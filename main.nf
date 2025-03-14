@@ -1,5 +1,6 @@
 nextflow.enable.dsl=2
 
+params.database_path = "/tscc/projects/ps-lalexandrov/shared"
 params.sample = "sample.csv"
 params.ref="/tscc/projects/ps-lalexandrov/shared/EVC_nextflow/GRCh38_ref/GRCh38.d1.vd1.fa"
 params.bam_dir="$projectDir/RESULTS/BAM"
