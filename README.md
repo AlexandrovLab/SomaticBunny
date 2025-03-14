@@ -40,10 +40,10 @@ export TMPDIR=/some/folder/in/restricted/
 nextflow run main.nf --type exome
 
 # If your pipeline terminates with external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
-nextflow run main.nf -resume
+nextflow run main.nf --type exome -resume
 
 # Optionally, you can recieve an notifiction email on completion with -N flag:
-nextflow run main.nf -N your_email@gmail.com
+nextflow run main.nf --type exome -N your_email@gmail.com
 ```
 6. Every process result and report will be stored in the **RESULT** folder
 
