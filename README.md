@@ -37,7 +37,7 @@ conda activate env_nf
 export TMPDIR=/some/folder/in/restricted/
 
 # Run nextflow
-nextflow run main.nf
+nextflow run main.nf --type exome
 
 # If your pipeline terminates with external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
 nextflow run main.nf -resume
