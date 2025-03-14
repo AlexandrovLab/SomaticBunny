@@ -1,6 +1,5 @@
 nextflow.enable.dsl=2
 
-params.type = "exome"
 params.sample = "sample.csv"
 params.ref="/tscc/projects/ps-lalexandrov/shared/EVC_nextflow/GRCh38_ref/GRCh38.d1.vd1.fa"
 params.bam_dir="$projectDir/RESULTS/BAM"
