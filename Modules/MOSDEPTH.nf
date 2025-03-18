@@ -19,12 +19,12 @@ process MOSDEPTH {
     if (map.type == "exome")
         """
         mosdepth -t 8 --by ${params.database_dir}/GRCh38_exome.bed ${map.patient}_tumor ${map.tumor}
-        mosdepth --by ${params.database_dir}/GRCh38_exome.bed ${map.patient}_normal ${map.normal}
+        mosdepth -t 8 --by ${params.database_dir}/GRCh38_exome.bed ${map.patient}_normal ${map.normal}
         """
 
     else
         """
         mosdepth -t 8 -n --fast-mode --by 500 ${map.patient}_tumor ${map.tumor}
-        mosdepth -n --fast-mode --by 500 ${map.patient}_normal ${map.normal}
+        mosdepth -t 8 -n --fast-mode --by 500 ${map.patient}_normal ${map.normal}
         """
 }
