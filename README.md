@@ -45,7 +45,7 @@ nextflow run main.nf --type exome -resume
 # Optionally, you can recieve an notifiction email on completion with -N flag:
 nextflow run main.nf --type exome -N your_email@gmail.com
 ```
-6. Every process result and report will be stored in the **RESULT** folder
+6. Every results and reports will be stored in the **RESULTS** folder
 
 ## Tool Versions
 
@@ -63,3 +63,5 @@ nextflow run main.nf --type exome -N your_email@gmail.com
 | Mutect2 | v4.6.0.0 (gatk) |
 | SAGE | v3.3 |
 | MuSE2 | v2.1.2 |
+| Delly | v1.3.1 |
+| CNVkit | v0.9.8 |
