@@ -29,9 +29,9 @@ mkdir special_mutations
 for sample in $(cat ../sample.txt);
 do
 
-gunzip $HOME_PATH/STRELKA/${sample}.somatic_indels.vcf.gz
-gunzip $HOME_PATH/STRELKA/${sample}.somatic_snvs.vcf.gz
-gunzip $HOME_PATH/SAGE/${sample}.sage.vcf.gz
+gunzip -k $HOME_PATH/STRELKA/${sample}.somatic_indels.vcf.gz
+gunzip -k $HOME_PATH/STRELKA/${sample}.somatic_snvs.vcf.gz
+gunzip -k $HOME_PATH/SAGE/${sample}.sage.vcf.gz
 
 done
 
