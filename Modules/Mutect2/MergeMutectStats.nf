@@ -1,27 +1,27 @@
 nextflow.enable.dsl=2
 
 process MergeMutectStats {
-  conda "${params.java_env}"
   scratch true
+  conda "${params.java_env}"
   label 'process_low'
   publishDir("${params.MUTECT2_dir}", mode: 'copy')
-  errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
+  errorStrategy 'retry'
   maxRetries 3
 
   input:
-  tuple val(patient), path(stats)
+  tuple val(map), path(stats)
 
   output:
-  tuple val(patient), path("*.stats"), emit: MUTECT2_stats
+  tuple val(map), path("*.stats"), emit: MUTECT2_stats
 
   script:
-  def cmd = "/tscc/projects/ps-lalexandrov/shared/EVC_nextflow/gatk-4.6.0.0/gatk MergeMutectStats"
+  def cmd = "${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk MergeMutectStats"
 
   for( int i=0; i<20; i++ ) {
     cmd += " -stats "
     cmd += stats[i]
     }
-  cmd += " -O ${patient}_merged.stats"
+  cmd += " -O ${map.patient}_${map.tumor_meta.sample}_merged.stats"
 
   cmd
 

@@ -24,7 +24,7 @@ process CONPAIR {
 
     \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/run_gatk_pileup_for_sample.py \
     -B ${map.normal} \
-    -O ${map.patient}_normal.pileup \
+    -O ${map.patient}_${map.tumor_meta.sample}_normal.pileup \
     -D ${params.conpair} \
     -G ${params.database_dir}/GenomeAnalysisTK.jar \
     --reference ${params.ref} \
@@ -32,35 +32,35 @@ process CONPAIR {
     
     \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/run_gatk_pileup_for_sample.py \
     -B ${map.tumor} \
-    -O ${map.patient}_tumor.pileup \
+    -O ${map.patient}_${map.tumor_meta.sample}_tumor.pileup \
     -D ${params.conpair} \
     -G ${params.database_dir}/GenomeAnalysisTK.jar \
     --reference ${params.ref} \
     --markers ${params.database_dir}/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.bed;
 
-    awk -F" " '\$5!=""' ${map.patient}_normal.pileup > ${map.patient}_normal.cleanpileup;
-    awk -F" " '\$5!=""' ${map.patient}_tumor.pileup > ${map.patient}_tumor.cleanpileup;
+    awk -F" " '\$5!=""' ${map.patient}_${map.tumor_meta.sample}_normal.pileup > ${map.patient}_${map.tumor_meta.sample}_normal.cleanpileup;
+    awk -F" " '\$5!=""' ${map.patient}_${map.tumor_meta.sample}_tumor.pileup > ${map.patient}_${map.tumor_meta.sample}_tumor.cleanpileup;
 
     \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/estimate_tumor_normal_contamination.py \
-    -T ${map.patient}_tumor.cleanpileup \
-    -N ${map.patient}_normal.cleanpileup \
-    --outfile ${map.patient}_contamination.txt \
+    -T ${map.patient}_${map.tumor_meta.sample}_tumor.cleanpileup \
+    -N ${map.patient}_${map.tumor_meta.sample}_normal.cleanpileup \
+    --outfile ${map.patient}_${map.tumor_meta.sample}_contamination.txt \
     --markers ${params.database_dir}/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.txt;
     
     \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/verify_concordance.py \
-    -T ${map.patient}_tumor.cleanpileup \
-    -N ${map.patient}_normal.cleanpileup \
+    -T ${map.patient}_${map.tumor_meta.sample}_tumor.cleanpileup \
+    -N ${map.patient}_${map.tumor_meta.sample}_normal.cleanpileup \
     --normal_homozygous_markers_only \
     --min_cov 10 \
-    --outfile ${map.patient}_concordance.txt \
+    --outfile ${map.patient}_${map.tumor_meta.sample}_concordance.txt \
     --markers ${params.database_dir}/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.txt;
     
-    echo "====Contamination Estimation" > ${map.patient}_info.txt;
-    cat ${map.patient}_contamination.txt >> ${map.patient}_info.txt;
-    echo "====Concordance" >> ${map.patient}_info.txt;
-    cat ${map.patient}_concordance.txt >> ${map.patient}_info.txt;
+    echo "====Contamination Estimation" > ${map.patient}_${map.tumor_meta.sample}_info.txt;
+    cat ${map.patient}_${map.tumor_meta.sample}_contamination.txt >> ${map.patient}_${map.tumor_meta.sample}_info.txt;
+    echo "====Concordance" >> ${map.patient}_${map.tumor_meta.sample}_info.txt;
+    cat ${map.patient}_${map.tumor_meta.sample}_concordance.txt >> ${map.patient}_${map.tumor_meta.sample}_info.txt;
 
-    rm ${map.patient}_contamination.txt  ${map.patient}_concordance.txt
+    rm ${map.patient}_${map.tumor_meta.sample}_contamination.txt  ${map.patient}_${map.tumor_meta.sample}_concordance.txt
     """
 
 }

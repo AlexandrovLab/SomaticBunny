@@ -1,10 +1,10 @@
 nextflow.enable.dsl=2
 
 process FASTQC {
+    conda "${params.fastqc_env}"
     scratch true
     label 'process_medium'
     publishDir("${params.FASTQC_dir}", mode: 'copy')
-    conda "${params.fastqc_env}"
     errorStrategy 'retry'
     maxRetries 3
 
