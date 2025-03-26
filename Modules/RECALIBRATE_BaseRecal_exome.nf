@@ -4,7 +4,6 @@ process RECALIBRATE_BaseRecal_exome {
     conda "${params.java_env}"
     scratch true
     label 'RECALIBRATE'
-    conda "${params.java_env}"
     publishDir("${params.recal_dir}", mode: 'copy')
     errorStrategy = 'retry'
     maxRetries 3

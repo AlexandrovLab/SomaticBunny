@@ -4,13 +4,12 @@ process RECALIBRATE_BQSR {
     conda "${params.java_env}"
     scratch true
     label 'RECALIBRATE'
-    conda "${params.java_env}"
     publishDir("${params.recal_dir}", mode: 'copy')
     errorStrategy = 'retry'
     maxRetries 3
         
     input: 
-    tuple val(patient), val(meta), val(status), path(bam), path(table), path(bai)
+    tuple val(patient), val(meta), path(bam), path(table), path(bai)
     each chunk
 
     output:

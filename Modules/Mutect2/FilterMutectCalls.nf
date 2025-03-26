@@ -1,7 +1,6 @@
 nextflow.enable.dsl=2
 
 process FilterMutectCalls {
-    conda "${params.java_env}"
     scratch true
     label 'process_low'
     conda "${params.java_env}"
@@ -10,15 +9,15 @@ process FilterMutectCalls {
     maxRetries 3
 
     input:
-    tuple val(map),
-          path(unfiltered_vcf),
-          path(contamination_table),
-          path(segments_table),
-          path(read_orientation_model_tar),
-          path(merged_stats)
+    tuple val(map), path(unfiltered_vcf)
+    tuple val(map), path(contamination_table)
+    tuple val(map), path(segments_table)
+    tuple val(map), path(read_orientation_model_tar)
+    tuple val(map), path(merged_stats)
 
     output:
     tuple val(map), path("*vcf"), path("*idx"), path("*stats"), emit: MUTECT2_final_out
+    val (map), emit: Mutect2_out
 
     script:
     """

@@ -1,7 +1,6 @@
 nextflow.enable.dsl=2
 
 process CalculateContamination {
-    conda "${params.java_env}"
     scratch true
     label 'process_low'
     conda "${params.java_env}"

@@ -9,7 +9,7 @@ process RECALIBRATE_SortBam {
     maxRetries 3
 
     input:
-    tuple val(patient), val(status), val(meta), path(bam)
+    tuple val(patient), val(meta), path(bam)
 
     output:
     tuple val(patient), val(meta), path("*bam"), path("*bai"), emit: pair_recal

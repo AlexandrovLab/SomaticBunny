@@ -1,6 +1,8 @@
 nextflow.enable.dsl=2
 
 params.database_path = "/tscc/projects/ps-lalexandrov/shared"
+
+params.type = "genome"
 params.sample = "sample.csv"
 params.ref="${params.database_path}/EVC_nextflow/GRCh38_ref/GRCh38.d1.vd1.fa"
 params.bam_dir="$projectDir/RESULTS/BAM"
@@ -35,10 +37,11 @@ params.strelka_env = "${params.database_path}/EVC_nextflow/yml/strelka_env.yml"
 params.mosdepth_env = "${params.database_path}/EVC_nextflow/yml/mosdepth_env.yml"
 params.summary_env = "${params.database_path}/EVC_nextflow/yml/py_summary.yml"
 params.java_env = "${params.database_path}/EVC_nextflow/yml/java.yml"
-params.muse_env = "${params.database_path}/EVC_nextflow/yml/muse2.yml"
+params.muse2_env = "${params.database_path}/EVC_nextflow/yml/muse2.yml"
 params.fastqc_env = "${params.database_path}/EVC_nextflow/yml/fastqc_env.yml"
 params.cnvkit_env = "${params.database_path}/EVC_nextflow/yml/cnvkit.yml"
 params.delly_env = "${params.database_path}/EVC_nextflow/yml/delly.yml"
+
 
 include { FASTQC } from './Modules/FASTQC'
 include { BWA_MEM } from './Modules/BWA_MEM'
@@ -61,6 +64,7 @@ include { CONPAIR } from './Modules/CONPAIR'
 include { SAGE } from './Modules/SAGE'
 include { STRELKA } from './Modules/STRELKA'
 include { MuSE2 } from './Modules/MuSE2'
+//include { Mutect2 } from './Modules/Mutect2'
 
 include { CNVkit_buildcnn } from './Modules/CNVkit_buildcnn'
 include { CNVkit } from './Modules/CNVkit'
@@ -132,7 +136,7 @@ workflow {
 
         RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
         BaseRecal_out_pair.map{
-            [patient:it[0], status:it[1], meta:it[2][0], bam:it[3][0], table:it[4], bai:it[5][0]]
+            [patient:it[0], status:it[1].status, meta:it[1], bam:it[2][0], table:it[3], bai:it[4][0]]
         }.set{ BaseRecal_out_MAP }
 
         RECALIBRATE_MergeReport(BaseRecal_out_MAP).set{ RECALIBRATE_MergeReport_out }
@@ -141,7 +145,7 @@ workflow {
 
         RECALIBRATE_BQSR_out.MergeBam_input.groupTuple(by:[0,1]).set { BaseRecal_BQSR_out_pair }
         BaseRecal_BQSR_out_pair.map{
-            [patient:it[0], status:it[1], meta:it[2][0], bam:it[3]]
+            [patient:it[0], meta:it[1], bam:it[2]]
         }.set{BaseRecal_BQSR_out_MAP}
 
         RECALIBRATE_MergeBam(BaseRecal_BQSR_out_MAP).set{ RECALIBRATE_MergeBam_out }
@@ -246,6 +250,7 @@ workflow {
             GETpileUP_out_pair.map{
             [patient:it[0], meta:it[1], mix:it[2]]
             }.set{ GETpileUP_out_pair_MAP }
+            GETpileUP_out_pair_MAP.view()
 
             GETpileUP_Merge(GETpileUP_out_pair_MAP).set { GETpileUP_Merge_out }
 
@@ -257,16 +262,10 @@ workflow {
             }.set{ GETpileUP_out_MAP }
 
             CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
-            FilterMutectCalls(
-              MergeVcfs_out.MUTECT2_vcf
-                .join(CalculateContamination_out.MUTECT2_contamination_table)
-                .join(CalculateContamination_out.MUTECT2_segments_table)
-                .join(LearnReadOrientationModel_out.MUTECT2_read_orientation)
-                .join(MergeMutectStats_out.MUTECT2_stats)
-            )
-           //SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
+            FilterMutectCalls(MergeVcfs_out.MUTECT2_vcf, CalculateContamination_out.MUTECT2_contamination_table, CalculateContamination_out.MUTECT2_segments_table, LearnReadOrientationModel_out.MUTECT2_read_orientation, MergeMutectStats_out.MUTECT2_stats)
+            SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
         }
-
+        
    // SAVE_CSV_MOSDEPTH.out.concat(SAVE_CSV_CONPAIR.out, SAVE_CSV_Mutect2.out, SAVE_CSV_MuSE2.out, SAVE_CSV_SAGE.out, SAVE_CSV_STRELKA.out, SAVE_CSV_RECAL.out, SAVE_CSV_FASTQC.out, SAVE_CSV_MKDUP.out, SAVE_CSV_BWA_MEM.out).collect().set{saved_csv}
     //SUMMARY(saved_csv).view()
     

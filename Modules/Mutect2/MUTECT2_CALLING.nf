@@ -1,7 +1,6 @@
 nextflow.enable.dsl=2
 
 process MUTECT2_CALLING {
-    conda "${params.java_env}"
     scratch true
     conda "${params.java_env}"
     label 'process_low'

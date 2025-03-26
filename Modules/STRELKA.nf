@@ -21,6 +21,7 @@ process STRELKA {
 
     script:
     if (params.type == "exome")
+
         """
         configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome
 
