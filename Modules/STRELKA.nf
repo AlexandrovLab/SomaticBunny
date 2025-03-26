@@ -44,3 +44,4 @@ process STRELKA {
         mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz.tbi
         """
 }
+

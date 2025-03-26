@@ -20,6 +20,7 @@ process CNVkit {
 
     script:
 
+<<<<<<< HEAD
     if (params.type == "exome")
         """
         cnvkit.py batch \

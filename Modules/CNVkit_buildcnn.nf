@@ -1,3 +1,5 @@
+nextflow.enable.dsl=2
+
 process CNVkit_buildcnn {
     conda "${params.cnvkit_env}"
     scratch true
@@ -5,11 +7,14 @@ process CNVkit_buildcnn {
     publishDir("${params.cnvkit_dir}", mode: 'copy')
     errorStrategy 'retry'
     maxRetries 3
+
     input:
     path normal_files
+
     output:
     path("reference.cnn"), emit: CNVkit_ref_cnn
     path("*coverage.cnn"), emit: CNVkit_buildcnns
+
     script:
     def bam_files = normal_files.findAll { it.toString().endsWith('.bam') }.join(' ')
     
@@ -34,3 +39,4 @@ process CNVkit_buildcnn {
         -p 8
         """
 }
+

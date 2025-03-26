@@ -1,6 +1,10 @@
 # EVCpipeline 
 ## Workflow Introduction
+<<<<<<< HEAD
 <img src="https://github.com/AlexandrovLab/SMURFS/blob/main/workflow_logo/v0.2.png" width="95%" height="95%">
+=======
+<img src="https://github.com/Tina04021997/EVCpipeline/blob/main/workflow_logo/v0.1.png" width="95%" height="95%">
+>>>>>>> 3df62aa (edited files)
 
 ## How to run EVC pipeline
 1. Install [Nextflow](https://www.nextflow.io/docs/latest/install.html) as a conda environment

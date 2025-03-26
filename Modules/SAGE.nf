@@ -31,5 +31,5 @@ process SAGE {
         -ensembl_data_dir ${params.SAGE_ref_dir}/common/ensembl_data \
         -out ${map.patient}_${map.tumor_meta.sample}.sage.vcf.gz
     """
-
 }
+

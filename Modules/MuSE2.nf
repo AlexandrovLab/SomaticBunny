@@ -27,3 +27,4 @@ process MuSE2 {
         ${params.MuSE2} sump -I ${map.patient}.MuSE.txt -n 16 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf -D ${params.database_dir}/af-only-gnomad.hg38_no_alt.vcf.gz
         """
 }
+

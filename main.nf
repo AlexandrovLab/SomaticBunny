@@ -25,7 +25,6 @@ params.mosdepth_dir="$projectDir/RESULTS/mosdepth"
 params.conpair_dir="$projectDir/RESULTS/Conpair"
 params.cnvkit_dir="$projectDir/RESULTS/CNVkit"
 params.Delly_dir="$projectDir/RESULTS/Delly"
-
 params.conpair="${params.database_path}/EVC_nextflow/Conpair-0.2"
 params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
 
@@ -107,6 +106,7 @@ workflow {
     | splitCsv( header:true )
     | map { row ->
         meta = row.subMap('patient','sample','status','fastq_1','fastq_2')
+
     } | set { sample_sheet }
 
     //1
