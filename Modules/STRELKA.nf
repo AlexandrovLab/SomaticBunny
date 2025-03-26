@@ -22,7 +22,7 @@ process STRELKA {
     script:
     if (map.type == "exome")
         """
-        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome
+        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome --callRegions ${params.bed}
 
         python2 strelka/runWorkflow.py -m local -j 10
 
@@ -33,7 +33,7 @@ process STRELKA {
         """
     else
         """
-        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --callRegions ${params.bed}
+        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka 
 
         python2 strelka/runWorkflow.py -m local -j 10
 
