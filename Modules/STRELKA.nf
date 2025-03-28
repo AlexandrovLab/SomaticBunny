@@ -20,16 +20,16 @@ process STRELKA {
 
 
     script:
-    if (map.type == "exome")
+    if (params.type == "exome")
         """
-        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome 
+        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome
 
         python2 strelka/runWorkflow.py -m local -j 10
 
-        mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}.somatic_indels.vcf.gz
-        mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}.somatic_indels.vcf.gz.tbi
-        mv strelka/results/variants/somatic.snvs.vcf.gz       ${map.patient}.somatic_snvs.vcf.gz
-        mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${map.patient}.somatic_snvs.vcf.gz.tbi
+        mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz
+        mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz.tbi
+        mv strelka/results/variants/somatic.snvs.vcf.gz       ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz
+        mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz.tbi
         """
     else
         """
@@ -37,9 +37,9 @@ process STRELKA {
 
         python2 strelka/runWorkflow.py -m local -j 10
 
-        mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}.somatic_indels.vcf.gz
-        mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}.somatic_indels.vcf.gz.tbi
-        mv strelka/results/variants/somatic.snvs.vcf.gz       ${map.patient}.somatic_snvs.vcf.gz
-        mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${map.patient}.somatic_snvs.vcf.gz.tbi
+        mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz
+        mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz.tbi
+        mv strelka/results/variants/somatic.snvs.vcf.gz       ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz
+        mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz.tbi
         """
 }
