@@ -65,3 +65,4 @@ nextflow run main.nf --type exome -N your_email@gmail.com
 | MuSE2 | v2.1.2 |
 | Delly | v1.3.1 |
 | CNVkit | v0.9.8 |
+| ASCAT | v3.2.0 |
