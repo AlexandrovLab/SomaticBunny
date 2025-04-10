@@ -14,7 +14,7 @@ process MuSE2 {
     val(map), emit:MuSE2_out
 
     script:
-    if (map.tumor_meta.type == "exome")
+    if (params.type == "exome")
         """
         ${params.MuSE2} call -f ${params.ref} -n 8 -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
@@ -22,9 +22,8 @@ process MuSE2 {
         """
     else
         """
+        ${params.MuSE2} call -f ${params.ref} -n 16 -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
-        ${params.MuSE2} call -f ${params.ref} -n 16 -O ${map.patient} ${map.tumor} ${map.normal}
-
-        ${params.MuSE2} sump -I ${map.patient}.MuSE.txt -n 16 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf -D ${params.database_dir}/af-only-gnomad.hg38_no_alt.vcf.gz
+        ${params.MuSE2} sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 16 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf -D ${params.database_dir}/af-only-gnomad.hg38_no_alt.vcf.gz
         """
 }

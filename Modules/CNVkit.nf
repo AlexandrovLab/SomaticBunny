@@ -9,7 +9,8 @@ process CNVkit {
     // maxRetries 3
 
     input:
-    tuple val(patient), val(type), path(normal), path(tumor), path(cnn)
+    val(map)
+    path(reference_cnn)
 
     output:
     path("*.bed"), emit: CNVkit_bed
@@ -19,29 +20,29 @@ process CNVkit {
 
     script:
 
-    if (type == "exome")
+    if (params.type == "exome")
         """
         cnvkit.py batch \
-        ${tumor} \
-        -r ${cnn} \
+        ${map.tumor} \
+        -r ${reference_cnn} \
         -p 16 \
         --scatter --diagram
 
         cnvkit.py call \
-        "${patient}_tumor_recal.cns" \
-        -o ${patient}_calls.cns
+        "${map.patient}_${map.sample}_tumor_recal.cns" \
+        -o ${map.patient}_${map.sample}_calls.cns
         """
     else
         """
         cnvkit.py batch \
         ${tumor} \
-        -r ${cnn} \
+        -r ${reference_cnn} \
         --method wgs \
         -p 16 \
         --scatter --diagram
 
         cnvkit.py call \
-        "${patient}_tumor_recal.cns" \
-        -o ${patient}_calls.cns
+        "${map.patient}_${map.sample}_tumor_recal.cns" \
+        -o ${map.patient}_${map.sample}_calls.cns
         """
 }

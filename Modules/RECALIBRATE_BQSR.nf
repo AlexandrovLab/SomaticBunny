@@ -13,7 +13,7 @@ process RECALIBRATE_BQSR {
     each chunk
 
     output:
-    tuple val(patient), val(meta), path("*bam"), emit: MergeBam_input
+    tuple val(patient), val(meta.status), val(meta), path("*bam"), emit: MergeBam_input
 
     script:
     """

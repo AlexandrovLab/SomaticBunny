@@ -16,7 +16,7 @@ process RECALIBRATE_MergeBam {
 
 
     script:
-    def temp_merged = "${map.patient}_${map.meta.sample}_${map.meta.status}_temp_merged.bam"
+    def temp_merged = "${map.patient}_${map.meta.sample}_${map.status}_temp_merged.bam"
     
     // Build the merge command to temporary file
     def cmd = "samtools merge -o ${temp_merged}"

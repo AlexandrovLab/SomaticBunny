@@ -20,7 +20,7 @@ process STRELKA {
 
 
     script:
-    if (map.tumor_meta.type == "exome")
+    if (params.type == "exome")
         """
         configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome
 

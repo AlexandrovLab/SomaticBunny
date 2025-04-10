@@ -23,6 +23,8 @@ params.muse2_dir="$projectDir/RESULTS/MuSE2"
 params.MUTECT2_dir="$projectDir/RESULTS/Mutect2"
 params.mosdepth_dir="$projectDir/RESULTS/mosdepth"
 params.conpair_dir="$projectDir/RESULTS/Conpair"
+params.cnvkit_dir="$projectDir/RESULTS/CNVkit"
+params.Delly_dir="$projectDir/RESULTS/Delly"
 params.conpair="${params.database_path}/EVC_nextflow/Conpair-0.2"
 params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
 
@@ -33,9 +35,11 @@ params.samtools_env = "${params.database_path}/EVC_nextflow/yml/samtools.yml"
 params.strelka_env = "${params.database_path}/EVC_nextflow/yml/strelka_env.yml"
 params.mosdepth_env = "${params.database_path}/EVC_nextflow/yml/mosdepth_env.yml"
 params.summary_env = "${params.database_path}/EVC_nextflow/yml/py_summary.yml"
-params.fastqc_env = "${params.database_path}/EVC_nextflow/yml/fastqc_env.yml"
 params.java_env = "${params.database_path}/EVC_nextflow/yml/java.yml"
-params.muse2_env = "${params.database_path}/EVC_nextflow/yml/muse2.yml"
+params.muse_env = "${params.database_path}/EVC_nextflow/yml/muse2.yml"
+params.fastqc_env = "${params.database_path}/EVC_nextflow/yml/fastqc_env.yml"
+params.cnvkit_env = "${params.database_path}/EVC_nextflow/yml/cnvkit.yml"
+params.delly_env = "${params.database_path}/EVC_nextflow/yml/delly.yml"
 
 include { FASTQC } from './Modules/FASTQC'
 include { BWA_MEM } from './Modules/BWA_MEM'
@@ -59,6 +63,15 @@ include { SAGE } from './Modules/SAGE'
 include { STRELKA } from './Modules/STRELKA'
 include { MuSE2 } from './Modules/MuSE2'
 //include { Mutect2 } from './Modules/Mutect2'
+
+include { CNVkit_buildcnn } from './Modules/CNVkit_buildcnn'
+include { CNVkit } from './Modules/CNVkit'
+
+include { Create_sample_tsv } from './Modules/Delly/Create_sample_tsv'
+include { Delly_SVcalling } from './Modules/Delly/Delly_SVcalling'
+include { Delly_Prefiltering } from './Modules/Delly/Delly_Prefiltering'
+include { Delly_Filtering } from './Modules/Delly/Delly_Filtering'
+include { Delly_Filtering_final } from './Modules/Delly/Delly_Filtering_final'
 
 include { MUTECT2_CALLING } from './Modules/Mutect2/MUTECT2_CALLING' 
 include { MUTECT2_CALLING_exome } from './Modules/Mutect2/MUTECT2_CALLING_exome' 
@@ -91,7 +104,7 @@ workflow {
     Channel.fromPath(params.sample)
     | splitCsv( header:true )
     | map { row ->
-        meta = row.subMap('patient','sample','status','fastq_1','fastq_2','type')
+        meta = row.subMap('patient','sample','status','fastq_1','fastq_2')
     } | set { sample_sheet }
 
     //1
@@ -145,8 +158,40 @@ workflow {
     RECALIBRATE_out.pair_recal.filter{it[1].status == 'tumor'}.set{tumor}
     normal.cross(tumor){it[0]}.map{
         normal, tumor ->
-        [patient:normal[0], normal:normal[2], tumor:tumor[2], tumor_meta:tumor[1],normal_meta:normal[1]]
+        [patient:normal[0], normal:normal[2], tumor:tumor[2], tumor_meta:tumor[1], normal_meta:normal[1]]
     }.set{ RECALIBRATE_out_MAP }
+    
+    // for CN analysis
+    normal.cross(tumor){it[0]}.map{
+        normal, tumor ->
+        [patient:normal[0], gender:normal[1].gender, normal:normal[2],tumor:tumor[2], type:normal[1].type, sample:tumor[1].sample]
+    }.set{ RECALIBRATE_out_MAP_CN }
+
+    // Collect all normal bams for CNVkit and Delly
+    normal.map { patient, meta, bam, bai -> [bam, bai] }.flatten().collect().set { normal_bams }
+    
+    // CNVkit
+    CNVkit_buildcnn(normal_bams).set { CNVkit_buildcnn_out }
+    CNVkit(RECALIBRATE_out_MAP_CN, CNVkit_buildcnn_out.CNVkit_ref_cnn).set { CNVkit_out }
+    
+    // Delly
+    Create_sample_tsv(Channel.fromPath(params.sample, checkIfExists: true))
+    sample_tsv_collected = Create_sample_tsv.out.samples_tsv.collect()
+
+    Delly_SVcalling(RECALIBRATE_out_MAP_CN).set { SVcalling_out }
+    SVcalling_out.SVcalling_bcf
+    .combine(sample_tsv_collected)
+    .set { prefiltering_input }
+
+    Delly_Prefiltering(prefiltering_input).set { Prefiltering_out }
+
+    Delly_Filtering(Prefiltering_out.Delly_pre_bcf, normal_bams).set { Filtering_out }
+
+    Filtering_out.Delly_geno_bcf
+    .combine(sample_tsv_collected)
+    .set { filtering_final_input }
+
+    Delly_Filtering_final(filtering_final_input)
 
     //5,6,7,8,9
     SAGE(RECALIBRATE_out_MAP)
@@ -175,8 +220,19 @@ workflow {
             }.set{ GETpileUP_out_MAP }
 
             CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
-            FilterMutectCalls(MUTECT2_CALLING_out.MUTECT2_vcf, CalculateContamination_out.MUTECT2_contamination_table, CalculateContamination_out.MUTECT2_segments_table, LearnReadOrientationModel_out.MUTECT2_read_orientation, MUTECT2_CALLING_out.MUTECT2_stats)
-            SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
+            MUTECT2_CALLING_out.MUTECT2_vcf
+                .join(CalculateContamination_out.MUTECT2_contamination_table)
+                .join(CalculateContamination_out.MUTECT2_segments_table)
+                .join(LearnReadOrientationModel_out.MUTECT2_read_orientation)
+                .join(MUTECT2_CALLING_out.MUTECT2_stats).view()
+            FilterMutectCalls(
+              MUTECT2_CALLING_out.MUTECT2_vcf
+                .join(CalculateContamination_out.MUTECT2_contamination_table)
+                .join(CalculateContamination_out.MUTECT2_segments_table)
+                .join(LearnReadOrientationModel_out.MUTECT2_read_orientation)
+                .join(MUTECT2_CALLING_out.MUTECT2_stats)
+            ).set{ FILTER_OUT }
+            //SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
 
         } else if (params.type == "genome") {
             GETpileUP(RECALIBRATE_out.pair_recal, chunk).set { GETpileUP_out }
@@ -208,7 +264,7 @@ workflow {
             SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
         }
 
-    SAVE_CSV_MOSDEPTH.out.concat(SAVE_CSV_CONPAIR.out, SAVE_CSV_Mutect2.out, SAVE_CSV_MuSE2.out, SAVE_CSV_SAGE.out, SAVE_CSV_STRELKA.out, SAVE_CSV_RECAL.out, SAVE_CSV_FASTQC.out, SAVE_CSV_MKDUP.out, SAVE_CSV_BWA_MEM.out).collect().set{saved_csv}
+   // SAVE_CSV_MOSDEPTH.out.concat(SAVE_CSV_CONPAIR.out, SAVE_CSV_Mutect2.out, SAVE_CSV_MuSE2.out, SAVE_CSV_SAGE.out, SAVE_CSV_STRELKA.out, SAVE_CSV_RECAL.out, SAVE_CSV_FASTQC.out, SAVE_CSV_MKDUP.out, SAVE_CSV_BWA_MEM.out).collect().set{saved_csv}
     //SUMMARY(saved_csv).view()
     
 }

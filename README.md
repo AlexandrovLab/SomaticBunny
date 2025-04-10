@@ -63,3 +63,6 @@ nextflow run main.nf -N your_email@gmail.com
 | Mutect2 | v4.6.0.0 (gatk) |
 | SAGE | v3.3 |
 | MuSE2 | v2.1.2 |
+| Delly | v1.3.1 |
+| CNVkit | v0.9.8 |
+| ASCAT | v3.2.0 |
