@@ -18,13 +18,13 @@ process MuSE2 {
         """
         ${params.MuSE2} call -f ${params.ref} -n 8 -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
-        ${params.MuSE2} sump -I ${map.patient}.MuSE.txt -n 8 -E -O ${map.patient}_${map.tumor_meta.sample}.vcf -D ${params.database_dir}/af-only-gnomad.hg38_no_alt.vcf.gz
+        ${params.MuSE2} sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 8 -E -O ${map.patient}_${map.tumor_meta.sample}.vcf -D ${params.database_dir}/af-only-gnomad.hg38_no_alt.vcf.gz
         """
     else
         """
         ${params.MuSE2} call -f ${params.ref} -n 16 -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
-        ${params.MuSE2} sump -I ${map.patient}.MuSE.txt -n 16 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf -D ${params.database_dir}/af-only-gnomad.hg38_no_alt.vcf.gz
+        ${params.MuSE2} sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 16 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf -D ${params.database_dir}/af-only-gnomad.hg38_no_alt.vcf.gz
         """
 }
 

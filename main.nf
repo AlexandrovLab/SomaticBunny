@@ -2,7 +2,6 @@ nextflow.enable.dsl=2
 
 params.database_path = "/tscc/projects/ps-lalexandrov/shared"
 
-params.type = "genome"
 params.sample = "sample.csv"
 params.ref="${params.database_path}/EVC_nextflow/GRCh38_ref/GRCh38.d1.vd1.fa"
 params.bam_dir="$projectDir/RESULTS/BAM"
@@ -105,8 +104,7 @@ workflow {
     Channel.fromPath(params.sample)
     | splitCsv( header:true )
     | map { row ->
-        meta = row.subMap('patient','sample','status','fastq_1','fastq_2')
-
+        meta = row.subMap('patient','sample','status','fastq_1','fastq_2','sex')
     } | set { sample_sheet }
 
     //1
@@ -166,7 +164,7 @@ workflow {
     // for CN analysis
     normal.cross(tumor){it[0]}.map{
         normal, tumor ->
-        [patient:normal[0], gender:normal[1].gender, normal:normal[2],tumor:tumor[2], type:normal[1].type, sample:tumor[1].sample]
+        [patient:normal[0], gender:normal[1].sex, normal:normal[2],tumor:tumor[2], sample:tumor[1].sample]
     }.set{ RECALIBRATE_out_MAP_CN }
 
     // Collect all normal bams for CNVkit and Delly
@@ -222,18 +220,47 @@ workflow {
             }.set{ GETpileUP_out_MAP }
 
             CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
-            MUTECT2_CALLING_out.MUTECT2_vcf
-                .join(CalculateContamination_out.MUTECT2_contamination_table)
-                .join(CalculateContamination_out.MUTECT2_segments_table)
-                .join(LearnReadOrientationModel_out.MUTECT2_read_orientation)
-                .join(MUTECT2_CALLING_out.MUTECT2_stats).view()
-            FilterMutectCalls(
-              MUTECT2_CALLING_out.MUTECT2_vcf
-                .join(CalculateContamination_out.MUTECT2_contamination_table)
-                .join(CalculateContamination_out.MUTECT2_segments_table)
-                .join(LearnReadOrientationModel_out.MUTECT2_read_orientation)
-                .join(MUTECT2_CALLING_out.MUTECT2_stats)
-            ).set{ FILTER_OUT }
+            
+
+            def vcfChannel = MUTECT2_CALLING_out.MUTECT2_vcf
+    		.map { map, vcf -> 
+        	    ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+    		}
+	    def contaminationChannel = CalculateContamination_out.MUTECT2_contamination_table
+    	        .map { map, cont -> 
+        	    ["${map.patient}_${map.tumor_meta.sample}", [map, cont]]
+    	        }
+
+            def segmentsChannel = CalculateContamination_out.MUTECT2_segments_table
+                .map { map, seg -> 
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, seg]]
+    		}
+
+            def orientationChannel = LearnReadOrientationModel_out.MUTECT2_read_orientation
+    	        .map { map, ori -> 
+        	    ["${map.patient}_${map.tumor_meta.sample}", [map, ori]]
+   	        }
+
+	    def statsChannel = MUTECT2_CALLING_out.MUTECT2_stats
+    	        .map { map, stats -> 
+        	    ["${map.patient}_${map.tumor_meta.sample}", [map, stats]]
+    	        }
+
+            // Join by combined patient_sample key
+	    vcfChannel
+    	        .join(contaminationChannel)
+    	        .join(segmentsChannel)
+    		.join(orientationChannel)
+    		.join(statsChannel)
+    		.map { patient_sample, vcfData, contData, segData, oriData, statsData ->
+        	     // Extract the original files for FilterMutectCalls
+        	     [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
+    	        }
+                //.view { "Final mapped data: $it" }
+    	        .set { filterInput }
+            FilterMutectCalls(filterInput).set { FILTER_OUT }
+
+		
             //SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
 
         } else if (params.type == "genome") {
@@ -262,11 +289,50 @@ workflow {
             }.set{ GETpileUP_out_MAP }
 
             CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
-            FilterMutectCalls(MergeVcfs_out.MUTECT2_vcf, CalculateContamination_out.MUTECT2_contamination_table, CalculateContamination_out.MUTECT2_segments_table, LearnReadOrientationModel_out.MUTECT2_read_orientation, MergeMutectStats_out.MUTECT2_stats)
-            SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
+           // For WGS workflow:
+            def vcfChannel = MergeVcfs_out.MUTECT2_vcf
+                .map{ map, vcf ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+                }
+
+            def contaminationChannel = CalculateContamination_out.MUTECT2_contamination_table
+                .map{ map, table ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, table]]
+                }
+
+            def segmentsChannel = CalculateContamination_out.MUTECT2_segments_table
+                .map{ map, segments ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, segments]]
+                }
+
+            def orientationChannel = LearnReadOrientationModel_out.MUTECT2_read_orientation
+                .map{ map, orientation ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, orientation]]
+                }
+
+            def statsChannel = MergeMutectStats_out.MUTECT2_stats
+                .map{ map, stats ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, stats]]
+                }
+
+            // Join by the composite key (patient_sample)
+            vcfChannel
+                .join(contaminationChannel)
+                .join(segmentsChannel)
+                .join(orientationChannel)
+                .join(statsChannel)
+                .map{ patient_sample, vcfData, contData, segData, oriData, statsData ->
+        // Extract the original files for FilterMutectCalls
+                    [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
+                }
+                .view { "Final joined data for FilterMutectCalls: $it" }
+                .set{ filterInput }
+
+             FilterMutectCalls(filterInput).set{ FILTER_OUT }
+          // SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
         }
         
-   // SAVE_CSV_MOSDEPTH.out.concat(SAVE_CSV_CONPAIR.out, SAVE_CSV_Mutect2.out, SAVE_CSV_MuSE2.out, SAVE_CSV_SAGE.out, SAVE_CSV_STRELKA.out, SAVE_CSV_RECAL.out, SAVE_CSV_FASTQC.out, SAVE_CSV_MKDUP.out, SAVE_CSV_BWA_MEM.out).collect().set{saved_csv}
+    //SAVE_CSV_MOSDEPTH.out.concat(SAVE_CSV_CONPAIR.out, SAVE_CSV_Mutect2.out, SAVE_CSV_MuSE2.out, SAVE_CSV_SAGE.out, SAVE_CSV_STRELKA.out, SAVE_CSV_RECAL.out, SAVE_CSV_FASTQC.out, SAVE_CSV_MKDUP.out, SAVE_CSV_BWA_MEM.out).collect().set{saved_csv}
     //SUMMARY(saved_csv).view()
     
 }

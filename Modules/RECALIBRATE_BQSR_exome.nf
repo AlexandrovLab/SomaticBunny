@@ -12,7 +12,7 @@ process RECALIBRATE_BQSR_exome {
     tuple val(patient), val(meta), path(bam), path(table), path(bai)
 
     output:
-    tuple val(patient), val(meta.status), val(meta), path("*bam"), emit: SortBam_input
+    tuple val(patient), val(meta), path("*bam"), emit: SortBam_input
 
     script:
     """

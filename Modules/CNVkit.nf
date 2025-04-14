@@ -19,8 +19,6 @@ process CNVkit {
     path("*.png"), emit: CNVkit_png
 
     script:
-
-<<<<<<< HEAD
     if (params.type == "exome")
         """
         cnvkit.py batch \
