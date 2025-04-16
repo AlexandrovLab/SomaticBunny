@@ -24,6 +24,7 @@ process CNVkit {
         cnvkit.py batch \
         ${map.tumor} \
         -r ${reference_cnn} \
+        --targets ${params.database_dir}/GRCh38_exome.bed \
         -p 16 \
         --scatter --diagram
 
