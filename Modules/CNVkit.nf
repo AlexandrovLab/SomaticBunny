@@ -34,7 +34,7 @@ process CNVkit {
     else
         """
         cnvkit.py batch \
-        ${tumor} \
+        ${map.tumor} \
         -r ${reference_cnn} \
         --method wgs \
         -p 16 \
