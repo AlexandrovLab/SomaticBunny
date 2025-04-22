@@ -10,17 +10,21 @@
   - nextflow.config
   - conf/base.config
   - sample.csv
-  - summary.py
 
-  > You can find these shared files and folder in `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
+  > You can find these shared files and folders in `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
 3. Prepare your sample.csv file:
 ```
-patient,status,fastq_1,fastq_2,type,file
-RADS10,normal,/path/to/RADS10_normal_1.fastq.gz,/path/to/RADS10_normal_2.fastq.gz,exome,fastq
-RADS10,tumor,/path/to/RADS10_tumor_1.fastq.gz,/path/to/RADS10_tumor_2.fastq.gz,exome,fastq
+patient,sample,status,fastq_1,fastq_2
+RADS10_GBC,A,normal,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285401_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285401_2.fastq.gz
+RADS10_GBC,A,tumor,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285402_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285402_2.fastq.gz
+RADS10_GBC,B,tumor,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285402_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285402_2.fastq.gz
+RADS13_GBC,A,normal,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285404_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285404_2.fastq.gz
+RADS13_GBC,A,tumor,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285405_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285405_2.fastq.gz
+RADS13_GBC,B,tumor,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285405_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285405_2.fastq.gz
+RADS17_GBC,A,normal,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285407_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285407_2.fastq.gz
+RADS17_GBC,A,tumor,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285408_1.fastq.gz,/tscc/lustre/restricted/alexandrov-ddn/users/tiy002/ENA/PRJEB42969/ERR5285408_2.fastq.gz
 ```
-> If you are running whole exome files, specify `exome` for type and `genome` for whole genome samples in the sample.csv
-> You can use the `create_sample_csv.sh` to create your sample.csv
+> If you are running whole exome files, specify `exome` for --type and `genome` for whole genome samples when running the commend
 
 4. Due to TSCC memory issue, you may need to modify the temp folder path to some folder in restricted:
   - `$params.mkdup_temp_dir` in the `main.nf` file (Default: `$projectDir/mkdup_tmp`)
