@@ -62,7 +62,6 @@ include { CONPAIR } from './Modules/CONPAIR'
 include { SAGE } from './Modules/SAGE'
 include { STRELKA } from './Modules/STRELKA'
 include { MuSE2 } from './Modules/MuSE2'
-//include { Mutect2 } from './Modules/Mutect2'
 
 include { CNVkit_buildcnn } from './Modules/CNVkit_buildcnn'
 include { CNVkit } from './Modules/CNVkit'
@@ -109,17 +108,17 @@ workflow {
 
     //1
     FASTQC(sample_sheet)
-    SAVE_CSV_FASTQC(FASTQC.out.fastqc_out,params.report_dir,params.FASTQC_dir)
+    // SAVE_CSV_FASTQC(FASTQC.out.fastqc_out,params.report_dir,params.FASTQC_dir)
 
     //2
     BWA_MEM(sample_sheet).set { BWA_MEM_out }
-    SAVE_CSV_BWA_MEM(BWA_MEM_out.bam, params.report_dir, params.bam_dir)
+    // SAVE_CSV_BWA_MEM(BWA_MEM_out.bam, params.report_dir, params.bam_dir)
     // CHECK_BAM_BWA(BWA_MEM_out.bam).set{ CHECK_BAM_BWA_out }
     // COMBINE_REPORTS_BWA(CHECK_BAM_BWA_out.individual_reports_bwa.collect())
 
     //3
     MKDUP(BWA_MEM_out).set{ MKDUP_out }
-    SAVE_CSV_MKDUP(MKDUP_out.mkdup_bam, params.report_dir, params.mkdup_dir)
+    // SAVE_CSV_MKDUP(MKDUP_out.mkdup_bam, params.report_dir, params.mkdup_dir)
     // CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
     // COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
 
@@ -150,7 +149,7 @@ workflow {
         RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
     }
 
-    SAVE_CSV_RECAL(RECALIBRATE_out.recal_bam, params.report_dir, params.recal_dir)
+    // SAVE_CSV_RECAL(RECALIBRATE_out.recal_bam, params.report_dir, params.recal_dir)
     // CHECK_BAM_RECAL(RECALIBRATE_out.pair_recal).set{ CHECK_BAM_RECAL_out }
     // COMBINE_REPORTS_RECAL(CHECK_BAM_RECAL_out.individual_reports_recal.collect())
 
@@ -200,11 +199,11 @@ workflow {
     CONPAIR(RECALIBRATE_out_MAP)
     MOSDEPTH(RECALIBRATE_out_MAP)
 
-    SAVE_CSV_SAGE(SAGE.out.SAGE_out,params.report_dir, params.SAGE_dir)
-    SAVE_CSV_STRELKA(STRELKA.out.STRELKA_out,params.report_dir, params.strelka_dir)
-    SAVE_CSV_MuSE2(MuSE2.out.MuSE2_out,params.report_dir, params.muse2_dir)
-    SAVE_CSV_CONPAIR(CONPAIR.out.CONPAIR_out,params.report_dir, params.conpair_dir)
-    SAVE_CSV_MOSDEPTH(MOSDEPTH.out.MOSDEPTH_out,params.report_dir, params.mosdepth_dir)
+    // SAVE_CSV_SAGE(SAGE.out.SAGE_out,params.report_dir, params.SAGE_dir)
+    // SAVE_CSV_STRELKA(STRELKA.out.STRELKA_out,params.report_dir, params.strelka_dir)
+    // SAVE_CSV_MuSE2(MuSE2.out.MuSE2_out,params.report_dir, params.muse2_dir)
+    // SAVE_CSV_CONPAIR(CONPAIR.out.CONPAIR_out,params.report_dir, params.conpair_dir)
+    // SAVE_CSV_MOSDEPTH(MOSDEPTH.out.MOSDEPTH_out,params.report_dir, params.mosdepth_dir)
 
     //10
     if (params.type == "exome") {
