@@ -104,7 +104,7 @@ workflow {
     Channel.fromPath(params.sample)
     | splitCsv( header:true )
     | map { row ->
-        meta = row.subMap('patient','sample','status','fastq_1','fastq_2','sex')
+        meta = row.subMap('patient','sample','status','fastq_1','fastq_2')
     } | set { sample_sheet }
 
     //1
