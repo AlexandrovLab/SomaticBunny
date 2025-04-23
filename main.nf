@@ -189,7 +189,6 @@ workflow {
     .set { prefiltering_input }
 
     Delly_Prefiltering(prefiltering_input).set { Prefiltering_out }
-
     Delly_Filtering(Prefiltering_out.Delly_pre_bcf, normal_bams).set { Filtering_out }
 
     Filtering_out.Delly_geno_bcf
@@ -301,12 +300,10 @@ workflow {
     		.join(orientationChannel)
     		.join(statsChannel)
     		.map { patient_sample, vcfData, contData, segData, oriData, statsData ->
-        	     // Extract the original files for FilterMutectCalls
         	     [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
     	        }
     	        .set { filterInput }
             FilterMutectCalls(filterInput).set { FILTER_OUT }
-
 		
             //SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
 
@@ -335,7 +332,6 @@ workflow {
             }.set{ GETpileUP_out_MAP }
 
             CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
-           // For WGS workflow:
             def vcfChannel = MergeVcfs_out.MUTECT2_vcf
                 .map{ map, vcf ->
                     ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
@@ -368,7 +364,6 @@ workflow {
                 .join(orientationChannel)
                 .join(statsChannel)
                 .map{ patient_sample, vcfData, contData, segData, oriData, statsData ->
-        // Extract the original files for FilterMutectCalls
                     [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
                 }
                 .set{ filterInput }
