@@ -1,0 +1,34 @@
+nextflow.enable.dsl=2
+
+process ASCAT_allelecount {
+    conda "${params.ascat_env}"
+    scratch true
+    label 'process_medium'
+    publishDir("${params.ascat_dir}", mode: 'copy')
+    errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
+    maxRetries 3
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/cancerit-allelecount:4.3.0--h41abebc_0' :
+        'biocontainers/cancerit-allelecount:4.3.0--h41abebc_0' }"
+
+    input:
+    val(map)
+    each chr
+
+    output:
+    tuple val(map), val(chr), path("*_${chr}.txt"), emit: allelecount
+
+    script:
+    """
+    alleleCounter \
+    -l "${params.database_dir}/ASCAT/WES/hg38/Loci/G1000_loci_hg38_chr${chr}.txt" \
+    -b "${map.tumor}" \
+    -o "${map.patient}_${map.sample}_tumor_${chr}.txt" -m 20
+
+    alleleCounter \
+    -l "${params.database_dir}/ASCAT/WES/hg38/Loci/G1000_loci_hg38_chr${chr}.txt" \
+    -b "${map.normal}" \
+    -o "${map.patient}_${map.sample}_normal_${chr}.txt" -m 20
+
+    """
+}
