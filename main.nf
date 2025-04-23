@@ -39,7 +39,8 @@ params.muse2_env = "${params.database_path}/EVC_nextflow/yml/muse2.yml"
 params.fastqc_env = "${params.database_path}/EVC_nextflow/yml/fastqc_env.yml"
 params.cnvkit_env = "${params.database_path}/EVC_nextflow/yml/cnvkit.yml"
 params.delly_env = "${params.database_path}/EVC_nextflow/yml/delly.yml"
-
+params.ascat_env = "${params.database_path}/EVC_nextflow/yml/ascat.yml"
+params.tmp_dir = './ascat_exome'
 
 include { FASTQC } from './Modules/FASTQC'
 include { BWA_MEM } from './Modules/BWA_MEM'
@@ -72,6 +73,11 @@ include { Delly_Prefiltering } from './Modules/Delly/Delly_Prefiltering'
 include { Delly_Filtering } from './Modules/Delly/Delly_Filtering'
 include { Delly_Filtering_final } from './Modules/Delly/Delly_Filtering_final'
 
+include { ASCAT } from './Modules/ASCAT'
+include { ASCAT_allelecount } from './Modules/ASCAT_exome/ASCAT_allelecount'
+include { ASCAT_logrbaf } from './Modules/ASCAT_exome/ASCAT_logrbaf'
+include { ASCAT_exome } from './Modules/ASCAT_exome/ASCAT_exome'
+
 include { MUTECT2_CALLING } from './Modules/Mutect2/MUTECT2_CALLING' 
 include { MUTECT2_CALLING_exome } from './Modules/Mutect2/MUTECT2_CALLING_exome' 
 include { GETpileUP } from './Modules/Mutect2/GETpileUP' 
@@ -103,7 +109,7 @@ workflow {
     Channel.fromPath(params.sample)
     | splitCsv( header:true )
     | map { row ->
-        meta = row.subMap('patient','sample','status','fastq_1','fastq_2')
+        meta = row.subMap('patient','sample','status','fastq_1','fastq_2','sex')
     } | set { sample_sheet }
 
     //1
@@ -192,6 +198,49 @@ workflow {
 
     Delly_Filtering_final(filtering_final_input)
 
+    // ASCAT
+    chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
+
+    if (params.type == "exome") {
+        ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
+
+        ASCAT_allelecount.out.allelecount
+            .map { map, chr, file ->
+                def patient = map.patient
+                def sample = map.sample
+                def gender = map.gender
+                [patient, sample, gender, file]
+            }
+            .groupTuple(by: [0, 1, 2])  // Group by patient, sample, and gender
+            // Restructure from pairs to separate normal and tumor lists
+            .map { patient, sample, gender, files ->
+                // Extract normal and tumor files from the nested structure
+                def normalFiles = []
+                def tumorFiles = []
+
+                // Flatten any nested structure if present
+                def flatFiles = files.flatten()
+
+                // Separate normal and tumor files
+                flatFiles.each { file ->
+                    if (file.toString().contains("_normal_")) {
+                        normalFiles << file
+                    } else if (file.toString().contains("_tumor_")) {
+                        tumorFiles << file
+                    }
+                }
+
+                [patient, sample, gender, normalFiles, tumorFiles]
+            }
+            .set { ascat_logrbaf_input }
+
+        ASCAT_logrbaf(ascat_logrbaf_input)
+        ASCAT_exome(ASCAT_logrbaf.out.ascat_input)
+
+    } else if (params.type == "genome") {
+        ASCAT(RECALIBRATE_out_MAP_CN)
+    }
+
     //5,6,7,8,9
     SAGE(RECALIBRATE_out_MAP)
     STRELKA(RECALIBRATE_out_MAP)
@@ -255,7 +304,6 @@ workflow {
         	     // Extract the original files for FilterMutectCalls
         	     [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
     	        }
-                //.view { "Final mapped data: $it" }
     	        .set { filterInput }
             FilterMutectCalls(filterInput).set { FILTER_OUT }
 
@@ -276,7 +324,6 @@ workflow {
             GETpileUP_out_pair.map{
             [patient:it[0], meta:it[1], mix:it[2]]
             }.set{ GETpileUP_out_pair_MAP }
-            GETpileUP_out_pair_MAP.view()
 
             GETpileUP_Merge(GETpileUP_out_pair_MAP).set { GETpileUP_Merge_out }
 
@@ -324,7 +371,6 @@ workflow {
         // Extract the original files for FilterMutectCalls
                     [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
                 }
-                .view { "Final joined data for FilterMutectCalls: $it" }
                 .set{ filterInput }
 
              FilterMutectCalls(filterInput).set{ FILTER_OUT }
@@ -332,6 +378,6 @@ workflow {
         }
         
     //SAVE_CSV_MOSDEPTH.out.concat(SAVE_CSV_CONPAIR.out, SAVE_CSV_Mutect2.out, SAVE_CSV_MuSE2.out, SAVE_CSV_SAGE.out, SAVE_CSV_STRELKA.out, SAVE_CSV_RECAL.out, SAVE_CSV_FASTQC.out, SAVE_CSV_MKDUP.out, SAVE_CSV_BWA_MEM.out).collect().set{saved_csv}
-    //SUMMARY(saved_csv).view()
+    //SUMMARY(saved_csv)
     
 }
