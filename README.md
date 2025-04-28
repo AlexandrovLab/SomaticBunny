@@ -71,3 +71,4 @@ nextflow run main.nf --type exome -N your_email@gmail.com
 | Delly | v1.3.1 |
 | CNVkit | v0.9.8 |
 | ASCAT | v3.2.0 |
+| Manta | v1.6.0 |
