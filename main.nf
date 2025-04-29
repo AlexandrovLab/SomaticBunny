@@ -26,6 +26,7 @@ params.cnvkit_dir="$projectDir/RESULTS/CNVkit"
 params.Delly_dir="$projectDir/RESULTS/Delly"
 params.conpair="${params.database_path}/EVC_nextflow/Conpair-0.2"
 params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
+params.manta_dir="$projectDir/RESULTS/MANTA"
 
 params.bwamem2_env = "${params.database_path}/EVC_nextflow/yml/bwamem2.yml"
 params.mkdup_env = "${params.database_path}/EVC_nextflow/yml/mkdup.yml"
@@ -41,6 +42,7 @@ params.cnvkit_env = "${params.database_path}/EVC_nextflow/yml/cnvkit.yml"
 params.delly_env = "${params.database_path}/EVC_nextflow/yml/delly.yml"
 params.ascat_env = "${params.database_path}/EVC_nextflow/yml/ascat.yml"
 params.tmp_dir = './ascat_exome'
+params.manta_env = "${params.database_path}/EVC_nextflow/yml/manta.yml"
 
 include { FASTQC } from './Modules/FASTQC'
 include { BWA_MEM } from './Modules/BWA_MEM'
@@ -72,6 +74,8 @@ include { Delly_SVcalling } from './Modules/Delly/Delly_SVcalling'
 include { Delly_Prefiltering } from './Modules/Delly/Delly_Prefiltering'
 include { Delly_Filtering } from './Modules/Delly/Delly_Filtering'
 include { Delly_Filtering_final } from './Modules/Delly/Delly_Filtering_final'
+
+include { MANTA } from './Modules/MANTA'
 
 include { ASCAT } from './Modules/ASCAT'
 include { ASCAT_allelecount } from './Modules/ASCAT_exome/ASCAT_allelecount'
@@ -196,6 +200,9 @@ workflow {
     .set { filtering_final_input }
 
     Delly_Filtering_final(filtering_final_input)
+
+    // Manta
+    MANTA(RECALIBRATE_out_MAP_CN)
 
     // ASCAT
     chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
