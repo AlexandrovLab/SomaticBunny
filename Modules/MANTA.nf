@@ -49,7 +49,7 @@ process MANTA {
         --tumorBam ${map.tumor} \
         --referenceFasta ${params.ref} \
         --runDir manta \
-        --callRegions ${params.bed}
+        --callRegions ${params.manta_bed}
 
         python2 manta/runWorkflow.py -j 8
         
