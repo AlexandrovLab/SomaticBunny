@@ -1,9 +1,9 @@
-# EVCpipeline 
+# SMURFS 
 ## Workflow Introduction
 <img src="https://github.com/AlexandrovLab/SMURFS/blob/main/workflow_logo/v0.2.png" width="95%" height="95%">
 
 
-## How to run EVC pipeline
+## How to run SMURFS pipeline
 1. Install [Nextflow](https://www.nextflow.io/docs/latest/install.html) as a conda environment
 2. Make sure you have the following folders and files in your working directory:
   - main.nf
@@ -24,9 +24,9 @@ RADS13_GBC,B,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR528540
 RADS17_GBC,A,normal,/FILE/LOCATION/ERR5285407_1.fastq.gz,/FILE/LOCATION/ERR5285407_2.fastq.gz,XY
 RADS17_GBC,A,tumor,/FILE/LOCATION/ERR5285408_1.fastq.gz,/FILE/LOCATION/ERR5285408_2.fastq.gz,XY
 ```
-> If you are running whole exome files, specify `exome` for --type and `genome` for whole genome samples when running the commend
+> If you are running whole-exome files, specify `--type exome` and `--type genome` for whole-genome samples when running the command
 
-4. Due to TSCC memory issue, you may need to modify the temp folder path to some folder in restricted:
+4. Due to TSCC memory issue, you may need to modify the temp folder path to a folder in the restricted:
   - `$params.mkdup_temp_dir` in the `main.nf` file (Default: `$projectDir/mkdup_tmp`)
   -  `$workDir` in the `nextflow.config` file (Default: `./work`)
 5. Request an interactive node and run Nextflow in your working directory under an interactive node:
@@ -44,13 +44,13 @@ export TMPDIR=/some/folder/in/restricted/
 # Run nextflow
 nextflow run main.nf --type exome
 
-# If your pipeline terminates with external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
+# If your pipeline terminates with an external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
 nextflow run main.nf --type exome -resume
 
-# Optionally, you can recieve an notifiction email on completion with -N flag:
+# Optionally, you can receive an notification email on completion with -N flag:
 nextflow run main.nf --type exome -N your_email@gmail.com
 ```
-6. Every results and reports will be stored in the **RESULTS** folder
+6. Every result and report will be stored in the **RESULTS** folder
 
 ## Tool Versions
 
