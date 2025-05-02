@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process ASCAT_allelecount {
-    conda "${params.ascat_env}"
+    conda "${params.alleleCounter_env}"
     scratch true
     label 'process_medium'
     publishDir("${params.ascat_dir}", mode: 'copy')
