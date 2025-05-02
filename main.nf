@@ -42,6 +42,7 @@ params.fastqc_env = "${params.database_path}/EVC_nextflow/yml/fastqc_env.yml"
 params.cnvkit_env = "${params.database_path}/EVC_nextflow/yml/cnvkit.yml"
 params.delly_env = "${params.database_path}/EVC_nextflow/yml/delly.yml"
 params.ascat_env = "${params.database_path}/EVC_nextflow/yml/ascat.yml"
+params.alleleCounter_env = "${params.database_path}/EVC_nextflow/yml/alleleCounter.yml"
 params.tmp_dir = './ascat_exome'
 params.manta_env = "${params.database_path}/EVC_nextflow/yml/manta.yml"
 
