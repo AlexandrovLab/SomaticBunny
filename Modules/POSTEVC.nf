@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 
-process postevc{
+process POSTEVC {
     scratch true
     label 'process_low'
     publishDir("${params.postevc_dir}", mode: 'copy', saveAs: { 
