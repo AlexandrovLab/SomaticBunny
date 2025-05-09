@@ -13,7 +13,7 @@ process SAGE {
     output:
     path("*vcf.gz"), emit: SAGE_vcf_gz
     path("*vcf.gz.tbi"), emit: SAGE_vcf_gz_tbi
-    val(map), emit: SAGE_out
+    tuple val(map),path("*vcf.gz"), emit: SAGE_out
 
     script:
     """
