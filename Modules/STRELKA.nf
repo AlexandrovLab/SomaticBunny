@@ -16,7 +16,7 @@ process STRELKA {
     path("*.somatic_indels.vcf.gz.tbi"), emit: STRELKA_indels_tbi
     path("*.somatic_snvs.vcf.gz"), emit: STRELKA_snvs
     path("*.somatic_snvs.vcf.gz.tbi"), emit: STRELKA_snvs_tbi
-    val(map), emit: STRELKA_out
+    tuple val(map),path("*.somatic_snvs.vcf.gz"),path("*.somatic_indels.vcf.gz"), emit: STRELKA_out
 
 
     script:
