@@ -4,7 +4,9 @@ process BWA_MEM {
     conda "${params.bwamem2_env}"
     scratch true
     label 'BWA_MEM'
-    publishDir("${params.bam_dir}", mode: 'copy')
+    if (params.publish.tokenize(',').contains('raw_bam')) {
+        publishDir("${params.bam_dir}", mode: 'copy')
+    }
     maxRetries 3
 
     input:

@@ -4,8 +4,9 @@ process MKDUP {
     conda "${params.mkdup_env}"
     scratch true
     label 'MKDUP'
-    publishDir("${params.mkdup_dir}", mode: 'copy')
-    errorStrategy = 'retry'
+    if (params.publish.tokenize(',').contains('markdup_bam')) {
+        publishDir("${params.mkdup_dir}", mode: 'copy')
+    }
     maxRetries 3
         
     input:

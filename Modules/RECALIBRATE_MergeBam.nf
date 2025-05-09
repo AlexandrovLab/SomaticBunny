@@ -4,7 +4,9 @@ process RECALIBRATE_MergeBam {
     scratch true
     label 'RECALIBRATE'
     conda "${params.samtools_env}"
-    publishDir("${params.recal_dir}", mode: 'copy')
+    if (params.publish.tokenize(',').contains('recal_bam')) {
+        publishDir("${params.recal_dir}", mode: 'copy')
+    }
     errorStrategy = 'retry'
     maxRetries 3
         

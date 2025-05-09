@@ -18,7 +18,7 @@ process FilterMutectCalls {
 
     output:
     tuple val(map), path("*vcf"), path("*idx"), path("*stats"), emit: MUTECT2_final_out
-    tuple val(map), path("*vcf") emit: Mutect2_out
+    val (map), emit: Mutect2_out
 
     script:
     """

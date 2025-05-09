@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 process ASCAT_allelecount {
     conda "${params.alleleCounter_env}"
     scratch true
-    label 'process_medium'
+    label 'process_low'
     publishDir("${params.ascat_dir}", mode: 'copy')
     errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
     maxRetries 3
