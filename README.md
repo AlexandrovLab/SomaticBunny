@@ -45,19 +45,19 @@ RADS17_GBC,A,tumor,/FILE/LOCATION/ERR5285408_1.fastq.gz,/FILE/LOCATION/ERR528540
 5. Request an interactive node and run Nextflow in your working directory under an interactive node:
 
 ```
-# Node requesting
+## Node requesting
 srun -N 1 -n 1 -c 8 --mem 125G -t 24:00:00 -p platinum -q hcp-ddp302 -A ddp302 --pty bash
 
-# Activate your nextflow conda environment
+## Activate your nextflow conda environment
 conda activate env_nf
 
-# Export TSCC temp directory to any folder in restricted
+## Export TSCC temp directory to any folder in restricted
 export TMPDIR=/some/folder/in/restricted/
 
-# Run nextflow
+## Run nextflow
 nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta
 
-# Publishing intermediate bam files
+## Publishing intermediate bam files
 
 By default, intermediate files are not saved to reduce disk usage. To publish specific intermediate files, use the `--publish` parameter with a comma-separated list of file types to publish:
 
@@ -69,10 +69,10 @@ Available options:
 Example:
 ```bash nextflow run main_conpair.nf --type exome --step variant_calling --publish raw_bam,mkdup_bam ```
 
-# If your pipeline terminates with an external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
+### If your pipeline terminates with an external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
 nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta-resume
 
-# Optionally, you can receive an notification email on completion with -N flag:
+### Optionally, you can receive an notification email on completion with -N flag:
 nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -N your_email@gmail.com
 
 6. Every result and report will be stored in the **RESULTS** folder
