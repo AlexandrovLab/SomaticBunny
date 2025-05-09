@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 params.database_path = "/tscc/projects/ps-lalexandrov/shared"
 
-params.sample = "sample.csv"
+params.sample = "sample_recalibrated.csv"
 params.ref="${params.database_path}/EVC_nextflow/GRCh38_ref/GRCh38.d1.vd1.fa"
 params.bam_dir="$projectDir/RESULTS/BAM"
 params.report_dir="$projectDir/RESULTS/REPORT"
@@ -100,7 +100,7 @@ include { FilterMutectCalls } from './Modules/Mutect2/FilterMutectCalls'
 
 include { SUMMARY } from './Modules/SUMMARY.nf'
 
-include { POSTEVC } from './Modules/POSTEVC.nf'
+include { postevc } from './Modules/POSTEVC.nf'
 
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
 include { SAVE_CSV_BWA_MEM } from './Modules/SAVE_CSV/SAVE_CSV_BWA_MEM'
@@ -725,36 +725,37 @@ workflow {
     }
 
     // Post EVC
-	def mutect2Channel = FILTER_OUT.Mutect2_out
-	    .map { map, vcf -> 
-		["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
-	    }
-	def muse2Channel = MuSE2_out.MuSE2_out
-	    .map { map, vcf -> 
-		["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
-	    }
-	def strelkaChannel = Strelka_out.STRELKA_out
-	    .map { map, snv, indel -> 
-		["${map.patient}_${map.tumor_meta.sample}", [map, snv, indel]]
-	    }
-	def sageChannel = SAGE_out.SAGE_out
-	    .map { map, vcf -> 
-		["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
-	    }
-	def recalChannel = tumor
-	    .map { patient,map,bam,bai  -> 
-		["${map.patient}_${map.sample}", [map, bam]]
-	    }
-	
-	mutect2Channel
-	    .join(muse2Channel)
-	    .join(strelkaChannel)
-	    .join(sageChannel)
-	    .join(recalChannel)
-	    .map{ patient_sample, mutect2_vcf, muse2_vcf, strelka_vcf, sage_vcf, recal_bam ->
-		[patient_sample, mutect2_vcf[1], muse2_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
-	    }
-	    .set{ postevcInput }
-	postevc(postevcInput)
+    def mutect2Channel = FILTER_OUT.Mutect2_out
+        .map { map, vcf -> 
+        ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+        }
+    def muse2Channel = MuSE2_out.MuSE2_out
+        .map { map, vcf -> 
+        ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+        }
+    def strelkaChannel = STRELKA_out.STRELKA_out
+        .map { map, snv, indel -> 
+        ["${map.patient}_${map.tumor_meta.sample}", [map, snv, indel]]
+        }
+    def sageChannel = SAGE_out.SAGE_out
+        .map { map, vcf -> 
+        ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+        }
+    RECALIBRATE_out_MAP
+        .map { it  -> 
+        ["${it.tumor_meta.patient}_${it.tumor_meta.sample}", [it.tumor_meta, it.tumor]]
+        }.set {recalChannel}
+    
+    mutect2Channel
+        .join(muse2Channel)
+        .join(strelkaChannel)
+        .join(sageChannel)
+        .join(recalChannel)
+        .map{ patient_sample, mutect2_vcf, muse2_vcf, strelka_vcf, sage_vcf, recal_bam ->
+        [patient_sample, mutect2_vcf[1], muse2_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
+        }
+        .set{ postevcInput }
+    postevc(postevcInput)
+
 
 }
