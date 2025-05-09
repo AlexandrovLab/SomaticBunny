@@ -3,14 +3,14 @@ nextflow.enable.dsl=2
 process ASCAT {
     conda "${params.ascat_env}"
     scratch true
-    label 'process_medium'
+    label 'process_high'
     publishDir("${params.ascat_dir}", mode: 'copy')
     errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
     maxRetries 3
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/cancerit-allelecount:4.3.0--h41abebc_0' :
         'biocontainers/cancerit-allelecount:4.3.0--h41abebc_0' }"
-
+        
     input:
     val(map)
 
@@ -51,11 +51,11 @@ process ASCAT {
     # Running ASCAT
     # For HTS data (WGS, WES and targeted sequencing), gamma must be set to 1 in ascat.runASCAT
 
-    ascat.bc = ascat.loadData(Tumor_LogR_file = paste0("${map.patient}_${map.sample}","_tumor_tumourLogR.txt"),
-                            Tumor_BAF_file = paste0("${map.patient}_${map.sample}","_tumor_tumourBAF.txt"),
-                            Germline_LogR_file = paste0("${map.patient}_${map.sample}","_tumor_normalLogR.txt"),
-                            Germline_BAF_file = paste0("${map.patient}_${map.sample}","_tumor_normalBAF.txt"),
-                            gender = "${map.gender}",
+    ascat.bc = ascat.loadData(Tumor_LogR_file = paste0("${map.patient}_${map.sample}","_tumor_tumourLogR.txt"), 
+                            Tumor_BAF_file = paste0("${map.patient}_${map.sample}","_tumor_tumourBAF.txt"), 
+                            Germline_LogR_file = paste0("${map.patient}_${map.sample}","_tumor_normalLogR.txt"), 
+                            Germline_BAF_file = paste0("${map.patient}_${map.sample}","_tumor_normalBAF.txt"), 
+                            gender = "${map.gender}", 
                             genomeVersion = "hg38")
 
 
@@ -87,12 +87,12 @@ process ASCAT {
     )
 
     # Write the data frame to a text file
-    write.table(output_df,
-                file = "purity_ploidy_${map.patient}_${map.sample}.txt",
-                append = TRUE,
-                quote = FALSE,
-                sep = "\t",
-                row.names = FALSE,
+    write.table(output_df, 
+                file = "purity_ploidy_${map.patient}_${map.sample}.txt", 
+                append = TRUE, 
+                quote = FALSE, 
+                sep = "\t", 
+                row.names = FALSE, 
                 col.names = !file.exists("purity_ploidy_${map.patient}_${map.sample}.txt"))
 
     """

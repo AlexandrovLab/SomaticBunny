@@ -4,7 +4,9 @@ process RECALIBRATE_BaseRecal_exome {
     conda "${params.java_env}"
     scratch true
     label 'RECALIBRATE'
-    publishDir("${params.recal_dir}", mode: 'copy')
+    if (params.publish.tokenize(',').contains('recal_bam')) {
+        publishDir("${params.recal_dir}", mode: 'copy')
+    }
     errorStrategy = 'retry'
     maxRetries 3
         

@@ -201,8 +201,10 @@ process ASCAT_logrbaf {
         # Write any remaining data in batches
         if tumor_logr_batch:
             write_batch_to_files(tumor_logr_batch, tumor_baf_batch, normal_logr_batch, normal_baf_batch)
-
+        
         # Clear normal_data to free memory
         normal_data.clear()
+
+    print(f"Completed processing for sample ${patient}_${sample}")
     """
 }
