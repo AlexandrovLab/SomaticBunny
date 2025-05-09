@@ -62,7 +62,7 @@ nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --to
 
 # Optionally, you can receive an notification email on completion with -N flag:
 nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -N your_email@gmail.com
-```
+
 6. Every result and report will be stored in the **RESULTS** folder
 
 ## Tool Versions
