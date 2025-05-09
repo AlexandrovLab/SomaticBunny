@@ -100,6 +100,8 @@ include { FilterMutectCalls } from './Modules/Mutect2/FilterMutectCalls'
 
 include { SUMMARY } from './Modules/SUMMARY.nf'
 
+include { POSTEVC } from './Modules/POSTEVC.nf'
+
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
 include { SAVE_CSV_BWA_MEM } from './Modules/SAVE_CSV/SAVE_CSV_BWA_MEM'
 include { SAVE_CSV_MKDUP } from './Modules/SAVE_CSV/SAVE_CSV_MKDUP'
