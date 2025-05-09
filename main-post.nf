@@ -722,6 +722,7 @@ workflow {
         MANTA(RECALIBRATE_out_MAP_CN)
     }
 
+    // Post EVC
 	def mutect2Channel = FILTER_OUT.Mutect2_out
 	    .map { map, vcf -> 
 		["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
@@ -742,7 +743,7 @@ workflow {
 	    .map { patient,map,bam,bai  -> 
 		["${map.patient}_${map.sample}", [map, bam]]
 	    }
-
+	
 	mutect2Channel
 	    .join(muse2Channel)
 	    .join(strelkaChannel)
