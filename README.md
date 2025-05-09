@@ -57,6 +57,18 @@ export TMPDIR=/some/folder/in/restricted/
 # Run nextflow
 nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta
 
+# Publishing intermediate bam files
+
+By default, intermediate files are not saved to reduce disk usage. To publish specific intermediate files, use the `--publish` parameter with a comma-separated list of file types to publish:
+
+Available options:
+- `raw_bam`: Publish raw BAM files from BWA_MEM
+- `recal_bam`: Publish recalibrated BAM files 
+- `mkdup_bam`: Publish mark duplicates BAM files
+
+Example:
+```bash nextflow run main_conpair.nf --type exome --step variant_calling --publish raw_bam,mkdup_bam ```
+
 # If your pipeline terminates with an external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
 nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta-resume
 
