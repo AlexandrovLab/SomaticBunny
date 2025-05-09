@@ -42,13 +42,13 @@ conda activate env_nf
 export TMPDIR=/some/folder/in/restricted/
 
 # Run nextflow
-nextflow run main.nf --type exome
+nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta
 
 # If your pipeline terminates with an external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
-nextflow run main.nf --type exome -resume
+nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta-resume
 
 # Optionally, you can receive an notification email on completion with -N flag:
-nextflow run main.nf --type exome -N your_email@gmail.com
+nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -N your_email@gmail.com
 ```
 6. Every result and report will be stored in the **RESULTS** folder
 
