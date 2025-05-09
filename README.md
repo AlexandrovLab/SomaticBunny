@@ -36,9 +36,9 @@ RADS13_GBC,A,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR528540
 RADS13_GBC,B,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR5285405_2.fastq.gz
 RADS17_GBC,A,normal,/FILE/LOCATION/ERR5285407_1.fastq.gz,/FILE/LOCATION/ERR5285407_2.fastq.gz
 RADS17_GBC,A,tumor,/FILE/LOCATION/ERR5285408_1.fastq.gz,/FILE/LOCATION/ERR5285408_2.fastq.gz
-
+```
 > If you are running whole-exome files, specify `--type exome` and `--type genome` for whole-genome samples when running the command
-
+```
 4. Due to TSCC memory issue, you may need to modify the temp folder path to a folder in the restricted:
   - `$params.mkdup_temp_dir` in the `main.nf` file (Default: `$projectDir/mkdup_tmp`)
   -  `$workDir` in the `nextflow.config` file (Default: `./work`)
