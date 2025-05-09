@@ -13,6 +13,7 @@
 
   > You can find these shared files and folders in `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
 3. Prepare your sample.csv file:
+> If you are running ASCAT:
 ```
 patient,sample,status,fastq_1,fastq_2,sex
 RADS10_GBC,A,normal,/FILE/LOCATION/ERR5285401_1.fastq.gz,/FILE/LOCATION/ERR5285401_2.fastq.gz,XY
@@ -24,6 +25,18 @@ RADS13_GBC,B,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR528540
 RADS17_GBC,A,normal,/FILE/LOCATION/ERR5285407_1.fastq.gz,/FILE/LOCATION/ERR5285407_2.fastq.gz,XY
 RADS17_GBC,A,tumor,/FILE/LOCATION/ERR5285408_1.fastq.gz,/FILE/LOCATION/ERR5285408_2.fastq.gz,XY
 ```
+> If you are not running ASCAT:
+```
+patient,sample,status,fastq_1,fastq_2
+RADS10_GBC,A,normal,/FILE/LOCATION/ERR5285401_1.fastq.gz,/FILE/LOCATION/ERR5285401_2.fastq.gz
+RADS10_GBC,A,tumor,/FILE/LOCATION/ERR5285402_1.fastq.gz,/FILE/LOCATION/ERR5285402_2.fastq.gz
+RADS10_GBC,B,tumor,/FILE/LOCATION/ERR5285402_1.fastq.gz,/FILE/LOCATION/ERR5285402_2.fastq.gz
+RADS13_GBC,A,normal,/FILE/LOCATION/ERR5285404_1.fastq.gz,/FILE/LOCATION/ERR5285404_2.fastq.gz
+RADS13_GBC,A,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR5285405_2.fastq.gz
+RADS13_GBC,B,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR5285405_2.fastq.gz
+RADS17_GBC,A,normal,/FILE/LOCATION/ERR5285407_1.fastq.gz,/FILE/LOCATION/ERR5285407_2.fastq.gz
+RADS17_GBC,A,tumor,/FILE/LOCATION/ERR5285408_1.fastq.gz,/FILE/LOCATION/ERR5285408_2.fastq.gz
+
 > If you are running whole-exome files, specify `--type exome` and `--type genome` for whole-genome samples when running the command
 
 4. Due to TSCC memory issue, you may need to modify the temp folder path to a folder in the restricted:
