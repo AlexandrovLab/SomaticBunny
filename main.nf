@@ -29,6 +29,7 @@ params.ascat_dir="$projectDir/RESULTS/ASCAT"
 params.conpair="${params.database_path}/EVC_nextflow/Conpair-0.2"
 params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
 params.manta_dir="$projectDir/RESULTS/MANTA"
+params.postevc_dir="$projectDir/RESULTS/POST"
 
 params.bwamem2_env = "${params.database_path}/EVC_nextflow/yml/bwamem2.yml"
 params.mkdup_env = "${params.database_path}/EVC_nextflow/yml/mkdup.yml"
