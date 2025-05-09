@@ -11,7 +11,7 @@ process MuSE2 {
 
     output:
     path("*.vcf"), emit: MuSE2_vcf
-    val(map), emit:MuSE2_out
+    tuple val(map), path("*.vcf"), emit:MuSE2_out
 
     script:
     if (params.type == "exome")
