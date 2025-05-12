@@ -108,7 +108,7 @@ export TMPDIR=/path/to/restricted/folder/
 4. Run the pipeline:
 
 ```bash
-nextflow run main_stepwise_cnsv_test.nf --type [genome|exome] --step variant_calling --tool [tool1,tool2,...]
+nextflow run main_stepwise_cnsv_test.nf --type [genome|exome] --step [mapping|markdup|recalibration|variant_calling] --tool [tool1,tool2,...]
 ```
 
 #### Pipeline Steps and Tools
@@ -142,10 +142,6 @@ Use the `--tool` parameter to specify which variant callers to run. You can sele
 
 | Category | Available Tools | Description |
 |----------|----------------|-------------|
-| SNV/INDEL Callers | `strelka2` | Illumina's variant caller for SNVs and small indels |
-| | `mutect2` | GATK's somatic variant caller |
-| | `sage` | HMF's accurate somatic SNV/indel caller |
-| | `muse2` | Somatic point mutation caller for tumor-normal pairs |
 | SV Callers | `manta` | Structural variant and indel caller |
 | | `delly` | Integrated structural variant detection |
 | CNV Callers | `ascat` | Allele-specific copy number analysis (requires sex information) |
