@@ -111,13 +111,51 @@ export TMPDIR=/path/to/restricted/folder/
 nextflow run main_stepwise_cnsv_test.nf --type [genome|exome] --step variant_calling --tool [tool1,tool2,...]
 ```
 
-#### Available Tools
+#### Pipeline Steps and Tools
 
-| Category | Available Tools |
-|----------|----------------|
-| SNV/INDEL Callers | `strelka2`, `mutect2`, `sage`, `muse2` |
-| SV Callers | `manta`, `delly` |
-| CNV Callers | `ascat`, `cnvkit` |
+The SMURFS pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--step` parameter.
+
+##### Available Steps
+
+| Step | Description |
+|------|-------------|
+| `mapping` | Performs alignment of FASTQ files to the reference genome |
+| `markdup` | Marks duplicate reads in the aligned BAM files |
+| `recalibration` | Performs base quality score recalibration |
+| `variant_calling` | Executes the selected variant calling tools |
+
+Example:
+```bash
+# Run only mapping step
+nextflow run main_stepwise_cnsv_test.nf --type exome --step mapping
+
+# Run only variant calling step
+nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool strelka2,mutect2
+
+# Run from a specific step to completion
+nextflow run main_stepwise_cnsv_test.nf --type exome --step markdup --tool strelka2,mutect2,ascat
+```
+
+##### Available Tools
+
+Use the `--tool` parameter to specify which variant callers to run. You can select multiple tools by separating them with commas.
+
+| Category | Available Tools | Description |
+|----------|----------------|-------------|
+| SNV/INDEL Callers | `strelka2` | Illumina's variant caller for SNVs and small indels |
+| | `mutect2` | GATK's somatic variant caller |
+| | `sage` | HMF's accurate somatic SNV/indel caller |
+| | `muse2` | Somatic point mutation caller for tumor-normal pairs |
+| SV Callers | `manta` | Structural variant and indel caller |
+| | `delly` | Integrated structural variant detection |
+| CNV Callers | `ascat` | Allele-specific copy number analysis (requires sex information) |
+| | `cnvkit` | Copy number variation detection from targeted DNA sequencing |
+
+Example of running multiple tools:
+```bash
+# Run Manta for SVs and ASCAT for CNVs
+nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool manta,ascat
+```
 
 ### Advanced Options
 
@@ -156,24 +194,21 @@ All results and reports are stored in the **RESULTS** folder with the following 
 
 ```
 RESULTS/
-├── QC/
-│   ├── FastQC/
-│   └── Conpair/
-├── BAM/
-│   ├── raw_bam/
-│   ├── recal_bam/
-│   └── mkdup_bam/
-├── SNV_INDEL/
-│   ├── Strelka2/
-│   ├── Mutect2/
-│   ├── SAGE/
-│   └── MuSE2/
-├── SV/
-│   ├── Manta/
-│   └── Delly/
-└── CNV/
-    ├── ASCAT/
-    └── CNVkit/
+├── ASCAT (optional)
+├── BAM (optional)
+├── CNVkit (optional)
+├── Conpair
+├── Delly (optional)
+├── FASTQC
+├── MANTA (optional)
+├── MKDUP
+├── mosdepth
+├── MuSE2
+├── Mutect2
+├── RECALIBRATE (optional)
+├── REPORT (optional)
+├── SAGE
+└── STRELKA
 ```
 
 ## Tool Versions
