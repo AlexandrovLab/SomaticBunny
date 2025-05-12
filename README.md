@@ -26,30 +26,23 @@ The Somatic MUtation Recognition Framework & Suite (SMURFS) integrates multiple 
 - Structural Variants (SVs)
 - Copy Number Variants (CNVs)
 
-This pipeline is designed to work with paired tumor-normal whole genome or whole exome sequencing data.
+This pipeline is designed to work with paired tumor-normal whole-genome or whole-exome sequencing data.
 
 ## Prerequisites
 
-- [Nextflow](https://www.nextflow.io/docs/latest/install.html) ≥21.10.3
-- High-performance computing environment (TSCC)
 - Conda/Mamba for environment management
 
 ## Installation
 
-1. Clone this repository or set up a working directory with the required files:
+1. Clone this repository
 
-```bash
-mkdir -p smurfs_pipeline/conf
-cd smurfs_pipeline
-```
-
-2. Add the following required files to your working directory:
+2. Make sure you have the following required files to your working directory:
    - `main.nf`
    - `nextflow.config`
    - `conf/base.config`
    - `sample.csv`
 
-   > **Note:** These files can be found in the shared directory: `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
+   > **Note:** These files can also be found in the shared directory: `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
 
 3. Prepare your `sample.csv` file according to your analysis requirements:
 
