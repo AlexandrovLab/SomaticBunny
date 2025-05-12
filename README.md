@@ -122,7 +122,7 @@ The SMURFS pipeline workflow is divided into multiple steps that can be run indi
 | `mapping` | This will start from performing alignment of FASTQ files to the reference genome | fastq_1 and fastq_2 |
 | `markdup` | This will start from mark duplicate reads using the aligned BAM files | raw bam and bai |
 | `recalibration` | This will start from performing base quality score recalibration | mark duplicated bam and bai |
-| `variant_calling` | This will start from executing the selected variant calling tools | recalibrated bam and bai |
+| `variant_calling` | This will start from executing variant calling tools | recalibrated bam and bai |
 
 Example:
 ```bash
