@@ -1,81 +1,83 @@
-# SMURFS 
-## Workflow Introduction
-<img src="https://github.com/AlexandrovLab/SMURFS/blob/main/workflow_logo/v0.2.png" width="95%" height="95%">
-
+```markdown
+# SMURFS: Somatic MUtation Recognition Framework & Suite
 
 ## How to run SMURFS pipeline
 1. Install [Nextflow](https://www.nextflow.io/docs/latest/install.html) as a conda environment
-2. Make sure you have the following folders and files in your working directory:
+2. Make sure you have the following files in your working directory:
   - main.nf
   - nextflow.config
   - conf/base.config
   - sample.csv
 
-  > You can find these shared files and folders in `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
-3. Prepare your sample.csv file:
-> If you are running ASCAT:
+  > You can find these files in the shared directory: `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
+3. Prepare your sample.csv file according to your analysis needs:
+> For ASCAT analysis (includes sex information):
 ```
 patient,sample,status,fastq_1,fastq_2,sex
-RADS10_GBC,A,normal,/FILE/LOCATION/ERR5285401_1.fastq.gz,/FILE/LOCATION/ERR5285401_2.fastq.gz,XY
-RADS10_GBC,A,tumor,/FILE/LOCATION/ERR5285402_1.fastq.gz,/FILE/LOCATION/ERR5285402_2.fastq.gz,XY
-RADS10_GBC,B,tumor,/FILE/LOCATION/ERR5285402_1.fastq.gz,/FILE/LOCATION/ERR5285402_2.fastq.gz,XY
-RADS13_GBC,A,normal,/FILE/LOCATION/ERR5285404_1.fastq.gz,/FILE/LOCATION/ERR5285404_2.fastq.gz,XX
-RADS13_GBC,A,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR5285405_2.fastq.gz,XX
-RADS13_GBC,B,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR5285405_2.fastq.gz,XX
-RADS17_GBC,A,normal,/FILE/LOCATION/ERR5285407_1.fastq.gz,/FILE/LOCATION/ERR5285407_2.fastq.gz,XY
-RADS17_GBC,A,tumor,/FILE/LOCATION/ERR5285408_1.fastq.gz,/FILE/LOCATION/ERR5285408_2.fastq.gz,XY
+RADS10_GBC,A,normal,/PATH/TO/NORMAL_1.fastq.gz,/PATH/TO/NORMAL_2.fastq.gz,XY
+RADS10_GBC,A,tumor,/PATH/TO/TUMOR_1.fastq.gz,/PATH/TO/TUMOR_2.fastq.gz,XY
+RADS10_GBC,B,tumor,/PATH/TO/TUMOR_B_1.fastq.gz,/PATH/TO/TUMOR_B_2.fastq.gz,XY
 ```
-> If you are not running ASCAT:
+> Without ASCAT analysis:
 ```
 patient,sample,status,fastq_1,fastq_2
-RADS10_GBC,A,normal,/FILE/LOCATION/ERR5285401_1.fastq.gz,/FILE/LOCATION/ERR5285401_2.fastq.gz
-RADS10_GBC,A,tumor,/FILE/LOCATION/ERR5285402_1.fastq.gz,/FILE/LOCATION/ERR5285402_2.fastq.gz
-RADS10_GBC,B,tumor,/FILE/LOCATION/ERR5285402_1.fastq.gz,/FILE/LOCATION/ERR5285402_2.fastq.gz
-RADS13_GBC,A,normal,/FILE/LOCATION/ERR5285404_1.fastq.gz,/FILE/LOCATION/ERR5285404_2.fastq.gz
-RADS13_GBC,A,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR5285405_2.fastq.gz
-RADS13_GBC,B,tumor,/FILE/LOCATION/ERR5285405_1.fastq.gz,/FILE/LOCATION/ERR5285405_2.fastq.gz
-RADS17_GBC,A,normal,/FILE/LOCATION/ERR5285407_1.fastq.gz,/FILE/LOCATION/ERR5285407_2.fastq.gz
-RADS17_GBC,A,tumor,/FILE/LOCATION/ERR5285408_1.fastq.gz,/FILE/LOCATION/ERR5285408_2.fastq.gz
+RADS10_GBC,A,normal,/PATH/TO/NORMAL_1.fastq.gz,/PATH/TO/NORMAL_2.fastq.gz
+RADS10_GBC,A,tumor,/PATH/TO/TUMOR_1.fastq.gz,/PATH/TO/TUMOR_2.fastq.gz
+RADS10_GBC,B,tumor,/PATH/TO/TUMOR_B_1.fastq.gz,/PATH/TO/TUMOR_B_2.fastq.gz
 ```
-> If you are running whole-exome files, specify `--type exome` and `--type genome` for whole-genome samples when running the command
-```
-4. Due to TSCC memory issue, you may need to modify the temp folder path to a folder in the restricted:
-  - `$params.mkdup_temp_dir` in the `main.nf` file (Default: `$projectDir/mkdup_tmp`)
-  -  `$workDir` in the `nextflow.config` file (Default: `./work`)
-5. Request an interactive node and run Nextflow in your working directory under an interactive node:
+> Specify sequencing type with `--type exome` for whole-exome or `--type genome` for whole-genome samples
+4. Configure temporary directories (required for TSCC memory management):
+  - Set `$params.mkdup_temp_dir` in `main.nf` (Default: `$projectDir/mkdup_tmp`)
+  - Set `$workDir` in `nextflow.config` (Default: `./work`)
+5. Request an interactive node and run the pipeline:
 
 ```
-## Node requesting
+## Request node
 srun -N 1 -n 1 -c 8 --mem 125G -t 24:00:00 -p platinum -q hcp-ddp302 -A ddp302 --pty bash
 
-## Activate your nextflow conda environment
+## Activate Nextflow environment
 conda activate env_nf
 
-## Export TSCC temp directory to any folder in restricted
-export TMPDIR=/some/folder/in/restricted/
+## Set TSCC temp directory
+export TMPDIR=/path/to/restricted/folder/
 
-## Run nextflow
+## Run pipeline with desired tools
 nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta
+```
+
+## Available Tools
+
+You can select one or more tools from each category:
+
+- SNV/INDEL callers: strelka2, mutect2, sage, muse2
+- SV callers: manta, delly
+- CNV callers: ascat, cnvkit
 
 ## Publishing intermediate bam files
 
-By default, intermediate files are not saved to reduce disk usage. To publish specific intermediate files, use the `--publish` parameter with a comma-separated list of file types to publish:
+By default, intermediate files are not saved to reduce disk usage. To publish specific files, use the `--publish` parameter:
 
 Available options:
-- `raw_bam`: Publish raw BAM files from BWA_MEM
-- `recal_bam`: Publish recalibrated BAM files 
-- `mkdup_bam`: Publish mark duplicates BAM files
+- `raw_bam`: Raw BAM files from BWA_MEM
+- `recal_bam`: Recalibrated BAM files 
+- `mkdup_bam`: Marked duplicates BAM files
 
 Example:
-```bash nextflow run main_conpair.nf --type exome --step variant_calling --publish raw_bam,mkdup_bam ```
+```
+nextflow run main_conpair.nf --type exome --step variant_calling --publish raw_bam,mkdup_bam
+```
 
-### If your pipeline terminates with an external error, or the interactive node is killed, you can resume your task after setting up the previous steps again with the following command:
-nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta-resume
+### If your pipeline terminates with an error or the node is killed, resume with:
+```
+nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -resume
+```
 
-### Optionally, you can receive an notification email on completion with -N flag:
-nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -N your_email@gmail.com
+### To receive email notifications upon completion:
+```
+nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -N your_email@example.com
+```
 
-6. Every result and report will be stored in the **RESULTS** folder
+6. All results and reports will be stored in the **RESULTS** folder
 
 ## Tool Versions
 
@@ -83,11 +85,11 @@ nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --to
 | --- | --- |
 | FastQC | v0.12.1 |
 | Picard | v2.18.27 |
-| samtool | v1.21 |
+| samtools | v1.21 |
 | bwa-mem2 | v2.2.1 |
 | Conpair | v0.2 |
 | Picard MarkDuplicates | v3.2.0-1 |
-| gatk4 | v4.6.0.0 |
+| GATK4 | v4.6.0.0 |
 | mosdepth | v0.3.8 |
 | Strelka2 | v2.9.10 |
 | Mutect2 | v4.6.0.0 (gatk) |
@@ -97,3 +99,4 @@ nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --to
 | CNVkit | v0.9.8 |
 | ASCAT | v3.2.0 |
 | Manta | v1.6.0 |
+```
