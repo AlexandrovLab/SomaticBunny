@@ -129,13 +129,13 @@ The SMURFS pipeline workflow is divided into multiple steps that can be run indi
 Example:
 ```bash
 # Run only mapping step
-nextflow run main_stepwise_cnsv_test.nf --type exome --step mapping
+nextflow run main.nf --type exome --step mapping
 
 # Run only variant calling step
-nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool strelka2,mutect2
+nextflow run main.nf --type exome --step variant_calling --tool strelka2,mutect2
 
 # Run from a specific step to completion
-nextflow run main_stepwise_cnsv_test.nf --type exome --step markdup --tool strelka2,mutect2,ascat
+nextflow run main.nf --type exome --step markdup --tool strelka2,mutect2,ascat
 ```
 
 ##### Available Tools
@@ -152,7 +152,7 @@ Use the `--tool` parameter to specify which variant callers to run. You can sele
 Example of running multiple tools:
 ```bash
 # Run Manta for SVs and ASCAT for CNVs
-nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool manta,ascat
+nextflow run main.nf --type exome --step variant_calling --tool manta,ascat
 ```
 
 ### Advanced Options
@@ -162,7 +162,7 @@ nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --to
 By default, intermediate files are not saved to reduce disk usage. Use the `--publish` parameter to save specific file types:
 
 ```bash
-nextflow run main_conpair.nf --type exome --step variant_calling --publish raw_bam,mkdup_bam
+nextflow run main.nf --type exome --step variant_calling --publish raw_bam,mkdup_bam
 ```
 
 **Available options:**
@@ -175,7 +175,7 @@ nextflow run main_conpair.nf --type exome --step variant_calling --publish raw_b
 If your pipeline terminates with an error or the interactive node is killed, resume with:
 
 ```bash
-nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -resume
+nextflow run main.nf --type exome --step variant_calling --tool ascat,manta -resume
 ```
 
 #### Email Notifications
@@ -183,7 +183,7 @@ nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --to
 Receive completion notification:
 
 ```bash
-nextflow run main_stepwise_cnsv_test.nf --type exome --step variant_calling --tool ascat,manta -N your_email@example.com
+nextflow run main.nf --type exome --step variant_calling --tool ascat,manta -N your_email@example.com
 ```
 
 ## Output
@@ -234,11 +234,4 @@ RESULTS/
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Citation
-
-If you use this pipeline in your research, please cite:
-
-```
-SMURFS: A Comprehensive Somatic Variant Calling Framework (in preparation)
-```
 ```
