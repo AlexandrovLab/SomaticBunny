@@ -36,7 +36,9 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
 
 1. Clone this repository
 
-2. Make sure you have the following required files to your working directory:
+2. Install [Nextflow](https://www.nextflow.io/docs/latest/install.html) as a conda environment
+
+3. Make sure you have the following required files to your working directory:
    - `main.nf`
    - `nextflow.config`
    - `conf/base.config`
@@ -44,7 +46,7 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
 
    > **Note:** These files can also be found in the shared directory: `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
 
-3. Prepare your `sample.csv` file according to your analysis requirements:
+4. Prepare your `sample.csv` file according to your analysis requirements:
 
    <details>
    <summary><b>For ASCAT analysis (click to expand)</b></summary>
