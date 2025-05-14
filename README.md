@@ -69,6 +69,17 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
    ```
    </details>
 
+   <details>
+   <summary><b>For starting from bams (click to expand)</b></summary>
+   
+   ```csv
+   patient,sample,status,bam,bai,sex
+   RADS10_GBC,A,normal,/PATH/TO/RADS10_GBC_A_normal.bam,/PATH/TO/RADS10_GBC_A_normal.bam.bai,XY
+   RADS10_GBC,A,tumor,/PATH/TO/RADS10_GBC_A_tumor.bam,/PATH/TO/RADS10_GBC_A_tumor.bam.bai,XY
+   RADS10_GBC,B,tumor,/PATH/TO/RADS10_GBC_B_tumor.bam,/PATH/TO/RADS10_GBC_B_tumor.bam.bai,XY
+   ```
+   </details>
+
 ## Configuration
 
 For TSCC memory management, modify the following parameters:
