@@ -229,9 +229,3 @@ RESULTS/
 | | Manta | v1.6.0 |
 | Copy Number Variants | CNVkit | v0.9.8 |
 | | ASCAT | v3.2.0 |
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-```
