@@ -38,7 +38,7 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
 
 2. Install [Nextflow](https://www.nextflow.io/docs/latest/install.html) as a conda environment
 
-3. Make sure you have the following required files to your working directory:
+3. Make sure you have the following required files in your working directory:
    - `main.nf`
    - `nextflow.config`
    - `conf/base.config`
@@ -110,7 +110,7 @@ export TMPDIR=/path/to/restricted/folder/
 4. Run the pipeline:
 
 ```bash
-nextflow run main_stepwise_cnsv_test.nf --type [genome|exome] --step [mapping|markdup|recalibration|variant_calling] --tool [tool1,tool2,...]
+nextflow run main_stepwise_cnsv_test.nf --type [genome|exome] --step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
 ```
 
 #### Pipeline Steps and Tools
@@ -167,8 +167,8 @@ nextflow run main_conpair.nf --type exome --step variant_calling --publish raw_b
 
 **Available options:**
 - `raw_bam`: Publish raw BAM files from BWA-MEM
-- `recal_bam`: Publish recalibrated BAM files
 - `mkdup_bam`: Publish mark duplicates BAM files
+- `recal_bam`: Publish recalibrated BAM files
 
 #### Resuming Failed Runs
 
