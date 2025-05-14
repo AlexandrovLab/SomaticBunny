@@ -120,7 +120,7 @@ export TMPDIR=/path/to/restricted/folder/
 4. Run the pipeline:
 
 ```bash
-nextflow run main_stepwise_cnsv_test.nf --type [genome|exome] --step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
+nextflow run main.nf --type [genome|exome] --step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
 ```
 
 #### Pipeline Steps and Tools
