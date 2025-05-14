@@ -16,7 +16,6 @@ SMURFS is an ensemble pipeline for somatic variant calling that integrates multi
   - [Advanced Options](#advanced-options)
 - [Output](#output)
 - [Tool Versions](#tool-versions)
-- [License](#license)
 
 ## Overview
 
