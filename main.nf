@@ -532,7 +532,7 @@ workflow {
             MOSDEPTH(RECALIBRATE_out_MAP)
 
             if (params.type == "exome") {
-                GETpileUP_exome(RECALIBRATE_out.pair_recal).set { GETpileUP_out }
+                GETpileUP_exome(sample_sheet).set { GETpileUP_out }
                 MUTECT2_CALLING_exome(RECALIBRATE_out_MAP).set { MUTECT2_CALLING_out }
                 LearnReadOrientationModel_exome(MUTECT2_CALLING_out.LearnReadOrientationModel_input).set { LearnReadOrientationModel_out }
 
