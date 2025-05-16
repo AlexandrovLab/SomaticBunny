@@ -374,6 +374,12 @@ workflow {
                 } | set { sample_sheet }
             }
 
+            if (params.type == "exome") {
+                GETpileUP_exome(sample_sheet).set { GETpileUP_out }
+            } else if (params.type == "genome") {
+                GETpileUP(sample_sheet, chunk).set { GETpileUP_out }
+            }
+
             sample_sheet.filter{it[1].status == 'normal'}.set{normal}
             sample_sheet.filter{it[1].status == 'tumor'}.set{tumor}
             normal.cross(tumor){it[0]}.map{
@@ -398,7 +404,6 @@ workflow {
             MOSDEPTH(RECALIBRATE_out_MAP)
 
             if (params.type == "exome") {
-                GETpileUP_exome(sample_sheet).set { GETpileUP_out }
                 MUTECT2_CALLING_exome(RECALIBRATE_out_MAP).set { MUTECT2_CALLING_out }
                 LearnReadOrientationModel_exome(MUTECT2_CALLING_out.LearnReadOrientationModel_input).set { LearnReadOrientationModel_out }
 
@@ -447,7 +452,6 @@ workflow {
             //SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
 
             } else if (params.type == "genome") {
-                GETpileUP(sample_sheet, chunk).set { GETpileUP_out }
                 MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk).set { MUTECT2_CALLING_out }
                 MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
                 MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
