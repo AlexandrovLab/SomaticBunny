@@ -17,6 +17,8 @@ process CONPAIR {
 
     script:
     """
+    export _JAVA_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=${TMPDIR}/conpair"
+    export JAVA_TOOL_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=${TMPDIR}/conpair"
     export PATH=${params.jre}/bin:$PATH
     export CONPAIR_DIR=${params.conpair}
     export GATK_JAR=${params.database_dir}/GenomeAnalysisTK.jar
