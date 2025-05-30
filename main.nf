@@ -113,6 +113,14 @@ include { SAVE_CSV_Mutect2 } from './Modules/SAVE_CSV/SAVE_CSV_Mutect2'
 include { SAVE_CSV_CONPAIR } from './Modules/SAVE_CSV/SAVE_CSV_CONPAIR'
 include { SAVE_CSV_MOSDEPTH } from './Modules/SAVE_CSV/SAVE_CSV_MOSDEPTH'
 
+def isToolSelected(String tool) {
+    if (params.tool) {
+        def tools = params.tool.split(',').collect { it.trim() }
+        return tools.contains(tool)
+    }
+    return false
+}
+
 workflow {
     chunk = Channel.of(1..20)
     
