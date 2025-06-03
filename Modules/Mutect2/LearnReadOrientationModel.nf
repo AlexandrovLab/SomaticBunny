@@ -21,7 +21,7 @@ process LearnReadOrientationModel {
     cmd += " -I "
     cmd += f1r2_files[i]
     }
-  cmd += " -O _read-orientation-model.tar.gz"
+  cmd += " -O ${map.patient}_${map.tumor_meta.sample}_read-orientation-model.tar.gz"
 
   cmd
 
