@@ -518,6 +518,88 @@ workflow {
                 FilterMutectCalls(filterInput).set{ FILTER_OUT }
             // SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
             }
+
+            // TOOL-SPECIFIC BLOCKS - MOVED INSIDE variant_calling STEP
+            // ASCAT
+            if (params.tool && params.tool.contains('ascat')) {
+                chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
+                if (params.type == "exome") {
+                    ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
+
+                    ASCAT_allelecount.out.allelecount
+                        .map { map, chr, file ->
+                            def patient = map.patient
+                            def sample = map.sample
+                            def gender = map.gender
+                            [patient, sample, gender, file]
+                        }
+                        .groupTuple(by: [0, 1, 2])  // Group by patient, sample, and gender
+                        // Restructure from pairs to separate normal and tumor lists
+                        .map { patient, sample, gender, files ->
+                            // Extract normal and tumor files from the nested structure
+                            def normalFiles = []
+                            def tumorFiles = []
+
+                            // Flatten any nested structure if present
+                            def flatFiles = files.flatten()
+
+                            // Separate normal and tumor files
+                            flatFiles.each { file ->
+                                if (file.toString().contains("_normal_")) {
+                                    normalFiles << file
+                                } else if (file.toString().contains("_tumor_")) {
+                                    tumorFiles << file
+                                }
+                            }
+
+                            [patient, sample, gender, normalFiles, tumorFiles]
+                        }
+                        .set { ascat_logrbaf_input }
+
+                    ASCAT_logrbaf(ascat_logrbaf_input)
+                    ASCAT_exome(ASCAT_logrbaf.out.ascat_input)
+
+                } else if (params.type == "genome") {
+                    ASCAT(RECALIBRATE_out_MAP_CN)
+                }
+            }
+
+            // CNVkit
+            if (params.tool && params.tool.contains('cnvkit')) {
+                CNVkit_buildcnn(normal_bams).set { CNVkit_buildcnn_out }
+                CNVkit(RECALIBRATE_out_MAP_CN, CNVkit_buildcnn_out.CNVkit_ref_cnn).set { CNVkit_out }
+            }
+
+            // Delly
+            if (params.tool && params.tool.contains('delly')) {
+                if (params.type == 'exome') {
+                    log.error "ERROR: Delly is not recommended for exome data. Please use a different SV caller (manta) for exome data"
+                    exit 1  
+                } else {
+                    Create_sample_tsv(Channel.fromPath(params.sample, checkIfExists: true))
+                    sample_tsv_collected = Create_sample_tsv.out.samples_tsv.collect()
+
+                    Delly_SVcalling(RECALIBRATE_out_MAP_CN).set { SVcalling_out }
+                    SVcalling_out.SVcalling_bcf
+                    .combine(sample_tsv_collected)
+                    .set { prefiltering_input }
+
+                    Delly_Prefiltering(prefiltering_input).set { Prefiltering_out }
+                    Delly_Filtering(Prefiltering_out.Delly_pre_bcf, normal_bams).set { Filtering_out }
+
+                    Filtering_out.Delly_geno_bcf
+                    .combine(sample_tsv_collected)
+                    .set { filtering_final_input }
+
+                    Delly_Filtering_final(filtering_final_input)
+                }
+            }
+
+            // Manta
+            if (params.tool && params.tool.contains('manta')) {
+                MANTA(RECALIBRATE_out_MAP_CN)
+            }
+
         } else {
 
             RECALIBRATE_out.pair_recal.filter{it[1].status == 'normal'}.set{normal}
@@ -652,88 +734,87 @@ workflow {
                 FilterMutectCalls(filterInput).set{ FILTER_OUT }
             // SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
             }
+
+            // TOOL-SPECIFIC BLOCKS - ALSO FOR NON variant_calling START STEPS
+	    // ASCAT
+	    if (params.tool in ['ascat']) {
+	        chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
+	        if (params.type == "exome") {
+	            ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
+	
+	            ASCAT_allelecount.out.allelecount
+	                .map { map, chr, file ->
+	                    def patient = map.patient
+	                    def sample = map.sample
+	                    def gender = map.gender
+	                    [patient, sample, gender, file]
+	                }
+	                .groupTuple(by: [0, 1, 2])  // Group by patient, sample, and gender
+	                // Restructure from pairs to separate normal and tumor lists
+	                .map { patient, sample, gender, files ->
+	                    // Extract normal and tumor files from the nested structure
+	                    def normalFiles = []
+	                    def tumorFiles = []
+	
+	                    // Flatten any nested structure if present
+	                    def flatFiles = files.flatten()
+	
+	                    // Separate normal and tumor files
+	                    flatFiles.each { file ->
+	                        if (file.toString().contains("_normal_")) {
+	                            normalFiles << file
+	                        } else if (file.toString().contains("_tumor_")) {
+	                            tumorFiles << file
+	                        }
+	                    }
+	
+	                    [patient, sample, gender, normalFiles, tumorFiles]
+	                }
+	                .set { ascat_logrbaf_input }
+	
+	            ASCAT_logrbaf(ascat_logrbaf_input)
+	            ASCAT_exome(ASCAT_logrbaf.out.ascat_input)
+	
+	        } else if (params.type == "genome") {
+	            ASCAT(RECALIBRATE_out_MAP_CN)
+	        }
+	    }
+	
+	    // CNVkit
+	    if (params.tool in ['cnvkit']) {
+	        CNVkit_buildcnn(normal_bams).set { CNVkit_buildcnn_out }
+	        CNVkit(RECALIBRATE_out_MAP_CN, CNVkit_buildcnn_out.CNVkit_ref_cnn).set { CNVkit_out }
+	    }
+	
+	    // Delly
+	    if (params.tool in ['delly']) {
+	        if (params.type == 'exome' && params.tool.toString().contains('delly')) {
+	            log.error "ERROR: Delly is not recommended for exome data. Please use a different SV caller (manta) for exome data"
+	            exit 1  
+	        } else {
+	            Create_sample_tsv(Channel.fromPath(params.sample, checkIfExists: true))
+	            sample_tsv_collected = Create_sample_tsv.out.samples_tsv.collect()
+	
+	            Delly_SVcalling(RECALIBRATE_out_MAP_CN).set { SVcalling_out }
+	            SVcalling_out.SVcalling_bcf
+	            .combine(sample_tsv_collected)
+	            .set { prefiltering_input }
+	
+	            Delly_Prefiltering(prefiltering_input).set { Prefiltering_out }
+	            Delly_Filtering(Prefiltering_out.Delly_pre_bcf, normal_bams).set { Filtering_out }
+	
+	            Filtering_out.Delly_geno_bcf
+	            .combine(sample_tsv_collected)
+	            .set { filtering_final_input }
+	
+	            Delly_Filtering_final(filtering_final_input)
+	        }
+	    }
+	
+	    // Manta
+	    if (params.tool in ['manta']) {
+	        MANTA(RECALIBRATE_out_MAP_CN)
+	    }
         }
     }
-
-
-    // ASCAT
-    if (params.tool in ['ascat']) {
-        chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
-        if (params.type == "exome") {
-            ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
-
-            ASCAT_allelecount.out.allelecount
-                .map { map, chr, file ->
-                    def patient = map.patient
-                    def sample = map.sample
-                    def gender = map.gender
-                    [patient, sample, gender, file]
-                }
-                .groupTuple(by: [0, 1, 2])  // Group by patient, sample, and gender
-                // Restructure from pairs to separate normal and tumor lists
-                .map { patient, sample, gender, files ->
-                    // Extract normal and tumor files from the nested structure
-                    def normalFiles = []
-                    def tumorFiles = []
-
-                    // Flatten any nested structure if present
-                    def flatFiles = files.flatten()
-
-                    // Separate normal and tumor files
-                    flatFiles.each { file ->
-                        if (file.toString().contains("_normal_")) {
-                            normalFiles << file
-                        } else if (file.toString().contains("_tumor_")) {
-                            tumorFiles << file
-                        }
-                    }
-
-                    [patient, sample, gender, normalFiles, tumorFiles]
-                }
-                .set { ascat_logrbaf_input }
-
-            ASCAT_logrbaf(ascat_logrbaf_input)
-            ASCAT_exome(ASCAT_logrbaf.out.ascat_input)
-
-        } else if (params.type == "genome") {
-            ASCAT(RECALIBRATE_out_MAP_CN)
-        }
-    }
-
-    // CNVkit
-    if (params.tool in ['cnvkit']) {
-        CNVkit_buildcnn(normal_bams).set { CNVkit_buildcnn_out }
-        CNVkit(RECALIBRATE_out_MAP_CN, CNVkit_buildcnn_out.CNVkit_ref_cnn).set { CNVkit_out }
-    }
-
-    // Delly
-    if (params.tool in ['delly']) {
-        if (params.type == 'exome' && params.tool.toString().contains('delly')) {
-            log.error "ERROR: Delly is not recommended for exome data. Please use a different SV caller (manta) for exome data"
-            exit 1  
-        } else {
-            Create_sample_tsv(Channel.fromPath(params.sample, checkIfExists: true))
-            sample_tsv_collected = Create_sample_tsv.out.samples_tsv.collect()
-
-            Delly_SVcalling(RECALIBRATE_out_MAP_CN).set { SVcalling_out }
-            SVcalling_out.SVcalling_bcf
-            .combine(sample_tsv_collected)
-            .set { prefiltering_input }
-
-            Delly_Prefiltering(prefiltering_input).set { Prefiltering_out }
-            Delly_Filtering(Prefiltering_out.Delly_pre_bcf, normal_bams).set { Filtering_out }
-
-            Filtering_out.Delly_geno_bcf
-            .combine(sample_tsv_collected)
-            .set { filtering_final_input }
-
-            Delly_Filtering_final(filtering_final_input)
-        }
-    }
-
-    // Manta
-    if (params.tool in ['manta']) {
-        MANTA(RECALIBRATE_out_MAP_CN)
-    }
-
 }
