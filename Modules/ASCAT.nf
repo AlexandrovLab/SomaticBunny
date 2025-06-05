@@ -37,8 +37,8 @@ process ASCAT {
 
     # PrepareHTS: Extracting logR and BAF from HTS data (bam files)
     ascat.prepareHTS(
-    tumourseqfile = "${map.tumor}_${map.sample}",
-    normalseqfile = "${map.normal}_${map.sample}",
+    tumourseqfile = "${map.tumor}",
+    normalseqfile = "${map.normal}",
     tumourname = "${map.patient}_${map.sample}_tumor",
     normalname = "${map.patient}_${map.sample}_normal",
     allelecounter_exe = "alleleCounter",
