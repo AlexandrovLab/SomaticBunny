@@ -817,4 +817,61 @@ workflow {
 	    }
         }
     }
+
+    // POST - filtering and consensus calling
+    if (params.step in ['mapping', 'markdup', 'recalibration', 'variant_calling']) {
+        
+        // Use the outputs that are guaranteed to exist from variant calling steps
+        def mutect2Channel = FilterMutectCalls.out.Mutect2_out
+            .map { map, vcf ->
+                ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+            }
+        
+        def muse2Channel = MuSE2.out.MuSE2_out
+            .map { map, vcf ->
+                ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+            }
+        
+        def strelkaChannel = STRELKA.out.STRELKA_out
+            .map { map, snv, indel ->
+                ["${map.patient}_${map.tumor_meta.sample}", [map, snv, indel]]
+            }
+        
+        def sageChannel = SAGE.out.SAGE_out
+            .map { map, vcf ->
+                ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+            }
+        
+        // Recreate recalChannel from the available data
+        // This needs to be derived from the same source that created RECALIBRATE_out_MAP
+        def recalChannel
+        
+        if (params.step == "variant_calling") {
+            sample_sheet.filter{it[1].status == 'normal'}.set{normal_post}
+            sample_sheet.filter{it[1].status == 'tumor'}.set{tumor_post}
+            normal_post.cross(tumor_post){it[0]}.map{
+                normal, tumor ->
+                ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2]]]
+            }.set { recalChannel }
+        } else {
+            RECALIBRATE_out.pair_recal.filter{it[1].status == 'normal'}.set{normal_post}
+            RECALIBRATE_out.pair_recal.filter{it[1].status == 'tumor'}.set{tumor_post}
+            normal_post.cross(tumor_post){it[0]}.map{
+                normal, tumor ->
+                ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2]]]
+            }.set { recalChannel }
+        }
+        
+        mutect2Channel
+            .join(muse2Channel)
+            .join(strelkaChannel)
+            .join(sageChannel)
+            .join(recalChannel)
+            .map { patient_sample, mutect2_vcf, muse2_vcf, strelka_vcf, sage_vcf, recal_bam ->
+                [patient_sample, mutect2_vcf[1], muse2_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
+            }
+            .set { postevcInput }
+        
+        POSTEVC(postevcInput)
+    }
 }
