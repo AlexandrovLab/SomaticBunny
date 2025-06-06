@@ -115,9 +115,7 @@ conda activate env_nf
 
 ```bash
 export TMPDIR=/path/to/restricted/folder/
-```
 
-```bash
 export NXF_OPTS="-Djava.io.tmpdir=${TMPDIR} -Xms4g -Xmx16g"
 ```
 
