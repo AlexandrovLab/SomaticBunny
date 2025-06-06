@@ -111,10 +111,14 @@ srun -N 1 -n 1 -c 8 --mem 125G -t 24:00:00 -p platinum -q hcp-ddp302 -A ddp302 -
 conda activate env_nf
 ```
 
-3. Set TSCC temporary directory:
+3. Set TSCC temporary directory and Nextflow tmp directory and memories:
 
 ```bash
 export TMPDIR=/path/to/restricted/folder/
+```
+
+```bash
+export NXF_OPTS="-Djava.io.tmpdir=${TMPDIR} -Xms4g -Xmx16g"
 ```
 
 4. Run the pipeline:
