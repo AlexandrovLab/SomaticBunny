@@ -14,6 +14,7 @@ process MOSDEPTH {
     output:
     tuple val(map.patient), path("*txt"), emit: coverage
     tuple val(map.patient), path("*txt"), emit: MOSDEPTH_out
+    tuple val(map.patient), path("*regions.bed.gz"), emit:regions_bed
 
     script:
     if (map.type == "exome")
