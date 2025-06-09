@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 process ASCAT {
     conda "${params.ascat_env}"
     scratch true
-    label 'process_high'
+    label 'process_medium'
     publishDir("${params.ascat_dir}", mode: 'copy')
     errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
     maxRetries 3
