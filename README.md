@@ -122,16 +122,16 @@ export NXF_OPTS="-Djava.io.tmpdir=${TMPDIR} -Xms4g -Xmx16g"
 4. Run the pipeline:
 
 ```bash
-nextflow run main.nf --type [genome|exome] --step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
+nextflow run main.nf --type [genome|exome] --first_step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
 ```
 
 #### Pipeline Steps and Tools
 
-The SMURFS pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--step` parameter.
+The SMURFS pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--first_step` parameter.
 
-##### Available Steps
+##### Available first_step
 
-| Step | Description | Required Input | 
+| First_step | Description | Required Input | 
 |------|-------------| ---------------|
 | `mapping` | This will start from performing alignment of FASTQ files to the reference genome | fastq_1 and fastq_2 |
 | `markdup` | This will start from mark duplicate reads using the aligned BAM files | raw bam and bai |
@@ -141,13 +141,13 @@ The SMURFS pipeline workflow is divided into multiple steps that can be run indi
 Example:
 ```bash
 # Run only mapping step
-nextflow run main.nf --type exome --step mapping
+nextflow run main.nf --type exome --first_step mapping
 
 # Run only variant calling step
-nextflow run main.nf --type exome --step variant_calling --tool strelka2,mutect2
+nextflow run main.nf --type exome --first_step variant_calling --tool strelka2,mutect2
 
 # Run from a specific step to completion
-nextflow run main.nf --type exome --step markdup --tool strelka2,mutect2,ascat
+nextflow run main.nf --type exome --first_step markdup --tool strelka2,mutect2,ascat
 ```
 
 ##### Available Tools
@@ -164,7 +164,7 @@ Use the `--tool` parameter to specify which variant callers to run. You can sele
 Example of running multiple tools:
 ```bash
 # Run Manta for SVs and ASCAT for CNVs
-nextflow run main.nf --type exome --step variant_calling --tool manta,ascat
+nextflow run main.nf --type exome --first_step variant_calling --tool manta,ascat
 ```
 
 ### Advanced Options
@@ -174,7 +174,7 @@ nextflow run main.nf --type exome --step variant_calling --tool manta,ascat
 By default, intermediate files are not saved to reduce disk usage. Use the `--publish` parameter to save specific file types:
 
 ```bash
-nextflow run main.nf --type exome --step variant_calling --publish raw_bam,mkdup_bam
+nextflow run main.nf --type exome --first_step variant_calling --publish raw_bam,mkdup_bam
 ```
 
 **Available options:**
@@ -187,7 +187,7 @@ nextflow run main.nf --type exome --step variant_calling --publish raw_bam,mkdup
 If your pipeline terminates with an error or the interactive node is killed, resume with:
 
 ```bash
-nextflow run main.nf --type exome --step variant_calling --tool ascat,manta -resume
+nextflow run main.nf --type exome --first_step variant_calling --tool ascat,manta -resume
 ```
 
 #### Email Notifications
@@ -195,7 +195,7 @@ nextflow run main.nf --type exome --step variant_calling --tool ascat,manta -res
 Receive completion notification:
 
 ```bash
-nextflow run main.nf --type exome --step variant_calling --tool ascat,manta -N your_email@example.com
+nextflow run main.nf --type exome --first_step variant_calling --tool ascat,manta -N your_email@example.com
 ```
 
 ## Output
