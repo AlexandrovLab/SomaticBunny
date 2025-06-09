@@ -991,7 +991,8 @@ workflow {
     }
 
     // POST - filtering and consensus calling
-    if (params.first_step in ['mapping', 'markdup', 'recalibration', 'variant_calling']) {
+    if (params.first_step in ['mapping', 'markdup', 'recalibration', 'variant_calling'] && 
+        params.genome in ['GRCh38', 'GRCh37']) {
         
         // Use the outputs that are guaranteed to exist from variant calling steps
         def mutect2Channel = FilterMutectCalls.out.Mutect2_out
