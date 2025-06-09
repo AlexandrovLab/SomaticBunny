@@ -140,14 +140,11 @@ The SMURFS pipeline workflow is divided into multiple steps that can be run indi
 
 Example:
 ```bash
-# Run only mapping step
+# Run from mapping step
 nextflow run main.nf --type exome --first_step mapping
 
-# Run only variant calling step
+# Run from variant calling step
 nextflow run main.nf --type exome --first_step variant_calling --tool strelka2,mutect2
-
-# Run from a specific step to completion
-nextflow run main.nf --type exome --first_step markdup --tool strelka2,mutect2,ascat
 ```
 
 ##### Available Tools
