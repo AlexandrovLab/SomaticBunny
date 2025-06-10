@@ -580,8 +580,10 @@ workflow {
             STRELKA(RECALIBRATE_out_MAP)
             MuSE2(RECALIBRATE_out_MAP)
             
-            CONPAIR(RECALIBRATE_out_MAP)
-            MOSDEPTH(RECALIBRATE_out_MAP)
+            if (params.genome in ['GRCh38', 'GRCh37']) {
+                CONPAIR(RECALIBRATE_out_MAP)
+                MOSDEPTH(RECALIBRATE_out_MAP)
+            }
 
             if (params.type == "exome") {
                 MUTECT2_CALLING_exome(RECALIBRATE_out_MAP).set { MUTECT2_CALLING_out }
@@ -794,8 +796,10 @@ workflow {
             STRELKA(RECALIBRATE_out_MAP)
             MuSE2(RECALIBRATE_out_MAP)
             
-            CONPAIR(RECALIBRATE_out_MAP)
-            MOSDEPTH(RECALIBRATE_out_MAP)
+            if (params.genome in ['GRCh38', 'GRCh37']) {
+                CONPAIR(RECALIBRATE_out_MAP)
+                MOSDEPTH(RECALIBRATE_out_MAP)
+            }
 
             if (params.type == "exome") {
                 GETpileUP_exome(RECALIBRATE_out.pair_recal).set { GETpileUP_out }
