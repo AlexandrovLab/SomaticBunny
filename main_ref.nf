@@ -411,11 +411,22 @@ workflow {
             // CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
             // COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
         }
+
+        if (params.genome in ['mm39', 'RN7']){
+            MKDUP_out.pair_mutect.filter{it[1].status == 'normal'}.set{normal}
+            MKDUP_out.pair_mutect.filter{it[1].status == 'tumor'}.set{tumor}
+            normal.cross(tumor){it[0]}.map{
+                normal, tumor ->
+                [patient:normal[0], normal:normal[2], tumor:tumor[2], tumor_meta:tumor[1], normal_meta:normal[1]]
+            }.set{ RECALIBRATE_out_MAP }
+
+            RECALIBRATE_out = [pair_recal: MKDUP_out.pair_mutect]
+        }
     }
 
     // starts from recalibration
     if (params.first_step in ['mapping', 'markdup', 'recalibration']) {
-        if (params.first_step == "recalibration"){
+        if (params.first_step == "recalibration" && params.genome in ['GRCh38', 'GRCh37']){
             // Sanity check for sample sheet
             def requiredColumns = ['patient', 'sample', 'status', 'bam', 'bai']
             if (params.tool && isToolSelected('ascat')) {
@@ -456,11 +467,11 @@ workflow {
                 } | set { sample_sheet }
             }
 
-            if (params.type == "exome") {
+            if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal_exome(sample_sheet).set{ RECALIBRATE_BaseRecal_out }
                 RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_BQSR_out }
                 RECALIBRATE_SortBam(RECALIBRATE_BQSR_out.SortBam_input).set{ RECALIBRATE_out }
-            } else if (params.type == "genome") {
+            } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal(sample_sheet, chunk).set{ RECALIBRATE_BaseRecal_out }
 
                 RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
@@ -481,12 +492,12 @@ workflow {
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
             }
         } else {
-            if (params.type == "exome") {
+            if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal_exome(MKDUP_out.pair_mutect).set{ RECALIBRATE_BaseRecal_out }
                 RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_BQSR_out }
                 RECALIBRATE_SortBam(RECALIBRATE_BQSR_out.SortBam_input).set{ RECALIBRATE_out }
 
-            } else if (params.type == "genome") {
+            } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal(MKDUP_out.pair_mutect, chunk).set{ RECALIBRATE_BaseRecal_out }
 
                 RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
@@ -579,7 +590,7 @@ workflow {
             if (params.genome in ['GRCh38', 'GRCh37']) {
                 SAGE(RECALIBRATE_out_MAP)
             }
-
+            
             STRELKA(RECALIBRATE_out_MAP)
             MuSE2(RECALIBRATE_out_MAP)
             
