@@ -576,7 +576,10 @@ workflow {
             // Collect all normal bams for CNVkit and Delly
             normal.map { patient, meta, bam, bai -> [bam, bai] }.flatten().collect().set { normal_bams }
 
-            SAGE(RECALIBRATE_out_MAP)
+            if (params.genome in ['GRCh38', 'GRCh37']) {
+                SAGE(RECALIBRATE_out_MAP)
+            }
+
             STRELKA(RECALIBRATE_out_MAP)
             MuSE2(RECALIBRATE_out_MAP)
             
@@ -792,7 +795,10 @@ workflow {
             // Collect all normal bams for CNVkit and Delly
             normal.map { patient, meta, bam, bai -> [bam, bai] }.flatten().collect().set { normal_bams }
 
-            SAGE(RECALIBRATE_out_MAP)
+            if (params.genome in ['GRCh38', 'GRCh37']) {
+                SAGE(RECALIBRATE_out_MAP)
+            }
+
             STRELKA(RECALIBRATE_out_MAP)
             MuSE2(RECALIBRATE_out_MAP)
             
