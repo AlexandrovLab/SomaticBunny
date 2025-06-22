@@ -65,7 +65,7 @@ params.genomes = [
         bed: "${params.database_path}/EVC_nextflow/mm39_ref/mm39_chr.bed.gz",
         database_subdir: "mm39",
         mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/mm39/mm39_exome.bed",
-        muse2_vcf: "",
+        muse2_vcf: "af-only-mgp.mm39.vcf",
         mutect2_pon: "PoN.mm39.vcf.gz",
         mutect2_pon_wes: "PoN.mm39.vcf.gz",
         mutect2_germline: "af-only-mgp.mm39.vcf.gz",
