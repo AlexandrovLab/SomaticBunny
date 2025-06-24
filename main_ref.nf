@@ -525,6 +525,17 @@ workflow {
     // starts from variant calling
     if (params.first_step in ['mapping', 'markdup', 'recalibration', 'variant_calling']) {
         if (params.first_step == "variant_calling"){
+            if (params.genome in ['mm39', 'RN7']){
+            MKDUP_out.pair_mutect.filter{it[1].status == 'normal'}.set{normal}
+            MKDUP_out.pair_mutect.filter{it[1].status == 'tumor'}.set{tumor}
+            normal.cross(tumor){it[0]}.map{
+                normal, tumor ->
+                [patient:normal[0], normal:normal[2], tumor:tumor[2], tumor_meta:tumor[1], normal_meta:normal[1]]
+            }.set{ RECALIBRATE_out_MAP }
+
+            RECALIBRATE_out = [pair_recal: MKDUP_out.pair_mutect]
+            }
+            
             // Sanity check for sample sheet
             def requiredColumns = ['patient', 'sample', 'status', 'bam', 'bai']
             if (params.tool && isToolSelected('ascat')) {
