@@ -52,7 +52,7 @@ params.genomes = [
         conpair_marker_txt: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.txt",
         mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/GRCh37/GRCh37_exome.bed",
         muse2_vcf: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf",
-        recal_knownsite1: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf",
+        recal_knownsite1: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf.gz",
         recal_knownsite2: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.known_indels.vcf.gz",
         recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/intervals_Broad.human.exome.b37.interval_list",
         sage: [
