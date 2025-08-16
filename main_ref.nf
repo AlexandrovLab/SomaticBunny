@@ -145,7 +145,6 @@ params.mutect2_pon = "${params.genome_database_dir}/${params.genomes[params.geno
 params.mutect2_pon_wes = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon_wes}"
 params.mutect2_interval_dir = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_interval_dir}"
 params.mutect2_germline = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
-mutect2_pon_wes = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon_wes}"
 
 params.mutect2_targets = params.type == "exome" ? 
     "${params.mutect2_interval_dir}/${params.genomes[params.genome].mutect2_targets_exome}" : 
