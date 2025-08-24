@@ -210,7 +210,7 @@ RESULTS/
 ├── MANTA (optional)
 ├── MKDUP
 ├── mosdepth
-├── MuSE2
+├── MuSE
 ├── Mutect2
 ├── RECALIBRATE (optional)
 ├── REPORT (optional)
@@ -233,7 +233,7 @@ RESULTS/
 | SNV/INDEL Callers | Strelka2 | v2.9.10 |
 | | Mutect2 | v4.6.0.0 |
 | | SAGE | v3.3 |
-| | MuSE2 | v2.1.2 |
+| | MuSE | v1.0 |
 | Structural Variants | Delly | v1.3.1 |
 | | Manta | v1.6.0 |
 | Copy Number Variants | CNVkit | v0.9.8 |
