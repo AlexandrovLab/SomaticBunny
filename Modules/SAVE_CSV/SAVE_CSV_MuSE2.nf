@@ -1,19 +1,19 @@
 nextflow.enable.dsl=2
 
-workflow SAVE_CSV_MuSE2 {
+workflow SAVE_CSV_MuSE {
     take:
-        MuSE2_out
+        MuSE_out
         outdir
-        MuSE2_dir
+        MuSE_dir
     main:
-        MuSE2_out.collectFile(keepHeader: true, storeDir: "${outdir}/csv") { map -> 
+        MuSE_out.collectFile(keepHeader: true, storeDir: "${outdir}/csv") { map -> 
             patient = map.patient
-            real_vcf = "${MuSE2_dir}/${map.patient}.vcf"
+            real_vcf = "${MuSE_dir}/${map.patient}.vcf"
 
-            ["MuSE2.csv", "patient,vcf\n${patient},${real_vcf}\n"]
-        }.set{MuSE2_file}
+            ["MuSE.csv", "patient,vcf\n${patient},${real_vcf}\n"]
+        }.set{MuSE_file}
     
     emit:
-        MuSE2_file
+        MuSE_file
 
 }
