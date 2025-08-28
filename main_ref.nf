@@ -4,6 +4,7 @@ params.database_path = "/tscc/projects/ps-lalexandrov/shared"
 params.log_file = "$projectDir/pipeline.log" 
 params.sample = "sample.csv"
 params.genome = ""
+params.tool = ""
 
 // Initialize the log file with a header
 new File(params.log_file).text = """
@@ -19,7 +20,7 @@ params.genomes = [
         conpair_marker: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.bed",
         conpair_marker_txt: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.txt",
         mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh38_exome.bed",
-        muse2_vcf: "${params.database_path}/EVC_nextflow/Databases/GRCh38/Homo_sapiens_assembly38.dbsnp138.vcf",
+        muse_vcf: "${params.database_path}/EVC_nextflow/Databases/GRCh38/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
         recal_knownsite1: "${params.database_path}/EVC_nextflow/Databases/GRCh38/resources_broad_hg38_v0_Homo_sapiens_assembly38.dbsnp138.vcf",
         recal_knownsite2: "${params.database_path}/EVC_nextflow/Databases/GRCh38/Homo_sapiens_assembly38.known_indels.vcf.gz",
         recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/whole_exome_illumina_coding_v1.Homo_sapiens_assembly38_canonical.targets.interval_list",
@@ -43,7 +44,7 @@ params.genomes = [
         mutect2_germline: "af-only-gnomad.hg38_no_alt.vcf.gz",
         mutect2_interval_dir: "GRCh38_interval_list_20",
         delly_excl: "${params.database_path}/EVC_nextflow/Databases/GRCh38/Delly/human.hg38.excl.tsv",
-        tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse2", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
+        tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
     ],
     'GRCh37': [
         ref: "${params.database_path}/EVC_nextflow/GRCh37_ref/GRCh37.fa", 
@@ -51,7 +52,7 @@ params.genomes = [
         conpair_marker: "${params.database_path}/EVC_nextflow/Databases/GRCh37/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.bed",
         conpair_marker_txt: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.txt",
         mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/GRCh37/GRCh37_exome.bed",
-        muse2_vcf: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf",
+        muse_vcf: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf",
         recal_knownsite1: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf.gz",
         recal_knownsite2: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.known_indels.vcf.gz",
         recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/intervals_Broad.human.exome.b37.interval_list",
@@ -75,7 +76,7 @@ params.genomes = [
         mutect2_germline: "af-only-gnomad.raw.sites.grch37.vcf.gz",
         mutect2_interval_dir: "GRCh37_interval_list_20",
         delly_excl: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Delly/human.hg19.excl.tsv",
-        tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse2", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
+        tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
     ],
     'mm39': [
         ref: "${params.database_path}/EVC_nextflow/mm39_ref/mm39.fa",
@@ -83,12 +84,12 @@ params.genomes = [
         database_subdir: "mm39",
         mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/mm39/mm39_exome.bed",
         recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/mm39/mm39_exome.interval_list",
-        muse2_vcf: "af_only_mgp_mm39_unique.vcf.gz",
+        muse_vcf: "af_only_mgp_mm39_unique.vcf.gz",
         mutect2_pon: "PoN.mm39.vcf.gz",
         mutect2_pon_wes: "PoN.mm39.vcf.gz",
         mutect2_germline: "af-only-mgp.mm39.vcf.gz",
         mutect2_interval_dir: "mm39_interval_list_20",
-        tools: ["fastqc", "bwa_mem", "mkdup", "strelka", "muse2", "mutect2", "cnvkit", "mosdepth", "manta"]
+        tools: ["fastqc", "bwa_mem", "mkdup", "strelka", "muse", "mutect2", "cnvkit", "mosdepth", "manta"]
     ],
     'RN7': [
         ref: "${params.database_path}/EVC_nextflow/RN7_ref/rn7.fa",
@@ -96,12 +97,12 @@ params.genomes = [
         database_subdir: "RN7",
         mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/RN7/rn7_exome.bed",
         recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/RN7/rn7_exome.interval_list",
-        muse2_vcf: "",
+        muse_vcf: "",
         mutect2_pon: "",
         mutect2_pon_wes: "",
         mutect2_germline: "af-only_rn7.vcf.gz",
         mutect2_interval_dir: "RN7_interval_list_20",
-        tools: ["fastqc", "bwa_mem", "mkdup", "strelka", "muse2", "mutect2", "cnvkit", "mosdepth", "manta"]
+        tools: ["fastqc", "bwa_mem", "mkdup", "strelka", "muse", "mutect2", "cnvkit", "mosdepth", "manta"]
     ]
 ]
 
@@ -116,7 +117,7 @@ params.bed = params.bed ?: params.genomes[params.genome].bed
 params.conpair_marker = params.conpair_marker ?: params.genomes[params.genome].conpair_marker
 params.conpair_marker_txt = params.conpair_marker_txt ?: params.genomes[params.genome].conpair_marker_txt
 params.mosdepth_bed = params.mosdepth_bed ?: params.genomes[params.genome].mosdepth_bed
-params.muse2_vcf = params.muse2_vcf ?: params.genomes[params.genome].muse2_vcf
+params.muse_vcf = params.muse_vcf ?: params.genomes[params.genome].muse_vcf
 params.recal_knownsite1 = params.recal_knownsite1 ?: params.genomes[params.genome].recal_knownsite1
 params.recal_knownsite2 = params.recal_knownsite2 ?: params.genomes[params.genome].recal_knownsite2
 params.recal_interval_wes = params.recal_interval_wes ?: params.genomes[params.genome].recal_interval_wes
@@ -193,8 +194,8 @@ params.recal_dir="$projectDir/RESULTS/RECALIBRATE"
 params.SAGE_java="${params.database_path}/EVC_nextflow/SAGE/sage_v3.3.jar"
 params.SAGE_dir="$projectDir/RESULTS/SAGE"
 params.strelka_dir="$projectDir/RESULTS/STRELKA"
+params.muse_dir="$projectDir/RESULTS/MuSE"
 params.MuSE2="${params.database_path}/EVC_nextflow/MuSE/MuSE"
-params.muse2_dir="$projectDir/RESULTS/MuSE2"
 params.MUTECT2_dir="$projectDir/RESULTS/Mutect2"
 params.mosdepth_dir="$projectDir/RESULTS/mosdepth"
 params.conpair_dir="$projectDir/RESULTS/Conpair"
@@ -214,7 +215,6 @@ params.strelka_env = "${params.database_path}/EVC_nextflow/yml/strelka_env.yml"
 params.mosdepth_env = "${params.database_path}/EVC_nextflow/yml/mosdepth_env.yml"
 params.summary_env = "${params.database_path}/EVC_nextflow/yml/py_summary.yml"
 params.java_env = "${params.database_path}/EVC_nextflow/yml/java.yml"
-params.muse2_env = "${params.database_path}/EVC_nextflow/yml/muse2.yml"
 params.fastqc_env = "${params.database_path}/EVC_nextflow/yml/fastqc_env.yml"
 params.cnvkit_env = "${params.database_path}/EVC_nextflow/yml/cnvkit.yml"
 params.delly_env = "${params.database_path}/EVC_nextflow/yml/delly.yml"
@@ -249,7 +249,7 @@ include { MOSDEPTH } from './Modules/MOSDEPTH'
 include { CONPAIR } from './Modules/CONPAIR'
 include { SAGE } from './Modules/SAGE'
 include { STRELKA } from './Modules/STRELKA'
-include { MuSE2 } from './Modules/MuSE2'
+include { MuSE } from './Modules/MuSE'
 
 include { CNVkit_buildcnn } from './Modules/CNVkit_buildcnn'
 include { CNVkit } from './Modules/CNVkit'
@@ -289,7 +289,7 @@ include { SAVE_CSV_MKDUP } from './Modules/SAVE_CSV/SAVE_CSV_MKDUP'
 include { SAVE_CSV_RECAL } from './Modules/SAVE_CSV/SAVE_CSV_RECAL'
 include { SAVE_CSV_SAGE } from './Modules/SAVE_CSV/SAVE_CSV_SAGE'
 include { SAVE_CSV_STRELKA } from './Modules/SAVE_CSV/SAVE_CSV_STRELKA'
-include { SAVE_CSV_MuSE2 } from './Modules/SAVE_CSV/SAVE_CSV_MuSE2'
+include { SAVE_CSV_MuSE } from './Modules/SAVE_CSV/SAVE_CSV_MuSE'
 include { SAVE_CSV_Mutect2 } from './Modules/SAVE_CSV/SAVE_CSV_Mutect2'
 include { SAVE_CSV_CONPAIR } from './Modules/SAVE_CSV/SAVE_CSV_CONPAIR'
 include { SAVE_CSV_MOSDEPTH } from './Modules/SAVE_CSV/SAVE_CSV_MOSDEPTH'
@@ -620,7 +620,7 @@ workflow {
             }
             
             STRELKA(RECALIBRATE_out_MAP)
-            MuSE2(RECALIBRATE_out_MAP)
+            MuSE(RECALIBRATE_out_MAP)
             
             if (params.genome in ['GRCh38', 'GRCh37']) {
                 CONPAIR(RECALIBRATE_out_MAP)
@@ -839,7 +839,7 @@ workflow {
             }
 
             STRELKA(RECALIBRATE_out_MAP)
-            MuSE2(RECALIBRATE_out_MAP)
+            MuSE(RECALIBRATE_out_MAP)
             
             if (params.genome in ['GRCh38', 'GRCh37']) {
                 CONPAIR(RECALIBRATE_out_MAP)
@@ -1039,61 +1039,55 @@ workflow {
         }
     }
 
-    // POST - filtering and consensus calling
+// POST - filtering and consensus calling
     if (params.first_step in ['mapping', 'markdup', 'recalibration', 'variant_calling'] && 
         params.genome in ['GRCh38', 'GRCh37']) {
         
         // Use the outputs that are guaranteed to exist from variant calling steps
-        def mutect2Channel = FilterMutectCalls.out.Mutect2_out
+        mutect2Channel = FilterMutectCalls.out.Mutect2_out
             .map { map, vcf ->
                 ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
             }
         
-        def muse2Channel = MuSE2.out.MuSE2_out
+        museChannel = MuSE.out.MuSE_out
             .map { map, vcf ->
                 ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
             }
         
-        def strelkaChannel = STRELKA.out.STRELKA_out
+        strelkaChannel = STRELKA.out.STRELKA_out
             .map { map, snv, indel ->
                 ["${map.patient}_${map.tumor_meta.sample}", [map, snv, indel]]
             }
         
-        def sageChannel = SAGE.out.SAGE_out
+        sageChannel = SAGE.out.SAGE_out
             .map { map, vcf ->
                 ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
             }
         
         // Recreate recalChannel from the available data
-        // This needs to be derived from the same source that created RECALIBRATE_out_MAP
-        def recalChannel
-        
-        if (params.first_step == "variant_calling") {
-            sample_sheet.filter{it[1].status == 'normal'}.set{normal_post}
-            sample_sheet.filter{it[1].status == 'tumor'}.set{tumor_post}
-            normal_post.cross(tumor_post){it[0]}.map{
-                normal, tumor ->
-                ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2]]]
-            }.set { recalChannel }
-        } else {
-            RECALIBRATE_out.pair_recal.filter{it[1].status == 'normal'}.set{normal_post}
-            RECALIBRATE_out.pair_recal.filter{it[1].status == 'tumor'}.set{tumor_post}
-            normal_post.cross(tumor_post){it[0]}.map{
-                normal, tumor ->
-                ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2]]]
-            }.set { recalChannel }
+        // Choose the source based on first_step
+        sourceChannel = (params.first_step == "variant_calling") ? 
+            sample_sheet : 
+            RECALIBRATE_out.pair_recal
+
+        // Create recalChannel from the chosen source
+        normal_post = sourceChannel.filter{it[1].status == 'normal'}
+        tumor_post = sourceChannel.filter{it[1].status == 'tumor'}
+
+        recalChannel = normal_post.cross(tumor_post){it[0]}.map{
+            normal, tumor ->
+            ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2]]]
         }
         
-        mutect2Channel
-            .join(muse2Channel)
+        postevcInput = mutect2Channel
+            .join(museChannel)
             .join(strelkaChannel)
             .join(sageChannel)
             .join(recalChannel)
-            .map { patient_sample, mutect2_vcf, muse2_vcf, strelka_vcf, sage_vcf, recal_bam ->
-                [patient_sample, mutect2_vcf[1], muse2_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
+            .map { patient_sample, mutect2_vcf, muse_vcf, strelka_vcf, sage_vcf, recal_bam ->
+                [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
             }
-            .set { postevcInput }
         
-        POSTEVC(postevcInput)
+        // POSTEVC(postevcInput)
     }
 }
