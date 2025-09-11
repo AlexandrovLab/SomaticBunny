@@ -339,8 +339,21 @@ mv ${f}.tmp3 ${fa}_snv_final_annotated.vcf
 rm *tmp*
 rm *mutect_snv_PON.vcf
 
-# Cleaning up and remove low quality samples
-cat ${fa}_snv_final_annotated.vcf|awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}'|awk -v OFS="\t" '$1=$1'|awk '$1 ~ /^#/ {print $0;next} {print $0 | "sort -k1,1V -k2,2n"}' > ${fa}_PASSed.vcf
+# Cleaning up and removing low-quality samples
+{
+    # Print headers first
+    cat ${fa}_snv_final_annotated.vcf | \
+    awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
+    awk -v OFS="\t" '$1=$1' | \
+    grep "^#"
+    
+    # Then print sorted data
+    cat ${fa}_snv_final_annotated.vcf | \
+    awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
+    awk -v OFS="\t" '$1=$1' | \
+    grep -v "^#" | \
+    sort -k1,1V -k2,2n
+} > ${fa}_PASSed.vcf
 
 done
 
@@ -421,7 +434,20 @@ mv ${f}.tmp3 ${fa}_indel_final_annotated.vcf
 rm *tmp*
 rm *mutect_indel_PON.vcf
 
-# Cleaning up and remove low quality samples
-cat ${fa}_indel_final_annotated.vcf|awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}'|awk -v OFS="\t" '$1=$1'|awk '$1 ~ /^#/ {print $0;next} {print $0 | "sort -k1,1V -k2,2n"}' > ${fa}_PASSed.vcf
+# Cleaning up and removing low-quality samples
+{
+    # Print headers first
+    cat ${fa}_indel_final_annotated.vcf | \
+    awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
+    awk -v OFS="\t" '$1=$1' | \
+    grep "^#"
+    
+    # Then print sorted data
+    cat ${fa}_indel_final_annotated.vcf | \
+    awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
+    awk -v OFS="\t" '$1=$1' | \
+    grep -v "^#" | \
+    sort -k1,1V -k2,2n
+} > ${fa}_PASSed.vcf
 
 done
