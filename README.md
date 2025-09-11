@@ -138,14 +138,21 @@ The SMURFS pipeline workflow is divided into multiple steps that can be run indi
 | `recalibration` | This will start from performing base quality score recalibration | mark duplicated bam and bai |
 | `variant_calling` | This will start from executing variant calling tools | recalibrated bam and bai |
 
-Example:
-```bash
-# Run from mapping step
-nextflow run main.nf --type exome --first_step mapping
-
-# Run from variant calling step
-nextflow run main.nf --type exome --first_step variant_calling --tool strelka2,mutect2
-```
+  Example:
+  ```bash
+  # Run from mapping step
+  nextflow run main.nf --type exome --first_step mapping
+  
+  # Run from variant calling step
+  nextflow run main.nf --type exome --first_step variant_calling --tool strelka2,mutect2
+  ```
+##### Available refernce genomes
+| Genomes | 
+|---------|
+| GRCh38  | 
+| GRCh37  | 
+| mm39  | 
+| RN7  | 
 
 ##### Available Tools
 
