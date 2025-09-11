@@ -138,14 +138,6 @@ The SMURFS pipeline workflow is divided into multiple steps that can be run indi
 | `recalibration` | This will start from performing base quality score recalibration | mark duplicated bam and bai |
 | `variant_calling` | This will start from executing variant calling tools | recalibrated bam and bai |
 
-  Example:
-  ```bash
-  # Run from mapping step
-  nextflow run main.nf --type exome --first_step mapping
-  
-  # Run from variant calling step
-  nextflow run main.nf --type exome --first_step variant_calling --tool strelka2,mutect2
-  ```
 ##### Available reference genomes
 | Genomes | 
 |---------|
@@ -178,7 +170,7 @@ nextflow run main.nf --type exome --first_step variant_calling --tool manta,asca
 By default, intermediate files are not saved to reduce disk usage. Use the `--publish` parameter to save specific file types:
 
 ```bash
-nextflow run main.nf --type exome --first_step variant_calling --publish raw_bam,mkdup_bam
+nextflow run main.nf --type exome -genome GRCh38 --first_step variant_calling --publish raw_bam,mkdup_bam
 ```
 
 **Available options:**
@@ -191,7 +183,7 @@ nextflow run main.nf --type exome --first_step variant_calling --publish raw_bam
 If your pipeline terminates with an error or the interactive node is killed, resume with:
 
 ```bash
-nextflow run main.nf --type exome --first_step variant_calling --tool ascat,manta -resume
+nextflow run main.nf --type exome -genome GRCh38 --first_step variant_calling --tool ascat,manta -resume
 ```
 
 #### Email Notifications
@@ -199,7 +191,7 @@ nextflow run main.nf --type exome --first_step variant_calling --tool ascat,mant
 Receive completion notification:
 
 ```bash
-nextflow run main.nf --type exome --first_step variant_calling --tool ascat,manta -N your_email@example.com
+nextflow run main.nf --type exome -genome GRCh38 --first_step variant_calling --tool ascat,manta -N your_email@example.com
 ```
 
 ## Output
