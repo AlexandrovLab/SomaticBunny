@@ -122,7 +122,7 @@ export NXF_OPTS="-Djava.io.tmpdir=${TMPDIR} -Xms4g -Xmx16g"
 4. Run the pipeline:
 
 ```bash
-nextflow run main.nf --type [genome|exome] --first_step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
+nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] --first_step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
 ```
 
 #### Pipeline Steps and Tools
