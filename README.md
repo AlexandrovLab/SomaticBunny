@@ -146,7 +146,7 @@ The SMURFS pipeline workflow is divided into multiple steps that can be run indi
   # Run from variant calling step
   nextflow run main.nf --type exome --first_step variant_calling --tool strelka2,mutect2
   ```
-##### Available refernce genomes
+##### Available reference genomes
 | Genomes | 
 |---------|
 | GRCh38  | 
