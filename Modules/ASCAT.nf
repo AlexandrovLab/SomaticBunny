@@ -45,7 +45,7 @@ process ASCAT {
     alleles.prefix = "${params.ascat_allele_prefix}",
     loci.prefix = "${params.ascat_loci_prefix}",
     gender = "${map.gender}",
-    nthreads = "16",
+    nthreads = "8",
     genomeVersion = "${params.ASCAT_ref_genome_version}")
 
     # Running ASCAT
