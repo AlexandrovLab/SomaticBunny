@@ -238,9 +238,8 @@ echo starting annotation in 2outof4 snv folder ...
 cd $WORK_DIR/snvs_filtered/2outof4
 mkdir tmp
 
-## Run Bseq form DKFZ
+## Run Bseq from DKFZ
 echo running bseq....
-# source /tscc/nfs/home/tiy002/anaconda3/etc/profile.d/conda.sh
 source ~/.bashrc
 conda activate dkfz
 
