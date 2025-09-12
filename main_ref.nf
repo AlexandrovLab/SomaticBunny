@@ -958,7 +958,7 @@ workflow {
 
             // TOOL-SPECIFIC BLOCKS - ALSO FOR NON variant_calling START STEPS
 	    // ASCAT
-	    if (params.tool in ['ascat']) {
+	    if (params.tool && params.tool.contains('ascat')) {
 	        chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
 	        if (params.type == "exome") {
 	            ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
@@ -1002,13 +1002,13 @@ workflow {
 	    }
 	
 	    // CNVkit
-	    if (params.tool in ['cnvkit']) {
+	    if (params.tool && params.tool.contains('cnvkit')) {
 	        CNVkit_buildcnn(normal_bams).set { CNVkit_buildcnn_out }
 	        CNVkit(RECALIBRATE_out_MAP_CN, CNVkit_buildcnn_out.CNVkit_ref_cnn).set { CNVkit_out }
 	    }
 	
 	    // Delly
-	    if (params.tool in ['delly']) {
+	    if (params.tool && params.tool.contains('delly')) {
 	        if (params.type == 'exome' && params.tool.toString().contains('delly')) {
 	            log.error "ERROR: Delly is not recommended for exome data. Please use a different SV caller (manta) for exome data"
 	            exit 1  
@@ -1033,7 +1033,7 @@ workflow {
 	    }
 	
 	    // Manta
-	    if (params.tool in ['manta']) {
+	    if (params.tool && params.tool.contains('manta')) {
 	        MANTA(RECALIBRATE_out_MAP_CN)
 	    }
         }
@@ -1088,6 +1088,6 @@ workflow {
                 [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
             }
         
-        // POSTEVC(postevcInput)
+        POSTEVC(postevcInput)
     }
 }
