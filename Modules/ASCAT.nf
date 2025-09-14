@@ -46,7 +46,7 @@ process ASCAT {
     loci.prefix = "${params.ascat_loci_prefix}",
     gender = "${map.gender}",
     nthreads = "8",
-    genomeVersion = "${params.ASCAT_ref_genome_version}")
+    genomeVersion = "${params.ascat_ref_genome_version}")
 
     # Running ASCAT
     # For HTS data (WGS, WES and targeted sequencing), gamma must be set to 1 in ascat.runASCAT
@@ -56,7 +56,7 @@ process ASCAT {
                             Germline_LogR_file = paste0("${map.patient}_${map.sample}","_tumor_normalLogR.txt"), 
                             Germline_BAF_file = paste0("${map.patient}_${map.sample}","_tumor_normalBAF.txt"), 
                             gender = "${map.gender}", 
-                            genomeVersion = "${params.ASCAT_ref_genome_version}")
+                            genomeVersion = "${params.ascat_ref_genome_version}")
 
 
     ascat.plotRawData(ascat.bc, img.prefix = "Before_correction_")
