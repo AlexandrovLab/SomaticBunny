@@ -17,14 +17,19 @@ process CONPAIR {
 
     script:
     """
-    export _JAVA_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=${TMPDIR}/conpair"
-    export JAVA_TOOL_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=${TMPDIR}/conpair"
+    # Create temp directory and set TMPDIR if not set
+    mkdir -p ./tmp_conpair
+    export TMPDIR=\${TMPDIR:-./tmp_conpair}
+    
+    export _JAVA_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=\${TMPDIR}/conpair"
+    export JAVA_TOOL_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=\${TMPDIR}/conpair"
+    
     export PATH=${params.jre}/bin:$PATH
     export CONPAIR_DIR=${params.conpair}
     export GATK_JAR=${params.database_dir}/GenomeAnalysisTK.jar
     export PYTHONPATH=\${PYTHONPATH:-}:${params.conpair}/modules/
 
-    \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/run_gatk_pileup_for_sample.py \
+    \$CONDA_PREFIX/bin/python ${params.conpair}/scripts/run_gatk_pileup_for_sample.py \
     -B ${map.normal} \
     -O ${map.patient}_${map.tumor_meta.sample}_normal.pileup \
     -D ${params.conpair} \
@@ -32,7 +37,7 @@ process CONPAIR {
     --reference ${params.ref} \
     --markers ${params.conpair_marker};
     
-    \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/run_gatk_pileup_for_sample.py \
+    \$CONDA_PREFIX/bin/python ${params.conpair}/scripts/run_gatk_pileup_for_sample.py \
     -B ${map.tumor} \
     -O ${map.patient}_${map.tumor_meta.sample}_tumor.pileup \
     -D ${params.conpair} \
@@ -43,13 +48,13 @@ process CONPAIR {
     awk -F" " '\$5!=""' ${map.patient}_${map.tumor_meta.sample}_normal.pileup > ${map.patient}_${map.tumor_meta.sample}_normal.cleanpileup;
     awk -F" " '\$5!=""' ${map.patient}_${map.tumor_meta.sample}_tumor.pileup > ${map.patient}_${map.tumor_meta.sample}_tumor.cleanpileup;
 
-    \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/estimate_tumor_normal_contamination.py \
+    \$CONDA_PREFIX/bin/python ${params.conpair}/scripts/estimate_tumor_normal_contamination.py \
     -T ${map.patient}_${map.tumor_meta.sample}_tumor.cleanpileup \
     -N ${map.patient}_${map.tumor_meta.sample}_normal.cleanpileup \
     --outfile ${map.patient}_${map.tumor_meta.sample}_contamination.txt \
     --markers ${params.conpair_marker_txt};
     
-    \$CONDA_PREFIX/bin/python2 ${params.conpair}/scripts/verify_concordance.py \
+    \$CONDA_PREFIX/bin/python ${params.conpair}/scripts/verify_concordance.py \
     -T ${map.patient}_${map.tumor_meta.sample}_tumor.cleanpileup \
     -N ${map.patient}_${map.tumor_meta.sample}_normal.cleanpileup \
     --normal_homozygous_markers_only \
