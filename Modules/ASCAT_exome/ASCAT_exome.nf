@@ -26,7 +26,7 @@ process ASCAT_exome {
     
     library(ASCAT)    
     
-    ascat.bc = ascat.loadData(Tumor_LogR_file = "${tumor_logr}", Tumor_BAF_file = "${tumor_baf}", Germline_LogR_file = "${normal_logr}", Germline_BAF_file = "${normal_baf}", gender = "${gender}", genomeVersion = "${params.ASCAT_ref_genome_version}")
+    ascat.bc = ascat.loadData(Tumor_LogR_file = "${tumor_logr}", Tumor_BAF_file = "${tumor_baf}", Germline_LogR_file = "${normal_logr}", Germline_BAF_file = "${normal_baf}", gender = "${gender}", genomeVersion = "${params.ascat_ref_genome_version}")
     
     ascat.plotRawData(ascat.bc, img.prefix = "Before_correction_")
     ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = "${params.ascat_GCcontentfile}", replictimingfile = "${params.ascat_replictimingfile}")
