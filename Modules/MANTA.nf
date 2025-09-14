@@ -28,7 +28,7 @@ process MANTA {
         --runDir manta \
         --exome
 
-        python2 manta/runWorkflow.py -j 8
+        python manta/runWorkflow.py -j 8
 
         mv manta/results/variants/candidateSmallIndels.vcf.gz ${map.patient}_${map.sample}.candidateSmallIndels.vcf.gz
         mv manta/results/variants/candidateSmallIndels.vcf.gz.tbi ${map.patient}_${map.sample}.candidateSmallIndels.vcf.gz.tbi
@@ -50,7 +50,7 @@ process MANTA {
         --referenceFasta ${params.ref} \
         --runDir manta 
 
-        python2 manta/runWorkflow.py -j 8
+        python manta/runWorkflow.py -j 8
         
         mv manta/results/variants/candidateSmallIndels.vcf.gz ${map.patient}_${map.sample}.candidateSmallIndels.vcf.gz
         mv manta/results/variants/candidateSmallIndels.vcf.gz.tbi ${map.patient}_${map.sample}.candidateSmallIndels.vcf.gz.tbi
