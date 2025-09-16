@@ -41,7 +41,7 @@ for sample in $(cat ../sample.txt);
 do
 cp $HOME_PATH/Mutect2/${sample}_mutect2_filtered.vcf ./${sample}_mutect.vcf
 
-cp $HOME_PATH/MuSE2/${sample}.vcf ./${sample}_muse_snv.vcf
+cp $HOME_PATH/MuSE/${sample}.vcf ./${sample}_muse_snv.vcf
 
 cp $HOME_PATH/STRELKA/${sample}.somatic_indels.vcf ./${sample}_strelka_indel.vcf
 cp $HOME_PATH/STRELKA/${sample}.somatic_snvs.vcf ./${sample}_strelka_snv.vcf
