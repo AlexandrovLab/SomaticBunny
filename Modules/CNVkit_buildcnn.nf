@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 process CNVkit_buildcnn {
     conda "${params.cnvkit_env}"
     scratch true
-    label 'process_medium'
+    label 'process_high'
     publishDir("${params.cnvkit_dir}", mode: 'copy')
     errorStrategy 'retry'
     maxRetries 3
