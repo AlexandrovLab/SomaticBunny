@@ -31,5 +31,8 @@ process Delly_Filtering {
         -q 20 \
         -s 15 \
         -z 5
+
+    # Create index for the output BCF file
+    bcftools index ${base_name}_geno.bcf
     """
 }
