@@ -12,14 +12,13 @@ process MANTA {
     val(map)
 
     output:
-    tuple val(map), path("*diploidSV.vcf.gz"), emit: MANTA_diploidSV
-    tuple val(map), path("*somaticSV.vcf.gz"), emit: MANTA_somaticSV
-    tuple val(map), path("*candidateSV.vcf.gz"), emit: MANTA_candidateSV
-    tuple val(map), path("*candidateSmallIndels.vcf.gz"), emit: MANTA_candidateSmallIndels
+    tuple val(map), path("*diploidSV.vcf.gz*"), emit: MANTA_diploidSV
+    tuple val(map), path("*somaticSV.vcf.gz*"), emit: MANTA_somaticSV
+    tuple val(map), path("*candidateSV.vcf.gz*"), emit: MANTA_candidateSV
+    tuple val(map), path("*candidateSmallIndels.vcf.gz*"), emit: MANTA_candidateSmallIndels
 
     script:
-    if (params.type == "exome")
-
+    if (params.type == "exome") {
         """
         configManta.py \
         --normalBam ${map.normal} \
@@ -42,7 +41,7 @@ process MANTA {
         mv manta/results/variants/somaticSV.vcf.gz ${map.patient}_${map.sample}.somaticSV.vcf.gz
         mv manta/results/variants/somaticSV.vcf.gz.tbi ${map.patient}_${map.sample}.somaticSV.vcf.gz.tbi
         """
-    else
+    } else {
         """
         configManta.py \
         --normalBam ${map.normal} \
@@ -63,6 +62,8 @@ process MANTA {
         
         mv manta/results/variants/somaticSV.vcf.gz ${map.patient}_${map.sample}.somaticSV.vcf.gz
         mv manta/results/variants/somaticSV.vcf.gz.tbi ${map.patient}_${map.sample}.somaticSV.vcf.gz.tbi
-
         """
+    }    
 }
+
+
