@@ -4,8 +4,13 @@ process RECALIBRATE_BQSR {
     conda "${params.java_env}"
     scratch true
     label 'RECALIBRATE'
-    errorStrategy = 'retry'
+    errorStrategy 'terminate'
     maxRetries 3
+
+    beforeScript = '''
+        export TMPDIR=$SLURM_TMPDIR
+        mkdir -p $TMPDIR/BQSR_tmp
+    '''
         
     input: 
     tuple val(patient), val(meta), path(bam), path(table), path(bai)
@@ -18,6 +23,7 @@ process RECALIBRATE_BQSR {
     script:
     """
     ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk ApplyBQSR \
+    --tmp-dir $TMPDIR/BQSR_tmp \
     -R ${params.ref} \
     -I ${bam} \
     -L ${params.mutect2_interval_dir}/${chunk}-scattered.interval_list \
