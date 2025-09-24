@@ -30,15 +30,6 @@ process RECALIBRATE_MergeBam {
     done
     
     # Merge all 20 chunks (this removes duplicates from your current problematic merge)
-    samtools merge -o temp_unsorted.bam ${map.bam.join(' ')}
-    
-    # Remove any duplicate reads created during merge and sort
-    samtools collate -@ 8 temp_unsorted.bam | \
-    samtools fixmate -@ 8 -m - - | \
-    samtools sort -@ 8 - | \
-    samtools markdup -@ 8 -r - ${temp_merged}
-    
-    samtools index ${temp_merged}
-    rm temp_unsorted.bam
+    samtools merge -o ${temp_merged} ${map.bam.join(' ')}
     """
 }
