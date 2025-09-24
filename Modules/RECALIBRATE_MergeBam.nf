@@ -1,6 +1,6 @@
 process RECALIBRATE_MergeBam {
     scratch true
-    label 'process_medium'
+    label 'RECALIBRATE'
     conda "${params.samtools_env}"
     errorStrategy = 'retry'
     maxRetries 3
