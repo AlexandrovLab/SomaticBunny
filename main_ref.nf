@@ -1088,6 +1088,6 @@ workflow {
                 [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
             }
         
-        POSTEVC(postevcInput)
+        // POSTEVC(postevcInput)
     }
 }
