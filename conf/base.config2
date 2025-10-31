@@ -1,0 +1,86 @@
+process {
+    process.executor = 'slurm'
+    clusterOptions = '-p platinum -q hcp-ddp302 -A ddp302' 
+
+    cpus   = { check_max( 2    * task.attempt, 'cpus'   ) }
+    memory = { check_max( 30.GB * task.attempt, 'memory' ) }
+    time   = { check_max( 4.h  * task.attempt, 'time'   ) }
+
+    errorStrategy = { task.exitStatus in ((130..145) + 104) ? 'retry' : 'finish' }
+    maxRetries    = 5
+    maxErrors     = '-1'
+
+    withLabel:process_low {
+        cpus   = { check_max( 2     * task.attempt, 'cpus'    ) }
+        memory = { check_max( 30.GB * task.attempt, 'memory'  ) }
+        time   = { check_max( 4.h   * task.attempt, 'time'    ) }
+    }
+    withLabel:process_medium {
+        cpus   = { check_max( 8     * task.attempt, 'cpus'    ) }
+        memory = { check_max( 32.GB * task.attempt, 'memory'  ) }
+        time   = { check_max( 8.h   * task.attempt, 'time'    ) }
+    }
+    withLabel:process_high {
+        cpus   = { check_max( 16    * task.attempt, 'cpus'    ) }
+        memory = { check_max( 64.GB * task.attempt, 'memory'  ) }
+        time   = { check_max( 16.h  * task.attempt, 'time'    ) }
+    }
+    withLabel:process_long {
+        time   = { check_max( 20.h  * task.attempt, 'time'    ) }
+    }
+    withLabel:process_high_memory {
+        memory = { check_max( 200.GB * task.attempt, 'memory' ) }
+    }
+    withLabel: FASTQC {
+        cpus = 4
+        memory = 60.GB
+        time = 30.h
+    }
+    withLabel: BWA_MEM {
+        cpus = 16
+        memory = 64.GB
+        time = 30.h
+    }
+    withLabel:MKDUP {
+        cpus = 4
+        memory = 64.GB
+        time = 20.h
+    }
+    withLabel:RECALIBRATE {
+        cpus = 4
+        memory = 64.GB
+        time = 20.h
+    }
+    withLabel:RECALIBRATE_SortBam {
+        cpus = 8
+        memory = 64.GB
+        time = 10.h
+    }
+    withLabel:MUTECT2_CALLING {
+        cpus = 2
+        memory = 16.GB
+        time = 10.h
+    }
+    withLabel:MuSE {
+        cpus = 16
+        memory = 64.GB
+        time = 10.h
+    }
+    withLabel:STRELKA {
+        cpus = 8
+        memory = 32.GB
+        time = 10.h
+    }
+    withLabel:SAGE {
+        cpus = 8
+        memory = 32.GB
+        time = 10.h
+    }
+    withLabel:error_ignore {
+        errorStrategy = 'ignore'
+    }
+    withLabel:error_retry {
+        errorStrategy = 'retry'
+        maxRetries    = 2
+    }
+}
