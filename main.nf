@@ -36,7 +36,11 @@ params.genomes = [
             ascat_allele_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/Alleles/G1000_alleles_hg38_chr",
             ascat_loci_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/Loci/G1000_loci_hg38_chr",
             ascat_GCcontentfile: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/GC_Correction/GC_G1000_hg38.txt",
-            ascat_replictimingfile: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/RT_Correction/RT_G1000_hg38.txt"
+            ascat_replictimingfile: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/RT_Correction/RT_G1000_hg38.txt",
+			ascat_allele_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/Alleles/G1000_alleles_hg38_chr",
+			ascat_loci_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/Loci/G1000_loci_hg38_chr",
+            ascat_GCcontentfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/GC_Correction/GC_G1000_hg38.txt",
+            ascat_replictimingfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/RT_Correction/RT_G1000_hg38.txt"
         ],
         database_subdir: "GRCh38",
         mutect2_pon: "MuTect2.PON.5210.vcf.gz",
@@ -68,7 +72,11 @@ params.genomes = [
             ascat_allele_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/Alleles/G1000_alleles_hg19_chr",
             ascat_loci_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/Loci/G1000_loci_hg19_chr",
             ascat_GCcontentfile: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/GC_Correction/GC_G1000_hg19.txt",
-            ascat_replictimingfile: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/RT_Correction/RT_G1000_hg19.txt"
+            ascat_replictimingfile: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/RT_Correction/RT_G1000_hg19.txt",
+            ascat_allele_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/Alleles/G1000_alleles_hg19_chr",
+            ascat_loci_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/Loci/G1000_loci_hg19_chr",
+            ascat_GCcontentfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/GC_Correction/GC_G1000_hg19.txt",
+            ascat_replictimingfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/RT_Correction/RT_G1000_hg19.txt"
         ],
         database_subdir: "GRCh37",
         mutect2_pon: "Mutect2-WGS-panel-b37.vcf",
@@ -136,6 +144,11 @@ params.ascat_allele_prefix = params.ascat_allele_prefix ?: (params.genomes[param
 params.ascat_loci_prefix = params.ascat_loci_prefix ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_loci_prefix : null)
 params.ascat_GCcontentfile = params.ascat_GCcontentfile ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_GCcontentfile : null)
 params.ascat_replictimingfile = params.ascat_replictimingfile ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_replictimingfile : null)
+
+params.ascat_allele_prefix_wes = params.ascat_allele_prefix_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_allele_prefix_wes : null)
+params.ascat_loci_prefix_wes = params.ascat_loci_prefix_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_loci_prefix_wes : null)
+params.ascat_GCcontentfile_wes = params.ascat_GCcontentfile_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_GCcontentfile_wes : null)
+params.ascat_replictimingfile_wes = params.ascat_replictimingfile_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_replictimingfile_wes : null)
 
 
 params.database_dir = "${params.database_path}/EVC_nextflow/Databases"
