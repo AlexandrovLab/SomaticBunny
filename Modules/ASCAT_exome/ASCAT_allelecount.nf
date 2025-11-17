@@ -18,12 +18,12 @@ process ASCAT_allelecount {
     script:
     """
     alleleCounter \
-    -l "${params.ascat_loci_prefix_wes}${chr}.txt" \
+    -l "${params.ascat_loci_prefix}${chr}.txt" \
     -b "${map.tumor}" \
     -o "${map.patient}_${map.sample}_tumor_${chr}.txt" -m 20
 
     alleleCounter \
-    -l "${params.ascat_loci_prefix_wes}${chr}.txt" \
+    -l "${params.ascat_loci_prefix}${chr}.txt" \
     -b "${map.normal}" \
     -o "${map.patient}_${map.sample}_normal_${chr}.txt" -m 20
 
