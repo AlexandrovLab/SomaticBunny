@@ -12,7 +12,7 @@ process RECALIBRATE_MergeBam {
     tuple val(map.patient), val(map.meta), path("*_temp_merged.bam"), emit: MergeBam_input
 
     script:
-    def temp_merged = "${map.patient}_${map.meta.sample}_${map.status}_temp_merged.bam"
+    def temp_merged = "${map.patient}_${map.meta.sample}_${map.meta.status}_temp_merged.bam"
     
     """
     # Validate we have exactly 20 chunks
