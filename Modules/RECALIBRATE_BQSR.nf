@@ -23,7 +23,6 @@ process RECALIBRATE_BQSR {
     script:
     """
     ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk ApplyBQSR \
-    --tmp-dir $TMPDIR/BQSR_tmp \
     -R ${params.ref} \
     -I ${bam} \
     -L ${params.mutect2_interval_dir}/${chunk}-scattered.interval_list \
