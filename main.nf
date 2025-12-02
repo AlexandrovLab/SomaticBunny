@@ -245,6 +245,7 @@ log.info configInfo
 include { FASTQC } from './Modules/FASTQC'
 include { BWA_MEM } from './Modules/BWA_MEM'
 include { CHECK_BAM_BWA } from './Modules/CHECK_BAM_BWA'
+include { CLEANUP_BWA } from './Modules/CLEANUP_BWA'
 include { COMBINE_REPORTS_BWA } from './Modules/COMBINE_REPORTS_BWA'
 include { RECALIBRATE_BaseRecal } from './Modules/RECALIBRATE_BaseRecal.nf'
 include { RECALIBRATE_BaseRecal_exome } from './Modules/RECALIBRATE_BaseRecal_exome.nf'
@@ -256,6 +257,7 @@ include { RECALIBRATE_SortBam } from './Modules/RECALIBRATE_SortBam.nf'
 include { CHECK_BAM_RECAL } from './Modules/CHECK_BAM_RECAL'
 include { COMBINE_REPORTS_RECAL } from './Modules/COMBINE_REPORTS_RECAL'
 include { MKDUP } from './Modules/MKDUP'
+include { CLEANUP_MKDUP_RECAL } from './Modules/CLEANUP_MKDUP_RECAL'
 include { CHECK_BAM_MKDUP } from './Modules/CHECK_BAM_MKDUP'
 include { COMBINE_REPORTS_MKDUP } from './Modules/COMBINE_REPORTS_MKDUP'
 include { MOSDEPTH } from './Modules/MOSDEPTH'
@@ -291,6 +293,8 @@ include { MergeMutectStats } from './Modules/Mutect2/MergeMutectStats'
 include { MergeVcfs } from './Modules/Mutect2/MergeVcfs'
 include { CalculateContamination } from './Modules/Mutect2/CalculateContamination'
 include { FilterMutectCalls } from './Modules/Mutect2/FilterMutectCalls'
+
+include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 
 include { SUMMARY } from './Modules/SUMMARY.nf'
 
@@ -436,19 +440,22 @@ workflow {
                 | splitCsv(header:true)
                 | map { row ->
                     meta = row.subMap('patient', 'sample', 'status', 'sex')
-                    return [meta, file(row.bam)]
+                    return [meta, file(row.bam), file(row.bai)]
                 } | set { sample_sheet }
             } else {
                 Channel.fromPath(params.sample)
                 | splitCsv(header:true)
                 | map { row ->
                     meta = row.subMap('patient', 'sample', 'status')
-                    return [meta, file(row.bam)]
+                    return [meta, file(row.bam), file(row.bai)]
                 } | set { sample_sheet }
             }
-            MKDUP(sample_sheet).set{ MKDUP_out }      
+            RENAME_BAM_HEADER(sample_sheet)
+            MKDUP(RENAME_BAM_HEADER.out.renamed_bam).set{ MKDUP_out }    
+            CLEANUP_BWA(MKDUP.out.cleanup_trigger)
         } else {
             MKDUP(BWA_MEM_out).set{ MKDUP_out }
+            CLEANUP_BWA(MKDUP.out.cleanup_trigger)
             // CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
             // COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
         }
@@ -497,16 +504,24 @@ workflow {
                 | splitCsv(header:true)
                 | map {row ->
                     meta = row.subMap('patient', 'sample', 'status', 'sex')
-                    return [meta.patient, meta, file(row.bam), file(row.bai)]
-                } | set {sample_sheet}
+                    return [meta, file(row.bam), file(row.bai)]
+                } | set { sample_sheet_raw }
             } else {
                 Channel.fromPath(params.sample)
                 | splitCsv(header:true)
                 | map { row ->
                     meta = row.subMap('patient', 'sample', 'status')
-                    return [meta.patient, meta, file(row.bam), file(row.bai)]
-                } | set { sample_sheet }
+                    return [meta, file(row.bam), file(row.bai)]
+                } | set { sample_sheet_raw }
             }
+
+            // Rename BAM headers to standardized format
+            RENAME_BAM_HEADER(sample_sheet_raw)
+
+            RENAME_BAM_HEADER.out.renamed_bam
+            | map { meta, bam, bai ->
+                [meta.patient, meta, bam, bai]
+            } | set { sample_sheet }
 
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal_exome(sample_sheet).set{ RECALIBRATE_BaseRecal_out }
@@ -530,7 +545,10 @@ workflow {
                 }.set{BaseRecal_BQSR_out_MAP}
 
                 RECALIBRATE_MergeBam(BaseRecal_BQSR_out_MAP).set{ RECALIBRATE_MergeBam_out }
+
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
+
+                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
             }
         } else {
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
@@ -556,7 +574,10 @@ workflow {
                 }.set{BaseRecal_BQSR_out_MAP}
 
                 RECALIBRATE_MergeBam(BaseRecal_BQSR_out_MAP).set{ RECALIBRATE_MergeBam_out }
+
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
+
+                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
             }
         }
         // CHECK_BAM_RECAL(RECALIBRATE_out.pair_recal).set{ CHECK_BAM_RECAL_out }
@@ -595,16 +616,24 @@ workflow {
                 | splitCsv(header:true)  
                 | map {row ->
                     meta = row.subMap('patient', 'sample', 'status', 'sex')
-                    return [meta.patient, meta, file(row.bam), file(row.bai)]
-                } | set {sample_sheet}
+                    return [meta, file(row.bam), file(row.bai)]
+                } | set {sample_sheet_raw}
             } else {
                 Channel.fromPath(params.sample)
                 | splitCsv(header:true)
                 | map { row ->
                     meta = row.subMap('patient', 'sample', 'status')
-                    return [meta.patient, meta, file(row.bam), file(row.bai)]
-                } | set { sample_sheet }
+                    return [meta, file(row.bam), file(row.bai)]
+                } | set { sample_sheet_raw }
             }
+
+            // Rename BAM headers to standardized format
+            RENAME_BAM_HEADER(sample_sheet_raw)
+
+            RENAME_BAM_HEADER.out.renamed_bam
+            | map { meta, bam, bai ->
+                [meta.patient, meta, bam, bai]
+            } | set { sample_sheet }
 
             if (params.type == "exome") {
                 GETpileUP_exome(sample_sheet).set { GETpileUP_out }

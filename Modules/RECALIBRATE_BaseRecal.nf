@@ -23,6 +23,7 @@ process RECALIBRATE_BaseRecal {
     --known-sites ${params.recal_knownsite2} \
     -L ${params.mutect2_interval_dir}/${chunk}-scattered.interval_list \
     -O ${meta.patient}_${meta.sample}_${meta.status}_${chunk}_recal.table
+
     """
 
 }

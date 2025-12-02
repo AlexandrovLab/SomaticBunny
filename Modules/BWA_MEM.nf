@@ -18,5 +18,6 @@ process BWA_MEM {
     script:
     """
     bwa-mem2 mem -T 0 -t 16 -R "@RG\\tID:${meta.patient}\\tSM:${meta.patient}_${meta.sample}_${meta.status}\\tPL:ILLUMINA" ${params.ref} ${meta.fastq_1} ${meta.fastq_2} | samtools view -bh --input-fmt-option nthreads=16 - | samtools sort -@ 16 -T ${meta.patient}_${meta.sample}_${meta.status}  -o ${meta.patient}_${meta.sample}_${meta.status}_raw.bam -
+
     """
 }

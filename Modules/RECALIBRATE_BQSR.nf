@@ -6,11 +6,6 @@ process RECALIBRATE_BQSR {
     label 'RECALIBRATE'
     errorStrategy 'terminate'
     maxRetries 3
-
-    beforeScript = '''
-        export TMPDIR=$SLURM_TMPDIR
-        mkdir -p $TMPDIR/BQSR_tmp
-    '''
         
     input: 
     tuple val(patient), val(meta), path(bam), path(table), path(bai)
@@ -28,6 +23,7 @@ process RECALIBRATE_BQSR {
     -L ${params.mutect2_interval_dir}/${chunk}-scattered.interval_list \
     --bqsr-recal-file ${table} \
     -O ${meta.patient}_${meta.sample}_${meta.status}_recalibrated_${chunk}.bam
+
     """
 
 }
