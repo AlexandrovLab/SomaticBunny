@@ -16,6 +16,7 @@ process RECALIBRATE_SortBam {
     output:
     tuple val(patient), val(meta), path("*bam"), path("*bai"), emit: pair_recal
     tuple val(meta), path("*bam"), path("*bai"), emit: recal_out
+    val(meta), emit: cleanup_trigger
 
     script:
     def sorted_bam = "${meta.patient}_${meta.sample}_${meta.status}_recal.bam"
