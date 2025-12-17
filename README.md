@@ -170,7 +170,7 @@ nextflow run main.nf --type exome --first_step variant_calling --tool manta,asca
 By default, intermediate files are not saved to reduce disk usage. Use the `--publish` parameter to save specific file types:
 
 ```bash
-nextflow run main.nf --type exome -genome GRCh38 --first_step variant_calling --publish raw_bam,markdup_bam
+nextflow run main.nf --type exome --genome GRCh38 --first_step variant_calling --publish raw_bam,markdup_bam
 ```
 
 **Available options:**
