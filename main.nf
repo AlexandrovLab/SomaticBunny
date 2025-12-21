@@ -1118,18 +1118,32 @@ workflow {
 
         recalChannel = normal_post.cross(tumor_post){it[0]}.map{
             normal, tumor ->
-            ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2]]]
+            ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2], tumor[3]]]
         }
         
-        postevcInput = mutect2Channel
+        postInput = mutect2Channel
             .join(museChannel)
             .join(strelkaChannel)
             .join(sageChannel)
             .join(recalChannel)
             .map { patient_sample, mutect2_vcf, muse_vcf, strelka_vcf, sage_vcf, recal_bam ->
-                [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1]]
+                [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1], recal_bam[2]]
+            }
+            .view { patient_sample, mutect2, muse, strelka_snv, strelka_indel, sage, bam, bai ->
+                """
+                ===== POSTEVC INPUT =====
+                Sample: ${patient_sample}
+                Mutect2: ${mutect2}
+                MuSE: ${muse}
+                Strelka SNV: ${strelka_snv}
+                Strelka INDEL: ${strelka_indel}
+                SAGE: ${sage}
+                Tumor BAM: ${bam}
+                Tumor BAI: ${bai}
+                ========================
+                """
             }
         
-        // POSTEVC(postevcInput)
+        POST(postInput)
     }
 }
