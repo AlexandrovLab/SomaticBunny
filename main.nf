@@ -218,7 +218,7 @@ params.ascat_dir="$projectDir/RESULTS/ASCAT"
 params.conpair="${params.database_path}/EVC_nextflow/Conpair-0.2"
 params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
 params.manta_dir="$projectDir/RESULTS/MANTA"
-params.postevc_dir="$projectDir/RESULTS/POST"
+params.post_dir="$projectDir/RESULTS/POST"
 
 params.bwamem2_env = "${params.database_path}/EVC_nextflow/yml/bwamem2.yml"
 params.mkdup_env = "${params.database_path}/EVC_nextflow/yml/mkdup.yml"
@@ -298,7 +298,7 @@ include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 
 include { SUMMARY } from './Modules/SUMMARY.nf'
 
-include { POSTEVC } from './Modules/POSTEVC.nf'
+include { POST } from './Modules/POST.nf'
 
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
 include { SAVE_CSV_BWA_MEM } from './Modules/SAVE_CSV/SAVE_CSV_BWA_MEM'
@@ -1131,7 +1131,7 @@ workflow {
             }
             .view { patient_sample, mutect2, muse, strelka_snv, strelka_indel, sage, bam, bai ->
                 """
-                ===== POSTEVC INPUT =====
+                ===== POST INPUT =====
                 Sample: ${patient_sample}
                 Mutect2: ${mutect2}
                 MuSE: ${muse}
