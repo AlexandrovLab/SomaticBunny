@@ -235,6 +235,7 @@ params.ascat_env = "${params.database_path}/EVC_nextflow/yml/ascat.yml"
 params.alleleCounter_env = "${params.database_path}/EVC_nextflow/yml/alleleCounter.yml"
 params.tmp_dir = '${workflow.workDir}/ascat_tmp'
 params.manta_env = "${params.database_path}/EVC_nextflow/yml/manta.yml"
+params.dkfz_env = "${params.database_path}/EVC_nextflow/yml/dkfz.yml"
 
 // Write configuration to log file
 writeToLog(params.log_file, configInfo)
