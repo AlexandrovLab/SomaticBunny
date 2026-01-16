@@ -22,6 +22,7 @@ sevs=13
 #####################
 # Starting the party ...
 WORK_DIR=$PWD
+TUMOR_BAM_ABS=$(readlink -f $TUMOR_BAM)
 
 mkdir -p snvs_filtered
 mkdir -p indels_filtered
@@ -117,7 +118,7 @@ awk 'BEGIN{OFS="\t";};
 grep "#" ${swapped_file} > ${final_file}
 cat ${final_vcf} >> ${final_file}
 
-rm ${swapped_file} ${biallelic_file} ${separated_snvs_file}
+# rm ${swapped_file} ${biallelic_file} ${separated_snvs_file}
 
 ####################
 ## Fix MuSE files ##
@@ -178,7 +179,24 @@ awk 'BEGIN{OFS="\t";};
 grep "#" ${biallelic_file} > ${final_file}
 cat ${final_vcf} >> ${final_file}
 
-rm ${biallelic_file} ${separated_snvs_file}
+# rm ${biallelic_file} ${separated_snvs_file}
+
+############################
+## DEBUG - Check files before filtering ##
+############################
+echo "=== DEBUG: Files before filtering ==="
+ls -lh *_snv.vcf 2>/dev/null || echo "ERROR: No SNV files found!"
+ls -lh *_indel.vcf 2>/dev/null || echo "ERROR: No indel files found!"
+
+echo ""
+echo "=== Checking PASS counts in SNV files ==="
+for f in *_snv.vcf; do
+    if [ -f "$f" ]; then
+        total=$(wc -l < "$f")
+        passed=$(grep -c "PASS" "$f" 2>/dev/null || echo 0)
+        echo "$f: $total lines, $passed with PASS"
+    fi
+done
 
 ############################
 ## Collect filtered files ##
@@ -217,11 +235,13 @@ cd 2outof4
 mkdir -p tmp
 
 echo "Running bseq..."
+echo "Variants before bseq filter: $(wc -l < ${SAMPLE_NAME}_2outof4.vcf)"
+
 # Add bseq header and run bias filter
 cat ${DATABASE_PATH}/EVC_nextflow/bseq_header ${SAMPLE_NAME}_2outof4.vcf > ${SAMPLE_NAME}_2outof4.vcf.tmp
-${DATABASE_PATH}/EVC_nextflow/DKFZBiasFilter/scripts/biasFilter.py \
+python ${DATABASE_PATH}/EVC_nextflow/DKFZBiasFilter/scripts/biasFilter.py \
     ${SAMPLE_NAME}_2outof4.vcf.tmp \
-    $TUMOR_BAM \
+    $TUMOR_BAM_ABS \
     ${REF_FASTA} \
     ${SAMPLE_NAME}_2outof4_bseq.vcf \
     --tempFolder=$WORK_DIR/snvs_filtered/2outof4/tmp \
@@ -230,10 +250,19 @@ ${DATABASE_PATH}/EVC_nextflow/DKFZBiasFilter/scripts/biasFilter.py \
 
 grep -v "#" ${SAMPLE_NAME}_2outof4_bseq.vcf > temp_bseq
 mv temp_bseq ${SAMPLE_NAME}_2outof4_bseq.vcf
-rm ${SAMPLE_NAME}_2outof4.vcf.tmp
-rm -r tmp
+# rm ${SAMPLE_NAME}_2outof4.vcf.tmp
+# rm -r tmp
 
 echo "Annotating callers in SNVs..."
+echo "Variants after bseq filter: $(wc -l < ${SAMPLE_NAME}_2outof4_bseq.vcf)"
+
+# Check if bseq produced output
+if [ ! -s ${SAMPLE_NAME}_2outof4_bseq.vcf ]; then
+    echo "ERROR: bseq filter produced empty output!"
+    echo "Check if biasFilter.py ran successfully"
+    exit 1
+fi
+
 f="${SAMPLE_NAME}_2outof4_bseq.vcf"
 
 # Annotate with each caller
@@ -291,7 +320,8 @@ awk -F"\t" -v sevs="$sevs" '{
 awk -F"\t" '{OFS=FS; if($7=="lowTLOD"&&length($6)>5) {$7="PASS";gsub("mt,", "", $6);print} else if($7=="lowSomaticEVS"&&length($6)>5) {$7="PASS";gsub("st,", "", $6);gsub(",st", "", $6);print} else if($7=="lowTLOD;lowSomaticEVS"&&length($6)==11) {$7="PASS";$6="sa,ms";print} else {print}}' ${f}.tmp1 > ${f}.tmp2
 
 # Filter panel of normals
-grep -v "#" $WORK_DIR/${SAMPLE_NAME}_mutect_snv.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_snv_PON.vcf || touch ${SAMPLE_NAME}_mutect_snv_PON.vcf
+grep -v "#" ../mutect_snvs/${SAMPLE_NAME}_mutect_snv.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_snv_PON.vcf || touch ${SAMPLE_NAME}_mutect_snv_PON.vcf
+
 pon=$(cat ${SAMPLE_NAME}_mutect_snv_PON.vcf | wc -l)
 
 if [ $pon -eq 0 ]; then
@@ -303,20 +333,11 @@ fi
 mv ${f}.tmp3 ${SAMPLE_NAME}_snv_final_annotated.vcf
 rm -f *tmp* *mutect_snv_PON.vcf
 
-# Generate final PASS file
-{
-    cat ${SAMPLE_NAME}_snv_final_annotated.vcf | \
+# Generate final PASS file for SNVs
+cat ${SAMPLE_NAME}_snv_final_annotated.vcf | \
     awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
     awk -v OFS="\t" '$1=$1' | \
-    grep "^#"
-    
-    cat ${SAMPLE_NAME}_snv_final_annotated.vcf | \
-    awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
-    awk -v OFS="\t" '$1=$1' | \
-    grep -v "^#" | \
-    sort -k1,1V -k2,2n
-} > ${SAMPLE_NAME}_PASSed.vcf
-
+    sort -k1,1V -k2,2n > ${SAMPLE_NAME}_PASSed.vcf
 
 ###############################
 ## Merge and Annotate INDELs ##
@@ -395,7 +416,7 @@ awk -F"\t" -v sevs="$sevs" '{
 cat ${f}.tmp1 | awk -F"\t" '{OFS=FS; if($7=="lowTLOD"&&length($6)>5) {$7="PASS";gsub("mt,", "", $6);print} else if($7=="lowSomaticEVS"&&length($6)>5) {$7="PASS";gsub("st,", "", $6);gsub(",st", "", $6);print} else if($7=="lowTLOD;lowSomaticEVS"&&length($6)==11) {$7="PASS";$6="sa,ms";print} else {print}}' > ${f}.tmp2
 
 # Filter panel of normals
-grep -v "#" $WORK_DIR/${SAMPLE_NAME}_mutect_indel.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_indel_PON.vcf || touch ${SAMPLE_NAME}_mutect_indel_PON.vcf
+grep -v "#" ../mutect_indels/${SAMPLE_NAME}_mutect_indel.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_indel_PON.vcf || touch ${SAMPLE_NAME}_mutect_indel_PON.vcf
 pon=$(cat ${SAMPLE_NAME}_mutect_indel_PON.vcf | wc -l)
 
 if [ $pon -eq 0 ]; then
