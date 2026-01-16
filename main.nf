@@ -1132,7 +1132,7 @@ workflow {
             }
             .view { patient_sample, mutect2, muse, strelka_snv, strelka_indel, sage, bam, bai ->
                 """
-                ===== POST INPUT =====
+                ===== POSTEVC INPUT =====
                 Sample: ${patient_sample}
                 Mutect2: ${mutect2}
                 MuSE: ${muse}
