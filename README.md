@@ -84,17 +84,17 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
 
 ## Configuration
 
-For TSCC memory management, modify the following parameters:
+For memory management, modify the following parameters if needed:
 
-- Set `$params.mkdup_temp_dir` in `main.nf` (Default: `$projectDir/mkdup_tmp`)
-- Set `$workDir` in `nextflow.config` (Default: `./work`)
+- Set `$params.mkdup_temp_dir` in `main.nf` to your ideal location (Default: `$projectDir/mkdup_tmp`)
+- Set `$workDir` in `nextflow.config` to your ideal location (Default: `./work`)
 
 ```nextflow
 // In main.nf
-params.mkdup_temp_dir = "/path/to/restricted/folder/mkdup_tmp"
+params.mkdup_temp_dir = "/path/to/ideal/mkdup_tmp/folder/"
 
 // In nextflow.config
-workDir = "/path/to/restricted/folder/work"
+workDir = "/path/to/ideal/intermediate/work/folder/"
 ```
 
 ## Usage
