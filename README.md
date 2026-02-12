@@ -104,7 +104,7 @@ workDir = "/path/to/ideal/intermediate/work/folder/"
 1. Request an interactive compute node:
 
 ```bash
-srun -N 1 -n 1 -c 8 --mem 125G -t 24:00:00 -p platinum -q hcp-ddp302 -A ddp302 --pty bash
+srun -N 1 -n 1 -c 16 --mem 250G -t 80:00:00 -p platinum -q hcp-ddp302 -A ddp302 --pty bash
 ```
 
 2. Activate your Nextflow environment:
