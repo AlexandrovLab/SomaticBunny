@@ -13,6 +13,7 @@ SMURFS is an ensemble pipeline for somatic variant calling that integrates multi
 - [Configuration](#configuration)
 - [Usage](#usage)
   - [Basic Usage](#basic-usage)
+  - [Custom Reference Genome](#custom-reference-genome)
   - [Advanced Options](#advanced-options)
 - [Output](#output)
 - [Tool Versions](#tool-versions)
@@ -162,6 +163,44 @@ Example of running multiple tools:
 # Run Manta for SVs and ASCAT for CNVs
 nextflow run main.nf --type exome --first_step variant_calling --tool manta,ascat
 ```
+
+### Custom Reference Genome
+
+When starting the pipeline from BAM files (`--first_step markdup`, `recalibration`, or `variant_calling`), you **must** provide your own reference genome files. This is because BAM files are already aligned to a specific reference, and the pipeline needs the matching reference for downstream analysis.
+
+#### Required parameters
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `--ref` | Reference FASTA file | `/path/to/hg38_genome.fa` |
+| `--ref_fai` | FASTA index file | `/path/to/hg38_genome.fa.fai` |
+| `--ref_dict` | Sequence dictionary | `/path/to/hg38_genome.dict` |
+| `--bed` | Callable regions BED file (bgzipped) | `/path/to/callable_regions.bed.gz` |
+| `--bed_tbi` | Tabix index for the BED file | `/path/to/callable_regions.bed.gz.tbi` |
+
+All five files must be provided together. The pipeline will exit with an error if any are missing.
+
+#### Example
+
+```bash
+nextflow run main.nf \
+  --type genome \
+  --genome GRCh38 \
+  --first_step variant_calling \
+  --sample sample.csv \
+  --ref /path/to/hg38_genome.fa \
+  --ref_fai /path/to/hg38_genome.fa.fai \
+  --ref_dict /path/to/hg38_genome.dict \
+  --bed /path/to/hg38_genome_callable_regions.bed.gz \
+  --bed_tbi /path/to/hg38_genome_callable_regions.bed.gz.tbi
+```
+
+When a custom reference is provided, the pipeline will automatically generate the scattered interval lists required by GATK tools (Mutect2, BaseRecalibrator, etc.) from your reference. When starting from `mapping`, these parameters are optional and will fall back to the pipeline's built-in defaults for the selected `--genome`.
+
+> [!IMPORTANT]
+> **Your custom reference genome must use the `chr` prefix for contig names** (e.g., `chr1`, `chr2`, ..., `chrX`, `chrY`). The pipeline's built-in database files (dbSNP, gnomAD, Panel of Normals, known indels, etc.) use `chr`-prefixed contig names. A reference without the `chr` prefix (e.g., `1`, `2`, ..., `X`, `Y`) will cause tools such as Mutect2, MuSE, Strelka, SAGE, and BQSR to fail due to contig name mismatches.
+>
+> Different GRCh38 builds that include additional or fewer contigs (e.g., alt contigs, decoys, HLA) are supported as long as the standard chromosomes use the `chr` prefix.
 
 ### Advanced Options
 
