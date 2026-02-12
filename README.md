@@ -252,7 +252,7 @@ RESULTS/
 ├── MuSE
 ├── Mutect2
 ├── RECALIBRATE (optional)
-├── REPORT (optional)
+├── REPORT
 ├── SAGE
 └── STRELKA
 ```
