@@ -210,7 +210,7 @@ When a custom reference is provided, the pipeline will automatically generate th
 By default, intermediate files are not saved to reduce disk usage. Use the `--publish` parameter to save specific file types:
 
 ```bash
-nextflow run main.nf --type exome --genome GRCh38 --first_step variant_calling --publish raw_bam,markdup_bam
+nextflow run main.nf --type genome --genome GRCh38 --first_step mapping --publish raw_bam,markdup_bam
 ```
 
 **Available options:**
@@ -223,7 +223,7 @@ nextflow run main.nf --type exome --genome GRCh38 --first_step variant_calling -
 If your pipeline terminates with an error or the interactive node is killed, resume with:
 
 ```bash
-nextflow run main.nf --type exome -genome GRCh38 --first_step variant_calling --tool ascat,manta -resume
+nextflow run main.nf --type genome -genome GRCh38 --first_step mapping --tool ascat,manta -resume
 ```
 
 #### Email Notifications
@@ -231,7 +231,7 @@ nextflow run main.nf --type exome -genome GRCh38 --first_step variant_calling --
 Receive completion notification:
 
 ```bash
-nextflow run main.nf --type exome -genome GRCh38 --first_step variant_calling --tool ascat,manta -N your_email@example.com
+nextflow run main.nf --type genome -genome GRCh38 --first_step mapping --tool ascat,manta -N your_email@example.com
 ```
 
 ## Output
