@@ -162,7 +162,7 @@ Use the `--tool` parameter to specify which variant callers to run. You can sele
 Example of running multiple tools:
 ```bash
 # Run Manta for SVs and ASCAT for CNVs
-nextflow run main.nf --genome GRCh38 --type exome --first_step variant_calling --tool manta,ascat
+nextflow run main.nf --genome GRCh38 --type genome --first_step mapping --tool manta,ascat
 ```
 
 ### Custom Reference Genome
