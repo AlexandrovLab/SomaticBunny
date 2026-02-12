@@ -49,37 +49,38 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
 4. Prepare your `sample.csv` file according to your analysis requirements:
 
    <details>
-   <summary><b>For ASCAT analysis (click to expand)</b></summary>
-   
-   ```csv
-   patient,sample,status,fastq_1,fastq_2,sex
-   RADS10_GBC,A,normal,/PATH/TO/ERR5285401_1.fastq.gz,/PATH/TO/ERR5285401_2.fastq.gz,XY
-   RADS10_GBC,A,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
-   RADS10_GBC,B,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
-   ```
-   </details>
-
-   <details>
-   <summary><b>Without ASCAT analysis (click to expand)</b></summary>
+   <summary><b>For starting from fastq (click to expand)</b></summary>
    
    ```csv
    patient,sample,status,fastq_1,fastq_2
-   RADS10_GBC,A,normal,/PATH/TO/ERR5285401_1.fastq.gz,/PATH/TO/ERR5285401_2.fastq.gz
-   RADS10_GBC,A,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz
-   RADS10_GBC,B,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz
+   UCSD101,A,normal,/PATH/TO/ERR5285401_1.fastq.gz,/PATH/TO/ERR5285401_2.fastq.gz,XY
+   UCSD101,A,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
+   UCSD101,B,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
    ```
    </details>
-
    <details>
    <summary><b>For starting from bams (click to expand)</b></summary>
    
    ```csv
    patient,sample,status,bam,bai,sex
-   RADS10_GBC,A,normal,/PATH/TO/RADS10_GBC_A_normal.bam,/PATH/TO/RADS10_GBC_A_normal.bam.bai,XY
-   RADS10_GBC,A,tumor,/PATH/TO/RADS10_GBC_A_tumor.bam,/PATH/TO/RADS10_GBC_A_tumor.bam.bai,XY
-   RADS10_GBC,B,tumor,/PATH/TO/RADS10_GBC_B_tumor.bam,/PATH/TO/RADS10_GBC_B_tumor.bam.bai,XY
+   UCSD101,A,normal,/PATH/TO/UCSD101_A_normal.bam,/PATH/TO/UCSD101_A_normal.bam.bai,XY
+   UCSD101,A,tumor,/PATH/TO/UCSD101_A_tumor.bam,/PATH/TO/UCSD101_A_tumor.bam.bai,XY
+   UCSD101,B,tumor,/PATH/TO/UCSD101_B_tumor.bam,/PATH/TO/UCSD101_B_tumor.bam.bai,XY
    ```
    </details>
+
+   <details>
+   <summary><b>For ASCAT analysis (click to expand)</b></summary>
+   
+   ```csv
+   patient,sample,status,fastq_1,fastq_2,sex
+   UCSD101,A,normal,/PATH/TO/ERR5285401_1.fastq.gz,/PATH/TO/ERR5285401_2.fastq.gz,XY
+   UCSD101,A,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
+   UCSD101,B,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
+   ```
+   </details>
+
+
 
 ## Configuration
 
