@@ -114,14 +114,75 @@ params.genomes = [
     ]
 ]
 
+// Custom ref/bed is REQUIRED when starting from markdup, recalibration, or variant_calling
+if (params.first_step in ['markdup', 'recalibration', 'variant_calling']) {
+    def missing = []
+    if (!params.ref)      missing << '--ref'
+    if (!params.ref_fai)  missing << '--ref_fai'
+    if (!params.ref_dict) missing << '--ref_dict'
+    if (!params.bed)      missing << '--bed'
+    if (!params.bed_tbi)  missing << '--bed_tbi'
+    if (missing) {
+        error "When --first_step is '${params.first_step}', you must provide all custom reference files: " +
+              "--ref, --ref_fai, --ref_dict, --bed, --bed_tbi. Missing: ${missing.join(', ')}"
+    }
+}
+
+// If any custom ref/bed provided, validate they come as a complete set
+if (params.ref || params.bed || params.bed_tbi || params.ref_fai || params.ref_dict) {
+    def missing = []
+    if (!params.ref)      missing << '--ref'
+    if (!params.ref_fai)  missing << '--ref_fai'
+    if (!params.ref_dict) missing << '--ref_dict'
+    if (!params.bed)      missing << '--bed'
+    if (!params.bed_tbi)  missing << '--bed_tbi'
+    if (missing) {
+        error "When providing custom reference files, all five must be specified: " +
+              "--ref, --ref_fai, --ref_dict, --bed, --bed_tbi. Missing: ${missing.join(', ')}"
+    }
+    if (!file(params.ref).exists())      error "Custom ref file not found: ${params.ref}"
+    if (!file(params.ref_fai).exists())  error "Custom ref_fai file not found: ${params.ref_fai}"
+    if (!file(params.ref_dict).exists()) error "Custom ref_dict file not found: ${params.ref_dict}"
+    if (!file(params.bed).exists())      error "Custom bed file not found: ${params.bed}"
+    if (!file(params.bed_tbi).exists())  error "Custom bed_tbi file not found: ${params.bed_tbi}"
+
+    log.info """
+    ==============================================
+    Using CUSTOM reference files:
+      ref      : ${params.ref}
+      ref_fai  : ${params.ref_fai}
+      ref_dict : ${params.ref_dict}
+      bed      : ${params.bed}
+      bed_tbi  : ${params.bed_tbi}
+    ==============================================
+    """
+}
+
 // Validate genome selection
 if (!params.genomes.containsKey(params.genome)) {
     error "Invalid genome: ${params.genome}. Available options are: ${params.genomes.keySet().join(', ')}"
 }
 
+if (params.custom_ref) {
+    log.warn """
+    WARNING: You are using a custom reference genome.
+    Ensure your reference uses the same contig naming convention 
+    (e.g., chr1 vs 1) as the pipeline's database files for genome '${params.genome}'.
+    Mismatched contig names will cause tools like Mutect2, MuSE, BQSR, 
+    SAGE, Conpair, and Delly to fail.
+    """
+}
+
+// Check if user inputs custom ref or not
+params.custom_ref = (params.ref && params.ref != params.genomes[params.genome].ref)
+
+
 // Set genome-specific parameters
 params.ref = params.ref ?: params.genomes[params.genome].ref
+params.ref_fai = params.ref_fai ?: "${params.ref}.fai"
+params.ref_dict = params.ref_dict ?: params.ref.replaceAll(/\.fa(sta)?$/, '.dict')
 params.bed = params.bed ?: params.genomes[params.genome].bed
+params.bed_tbi = params.bed_tbi ?: "${params.bed}.tbi"
 params.conpair_marker = params.conpair_marker ?: params.genomes[params.genome].conpair_marker
 params.conpair_marker_txt = params.conpair_marker_txt ?: params.genomes[params.genome].conpair_marker_txt
 params.mosdepth_bed = params.mosdepth_bed ?: params.genomes[params.genome].mosdepth_bed
@@ -190,6 +251,13 @@ Analysis Parameters:
 Analysis Type  : ${params.type}
 Genome         : ${params.genome}
 ==============================================
+Reference Files:
+==============================================
+ref            : ${params.ref}
+ref_fai        : ${params.ref_fai}
+bed            : ${params.bed}
+bed_tbi        : ${params.bed_tbi}
+==============================================
 Avaliable Tools:
 ==============================================
 ${available_tools.join(', ')}
@@ -219,6 +287,7 @@ params.conpair="${params.database_path}/EVC_nextflow/Conpair-0.2"
 params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
 params.manta_dir="$projectDir/RESULTS/MANTA"
 params.post_dir="$projectDir/RESULTS/POST"
+params.intervals_dir="$projectDir/RESULTS/custom_intervals"
 
 params.bwamem2_env = "${params.database_path}/EVC_nextflow/yml/bwamem2.yml"
 params.mkdup_env = "${params.database_path}/EVC_nextflow/yml/mkdup.yml"
@@ -296,6 +365,7 @@ include { CalculateContamination } from './Modules/Mutect2/CalculateContaminatio
 include { FilterMutectCalls } from './Modules/Mutect2/FilterMutectCalls'
 
 include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
+include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
 
 include { SUMMARY } from './Modules/SUMMARY.nf'
 
@@ -339,8 +409,21 @@ def isToolSelected(String tool) {
     return false
 }
 
+
 workflow {
     chunk = Channel.of(1..20)
+
+    // Check if need to build custom intervals from user provided ref fa file
+    if (params.custom_ref) {
+    GENERATE_INTERVALS(
+        file(params.ref),
+        file(params.ref_fai),
+        file(params.ref_dict)
+    )
+    interval_dir_ch = GENERATE_INTERVALS.out.interval_dir
+    } else {
+        interval_dir_ch = Channel.value(file(params.mutect2_interval_dir))
+    }
     
     // Sanity check for ascat input format
     if (params.tool.toString().contains('ascat')) {
@@ -405,8 +488,8 @@ workflow {
         }
         FASTQC(sample_sheet)
         BWA_MEM(sample_sheet).set { BWA_MEM_out }
-        // CHECK_BAM_BWA(BWA_MEM_out.bam).set{ CHECK_BAM_BWA_out }
-        // COMBINE_REPORTS_BWA(CHECK_BAM_BWA_out.individual_reports_bwa.collect())
+        CHECK_BAM_BWA(BWA_MEM_out.bam).set{ CHECK_BAM_BWA_out }
+        COMBINE_REPORTS_BWA(CHECK_BAM_BWA_out.individual_reports_bwa.collect())
     }
 
     // starts from markduplicate
@@ -457,8 +540,8 @@ workflow {
         } else {
             MKDUP(BWA_MEM_out).set{ MKDUP_out }
             CLEANUP_BWA(MKDUP.out.cleanup_trigger)
-            // CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
-            // COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
+            CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
+            COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
         }
 
         if (params.genome in ['mm39', 'RN7']){
@@ -529,7 +612,7 @@ workflow {
                 RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_BQSR_out }
                 RECALIBRATE_SortBam(RECALIBRATE_BQSR_out.SortBam_input).set{ RECALIBRATE_out }
             } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
-                RECALIBRATE_BaseRecal(sample_sheet, chunk).set{ RECALIBRATE_BaseRecal_out }
+                RECALIBRATE_BaseRecal(sample_sheet, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
 
                 RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
                 BaseRecal_out_pair.map{
@@ -538,7 +621,7 @@ workflow {
 
                 RECALIBRATE_MergeReport(BaseRecal_out_MAP).set{ RECALIBRATE_MergeReport_out }
 
-                RECALIBRATE_BQSR(RECALIBRATE_MergeReport_out.BQSR_input, chunk).set { RECALIBRATE_BQSR_out }
+                RECALIBRATE_BQSR(RECALIBRATE_MergeReport_out.BQSR_input, chunk, interval_dir_ch).set { RECALIBRATE_BQSR_out }
 
                 RECALIBRATE_BQSR_out.MergeBam_input.groupTuple(by:[0,1]).set { BaseRecal_BQSR_out_pair }
                 BaseRecal_BQSR_out_pair.map{
@@ -549,7 +632,7 @@ workflow {
 
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
 
-                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                // CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
             }
         } else {
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
@@ -558,7 +641,7 @@ workflow {
                 RECALIBRATE_SortBam(RECALIBRATE_BQSR_out.SortBam_input).set{ RECALIBRATE_out }
 
             } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
-                RECALIBRATE_BaseRecal(MKDUP_out.pair_mutect, chunk).set{ RECALIBRATE_BaseRecal_out }
+                RECALIBRATE_BaseRecal(MKDUP_out.pair_mutect, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
 
                 RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
                 BaseRecal_out_pair.map{
@@ -567,7 +650,7 @@ workflow {
 
                 RECALIBRATE_MergeReport(BaseRecal_out_MAP).set{ RECALIBRATE_MergeReport_out }
 
-                RECALIBRATE_BQSR(RECALIBRATE_MergeReport_out.BQSR_input, chunk).set { RECALIBRATE_BQSR_out }
+                RECALIBRATE_BQSR(RECALIBRATE_MergeReport_out.BQSR_input, chunk, interval_dir_ch).set { RECALIBRATE_BQSR_out }
 
                 RECALIBRATE_BQSR_out.MergeBam_input.groupTuple(by:[0,1]).set { BaseRecal_BQSR_out_pair }
                 BaseRecal_BQSR_out_pair.map{
@@ -578,11 +661,11 @@ workflow {
 
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
 
-                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                // CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
             }
         }
-        // CHECK_BAM_RECAL(RECALIBRATE_out.pair_recal).set{ CHECK_BAM_RECAL_out }
-        // COMBINE_REPORTS_RECAL(CHECK_BAM_RECAL_out.individual_reports_recal.collect())
+        CHECK_BAM_RECAL(RECALIBRATE_out.pair_recal).set{ CHECK_BAM_RECAL_out }
+        COMBINE_REPORTS_RECAL(CHECK_BAM_RECAL_out.individual_reports_recal.collect())
     }
 
     // starts from variant calling
@@ -639,7 +722,7 @@ workflow {
             if (params.type == "exome") {
                 GETpileUP_exome(sample_sheet).set { GETpileUP_out }
             } else if (params.type == "genome") {
-                GETpileUP(sample_sheet, chunk).set { GETpileUP_out }
+                GETpileUP(sample_sheet, chunk, interval_dir_ch).set { GETpileUP_out }
             }
 
             sample_sheet.filter{it[1].status == 'normal'}.set{normal}
@@ -719,7 +802,7 @@ workflow {
             //SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
 
             } else if (params.type == "genome") {
-                MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk).set { MUTECT2_CALLING_out }
+                MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
                 MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
                 MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
                 MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
@@ -939,8 +1022,8 @@ workflow {
             //SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
 
             } else if (params.type == "genome") {
-                GETpileUP(RECALIBRATE_out.pair_recal, chunk).set { GETpileUP_out }
-                MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk).set { MUTECT2_CALLING_out }
+                GETpileUP(RECALIBRATE_out.pair_recal, chunk, interval_dir_ch).set { GETpileUP_out }
+                MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
                 MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
                 MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
                 MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
