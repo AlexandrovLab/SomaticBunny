@@ -632,7 +632,7 @@ workflow {
 
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
 
-                // CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
             }
         } else {
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
@@ -661,7 +661,7 @@ workflow {
 
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
 
-                // CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
             }
         }
         CHECK_BAM_RECAL(RECALIBRATE_out.pair_recal).set{ CHECK_BAM_RECAL_out }
