@@ -38,9 +38,7 @@ process POST {
     ls -lh ${sage_vcf}
     ls -lh ${tumor_bam}
 
-    # ${params.database_path}/EVC_nextflow/Databases/filtering.sh
-
-    bash /tscc/lustre/restricted/alexandrov-ddn/users/tiy002/projects/SMURFS/filtering.sh \
+    bash ${params.database_path}/EVC_nextflow/Databases/filtering.sh \
         ${patient_sample} \
         ${mutect2_vcf} \
         ${muse_vcf} \
