@@ -18,7 +18,6 @@ process RECALIBRATE_BQSR_exome {
     ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk ApplyBQSR \
     -R ${params.ref} \
     -I ${bam} \
-    -L ${params.recal_interval_wes} \
     --bqsr-recal-file ${table} \
     -O ${meta.patient}_${meta.sample}_${meta.status}_recalibrated.bam
     """
