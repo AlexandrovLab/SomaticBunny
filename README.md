@@ -1,9 +1,9 @@
-# SMURFS: Somatic MUtation Recognition Framework & Suite
+# MS-SOMATICX: Somatic MUtation Recognition Framework & Suite
 
-SMURFS is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
+MS-SOMATICX is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
 
 <p align="center">
-  <img src="https://github.com/AlexandrovLab/SMURFS/blob/main/workflow_logo/SMURFS.png" alt="SMURFS Pipeline Workflow"/>
+  <img src="https://github.com/AlexandrovLab/MS-SOMATICX/blob/main/workflow_logo/MS-SOMATICX.png" alt="MS-SOMATICX Pipeline Workflow"/>
 </p>
 
 ## Table of Contents
@@ -20,7 +20,7 @@ SMURFS is an ensemble pipeline for somatic variant calling that integrates multi
 
 ## Overview
 
-The Somatic MUtation Recognition Framework & Suite (SMURFS) integrates multiple variant calling tools to improve detection accuracy for:
+The Somatic MUtation Recognition Framework & Suite (MS-SOMATICX) integrates multiple variant calling tools to improve detection accuracy for:
 - Single Nucleotide Variants (SNVs)
 - Insertions and Deletions (INDELs)
 - Structural Variants (SVs)
@@ -129,7 +129,7 @@ nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] --f
 
 #### Pipeline Steps and Tools
 
-The SMURFS pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--first_step` parameter.
+The MS-SOMATICX pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--first_step` parameter.
 
 ##### Available first_step
 
