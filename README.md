@@ -44,8 +44,6 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
    - `conf/base.config`
    - `sample.csv`
 
-   > **Note:** These files can also be found in the shared directory: `/tscc/projects/ps-lalexandrov/shared/EVC_nextflow`
-
 4. Prepare your `sample.csv` file according to your analysis requirements:
 
    <details>
