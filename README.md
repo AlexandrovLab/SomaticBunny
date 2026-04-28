@@ -1,4 +1,4 @@
-# MS-SOMATICX: Somatic MUtation Recognition Framework & Suite
+# MS-SOMATICX
 
 MS-SOMATICX is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
 
