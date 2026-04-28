@@ -1,5 +1,8 @@
 #!/bin/bash
-# Post-EVC for consensus calling and filtering 
+# Author: Ting Yang, George Wu
+# Lab: The Alexandrov Lab @ UCSD
+# Date: 2026.3
+# Version: 1.0
 
 ######################
 ## ACCEPT ARGUMENTS ##
