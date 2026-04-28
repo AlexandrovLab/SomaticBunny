@@ -1,0 +1,11 @@
+Copyright (c) 2026 Ting Yang, George Wu, and the Alexandrov lab
+
+All rights reserved.
+
+This repository contains unpublished research software and analysis workflows.
+
+Permission is granted only to authorized collaborators for review and collaborative research purposes.
+
+Redistribution, public posting, reuse, modification, or incorporation into other projects without explicit written permission from the authors is prohibited.
+
+This software and associated methods are unpublished work.
