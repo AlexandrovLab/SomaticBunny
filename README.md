@@ -1,9 +1,9 @@
-# MS-SOMATICX
+# Somatic-Bunny
 
-MS-SOMATICX is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
+Somatic-Bunny is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
 
 <p align="center">
-  <img src="https://github.com/AlexandrovLab/MS-SOMATICX/blob/main/workflow_logo/MS-SOMATICX.png" alt="MS-SOMATICX Pipeline Workflow"/>
+  <img src="https://github.com/AlexandrovLab/Somatic-Bunny/blob/main/workflow_logo/Somatic-Bunny.png" alt="Somatic-Bunny Pipeline Workflow"/>
 </p>
 
 ## Table of Contents
@@ -20,7 +20,7 @@ MS-SOMATICX is an ensemble pipeline for somatic variant calling that integrates 
 
 ## Overview
 
-The Somatic MUtation Recognition Framework & Suite (MS-SOMATICX) integrates multiple variant calling tools to improve detection accuracy for:
+The Somatic MUtation Recognition Framework & Suite (Somatic-Bunny) integrates multiple variant calling tools to improve detection accuracy for:
 - Single Nucleotide Variants (SNVs)
 - Insertions and Deletions (INDELs)
 - Structural Variants (SVs)
@@ -127,7 +127,7 @@ nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] --f
 
 #### Pipeline Steps and Tools
 
-The MS-SOMATICX pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--first_step` parameter.
+The Somatic-Bunny pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--first_step` parameter.
 
 ##### Available first_step
 
