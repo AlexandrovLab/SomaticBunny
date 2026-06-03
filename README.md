@@ -20,7 +20,7 @@ Somatic-Bunny is an ensemble pipeline for somatic variant calling that integrate
 
 ## Overview
 
-The Somatic MUtation Recognition Framework & Suite (Somatic-Bunny) integrates multiple variant calling tools to improve detection accuracy for:
+The Somatic-Bunny pipeline integrates multiple variant calling tools to improve detection accuracy for:
 - Single Nucleotide Variants (SNVs)
 - Insertions and Deletions (INDELs)
 - Structural Variants (SVs)
