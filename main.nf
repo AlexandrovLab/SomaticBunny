@@ -1,7 +1,7 @@
 // Author: Ting Yang, George Wu
 // Lab: The Alexandrov Lab @ UCSD
-// Date: 2026.3
-// Version: 1.0
+// Date: 2026.6
+// Version: 3.0
 
 nextflow.enable.dsl=2
 
@@ -293,6 +293,7 @@ params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
 params.manta_dir="$projectDir/RESULTS/MANTA"
 params.post_dir="$projectDir/RESULTS/POST"
 params.intervals_dir="$projectDir/RESULTS/custom_intervals"
+params.VAF_dir="$projectDir/RESULTS/POST/VAF"
 
 params.bwamem2_env = "${params.database_path}/EVC_nextflow/yml/bwamem2.yml"
 params.mkdup_env = "${params.database_path}/EVC_nextflow/yml/mkdup.yml"
@@ -375,6 +376,7 @@ include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
 include { SUMMARY } from './Modules/SUMMARY.nf'
 
 include { POST } from './Modules/POST.nf'
+include { ALLELECOUNTER } from './Modules/ALLELECOUNTER.nf'
 
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
 include { SAVE_CSV_BWA_MEM } from './Modules/SAVE_CSV/SAVE_CSV_BWA_MEM'
@@ -724,11 +726,7 @@ workflow {
                 [meta.patient, meta, bam, bai]
             } | set { sample_sheet }
 
-            if (params.type == "exome") {
-                GETpileUP_exome(sample_sheet).set { GETpileUP_out }
-            } else if (params.type == "genome") {
-                GETpileUP(sample_sheet, chunk, interval_dir_ch).set { GETpileUP_out }
-            }
+            GETpileUP(sample_sheet, chunk, interval_dir_ch).set { GETpileUP_out }
 
             sample_sheet.filter{it[1].status == 'normal'}.set{normal}
             sample_sheet.filter{it[1].status == 'tumor'}.set{tumor}
@@ -758,62 +756,63 @@ workflow {
                 MOSDEPTH(RECALIBRATE_out_MAP)
             }
 
-			MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
-			MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
-			MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
-			MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
-			LearnReadOrientationModel(LearnReadOrientationModel_input_pair).set { LearnReadOrientationModel_out }
-			MergeMutectStats(MergeMutectStats_input_pair).set { MergeMutectStats_out }
-			MergeVcfs(MergeVcfs_input_pair).set { MergeVcfs_out }
+            MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
+            MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
+            MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
+            MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
+            LearnReadOrientationModel(LearnReadOrientationModel_input_pair).set { LearnReadOrientationModel_out }
+            MergeMutectStats(MergeMutectStats_input_pair).set { MergeMutectStats_out }
+            MergeVcfs(MergeVcfs_input_pair).set { MergeVcfs_out }
 
-			GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1],sort: {it[1]}).set { GETpileUP_out_pair }
-			GETpileUP_out_pair.map{
-			[patient:it[0], meta:it[1], mix:it[2]]
-			}.set{ GETpileUP_out_pair_MAP }
+            GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1],sort: {it[1]}).set { GETpileUP_out_pair }
+            GETpileUP_out_pair.map{
+            [patient:it[0], meta:it[1], mix:it[2]]
+            }.set{ GETpileUP_out_pair_MAP }
 
-			GETpileUP_Merge(GETpileUP_out_pair_MAP).set { GETpileUP_Merge_out }
+            GETpileUP_Merge(GETpileUP_out_pair_MAP).set { GETpileUP_Merge_out }
 
-			GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'normal'}.set{ GETpileUP_normal }
-			GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'tumor'}.set{ GETpileUP_tumor }
-			GETpileUP_normal.cross(GETpileUP_tumor){it[0]}.map{
-				normal, tumor ->
-				[patient:normal[0], normal:normal[2],tumor:tumor[2], tumor_meta:tumor[1]]
-			}.set{ GETpileUP_out_MAP }
+            GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'normal'}.set{ GETpileUP_normal }
+            GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'tumor'}.set{ GETpileUP_tumor }
+            GETpileUP_normal.cross(GETpileUP_tumor){it[0]}.map{
+                normal, tumor ->
+                [patient:normal[0], normal:normal[2],tumor:tumor[2], tumor_meta:tumor[1]]
+            }.set{ GETpileUP_out_MAP }
 
-			CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
-			def vcfChannel = MergeVcfs_out.MUTECT2_vcf
-				.map{ map, vcf ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
-				}
-			def contaminationChannel = CalculateContamination_out.MUTECT2_contamination_table
-				.map{ map, table ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, table]]
-				}
-			def segmentsChannel = CalculateContamination_out.MUTECT2_segments_table
-				.map{ map, segments ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, segments]]
-				}
-			def orientationChannel = LearnReadOrientationModel_out.MUTECT2_read_orientation
-				.map{ map, orientation ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, orientation]]
-				}
-			def statsChannel = MergeMutectStats_out.MUTECT2_stats
-				.map{ map, stats ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, stats]]
-				}
+            CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
+            def vcfChannel = MergeVcfs_out.MUTECT2_vcf
+                .map{ map, vcf ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+                }
+            def contaminationChannel = CalculateContamination_out.MUTECT2_contamination_table
+                .map{ map, table ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, table]]
+                }
+            def segmentsChannel = CalculateContamination_out.MUTECT2_segments_table
+                .map{ map, segments ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, segments]]
+                }
+            def orientationChannel = LearnReadOrientationModel_out.MUTECT2_read_orientation
+                .map{ map, orientation ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, orientation]]
+                }
+            def statsChannel = MergeMutectStats_out.MUTECT2_stats
+                .map{ map, stats ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, stats]]
+                }
 
-			// Join by the composite key (patient_sample)
-			vcfChannel
-				.join(contaminationChannel)
-				.join(segmentsChannel)
-				.join(orientationChannel)
-				.join(statsChannel)
-				.map{ patient_sample, vcfData, contData, segData, oriData, statsData ->
-					[vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
-				}
-				.set{ filterInput }
+            // Join by the composite key (patient_sample)
+            vcfChannel
+                .join(contaminationChannel)
+                .join(segmentsChannel)
+                .join(orientationChannel)
+                .join(statsChannel)
+                .map{ patient_sample, vcfData, contData, segData, oriData, statsData ->
+                    [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
+                }
+                .set{ filterInput }
 
-			FilterMutectCalls(filterInput).set{ FILTER_OUT }
+            FilterMutectCalls(filterInput).set{ FILTER_OUT }
+            // SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
 
             // TOOL-SPECIFIC BLOCKS - MOVED INSIDE variant_calling STEP
             // ASCAT
@@ -926,63 +925,65 @@ workflow {
                 MOSDEPTH(RECALIBRATE_out_MAP)
             }
 
-			GETpileUP(RECALIBRATE_out.pair_recal, chunk, interval_dir_ch).set { GETpileUP_out }
-			MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
-			MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
-			MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
-			MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
-			LearnReadOrientationModel(LearnReadOrientationModel_input_pair).set { LearnReadOrientationModel_out }
-			MergeMutectStats(MergeMutectStats_input_pair).set { MergeMutectStats_out }
-			MergeVcfs(MergeVcfs_input_pair).set { MergeVcfs_out }
+            GETpileUP(RECALIBRATE_out.pair_recal, chunk, interval_dir_ch).set { GETpileUP_out }
+            MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
+            MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
+            MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
+            MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
+            LearnReadOrientationModel(LearnReadOrientationModel_input_pair).set { LearnReadOrientationModel_out }
+            MergeMutectStats(MergeMutectStats_input_pair).set { MergeMutectStats_out }
+            MergeVcfs(MergeVcfs_input_pair).set { MergeVcfs_out }
 
-			GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1],sort: {it[1]}).set { GETpileUP_out_pair }
-			GETpileUP_out_pair.map{
-			[patient:it[0], meta:it[1], mix:it[2]]
-			}.set{ GETpileUP_out_pair_MAP }
+            GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1],sort: {it[1]}).set { GETpileUP_out_pair }
+            GETpileUP_out_pair.map{
+            [patient:it[0], meta:it[1], mix:it[2]]
+            }.set{ GETpileUP_out_pair_MAP }
 
-			GETpileUP_Merge(GETpileUP_out_pair_MAP).set { GETpileUP_Merge_out }
+            GETpileUP_Merge(GETpileUP_out_pair_MAP).set { GETpileUP_Merge_out }
 
-			GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'normal'}.set{ GETpileUP_normal }
-			GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'tumor'}.set{ GETpileUP_tumor }
-			GETpileUP_normal.cross(GETpileUP_tumor){it[0]}.map{
-				normal, tumor ->
-				[patient:normal[0], normal:normal[2],tumor:tumor[2], tumor_meta:tumor[1]]
-			}.set{ GETpileUP_out_MAP }
+            GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'normal'}.set{ GETpileUP_normal }
+            GETpileUP_Merge_out.CalculateContamination_input.filter{it[1].status== 'tumor'}.set{ GETpileUP_tumor }
+            GETpileUP_normal.cross(GETpileUP_tumor){it[0]}.map{
+                normal, tumor ->
+                [patient:normal[0], normal:normal[2],tumor:tumor[2], tumor_meta:tumor[1]]
+            }.set{ GETpileUP_out_MAP }
 
-			CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
-			def vcfChannel = MergeVcfs_out.MUTECT2_vcf
-				.map{ map, vcf ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
-				}
-			def contaminationChannel = CalculateContamination_out.MUTECT2_contamination_table
-				.map{ map, table ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, table]]
-				}
-			def segmentsChannel = CalculateContamination_out.MUTECT2_segments_table
-				.map{ map, segments ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, segments]]
-				}
-			def orientationChannel = LearnReadOrientationModel_out.MUTECT2_read_orientation
-				.map{ map, orientation ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, orientation]]
-				}
-			def statsChannel = MergeMutectStats_out.MUTECT2_stats
-				.map{ map, stats ->
-					["${map.patient}_${map.tumor_meta.sample}", [map, stats]]
-				}
+            CalculateContamination(GETpileUP_out_MAP).set { CalculateContamination_out }
+            def vcfChannel = MergeVcfs_out.MUTECT2_vcf
+                .map{ map, vcf ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+                }
+            def contaminationChannel = CalculateContamination_out.MUTECT2_contamination_table
+                .map{ map, table ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, table]]
+                }
+            def segmentsChannel = CalculateContamination_out.MUTECT2_segments_table
+                .map{ map, segments ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, segments]]
+                }
+            def orientationChannel = LearnReadOrientationModel_out.MUTECT2_read_orientation
+                .map{ map, orientation ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, orientation]]
+                }
+            def statsChannel = MergeMutectStats_out.MUTECT2_stats
+                .map{ map, stats ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, stats]]
+                }
 
-			// Join by the composite key (patient_sample)
-			vcfChannel
-				.join(contaminationChannel)
-				.join(segmentsChannel)
-				.join(orientationChannel)
-				.join(statsChannel)
-				.map{ patient_sample, vcfData, contData, segData, oriData, statsData ->
-					[vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
-				}
-				.set{ filterInput }
+            // Join by the composite key (patient_sample)
+            vcfChannel
+                .join(contaminationChannel)
+                .join(segmentsChannel)
+                .join(orientationChannel)
+                .join(statsChannel)
+                .map{ patient_sample, vcfData, contData, segData, oriData, statsData ->
+                    [vcfData[0], vcfData[1], contData[1], segData[1], oriData[1], statsData[1]]
+                }
+                .set{ filterInput }
 
-			FilterMutectCalls(filterInput).set{ FILTER_OUT }
+            FilterMutectCalls(filterInput).set{ FILTER_OUT }
+            // SAVE_CSV_Mutect2(FilterMutectCalls.out.Mutect2_out,params.report_dir,params.MUTECT2_dir)
+
 
             // TOOL-SPECIFIC BLOCKS - ALSO FOR NON variant_calling START STEPS
 	    // ASCAT
@@ -1115,21 +1116,43 @@ workflow {
             .map { patient_sample, mutect2_vcf, muse_vcf, strelka_vcf, sage_vcf, recal_bam ->
                 [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1], recal_bam[2]]
             }
-            .view { patient_sample, mutect2, muse, strelka_snv, strelka_indel, sage, bam, bai ->
-                """
-                ===== POSTEVC INPUT =====
-                Sample: ${patient_sample}
-                Mutect2: ${mutect2}
-                MuSE: ${muse}
-                Strelka SNV: ${strelka_snv}
-                Strelka INDEL: ${strelka_indel}
-                SAGE: ${sage}
-                Tumor BAM: ${bam}
-                Tumor BAI: ${bai}
-                ========================
-                """
-            }
         
         POST(postInput)
+
+        // AlleleCounter for VAF calculation
+        def vaf_source = (params.first_step == "variant_calling") ? 
+            RENAME_BAM_HEADER.out.renamed_bam.map { meta, bam, bai -> [meta.patient, meta, bam, bai] } :
+            RECALIBRATE_out.pair_recal
+
+        vaf_source.filter{it[1].status == 'normal'}.set{normal_vaf}
+        vaf_source.filter{it[1].status == 'tumor'}.set{tumor_vaf}
+
+        normal_vaf.cross(tumor_vaf){it[0]}.map{
+            normal, tumor ->
+            [patient:normal[0], normal:normal[2], tumor:tumor[2], tumor_meta:tumor[1], normal_meta:normal[1], tumor_bai:tumor[3], normal_bai:normal[3]]
+        }.set{ RECALIBRATE_out_MAP_VAF }
+
+        RECALIBRATE_out_MAP_VAF
+            .map { map ->
+                def patient_sample = "${map.patient}_${map.tumor_meta.sample}"
+                [patient_sample, map]
+            }
+            .set { recal_map_keyed }
+
+        POST.out.final_vcf
+            .join(recal_map_keyed)
+            .map { patient_sample, vcf_file, recal_map -> 
+                [
+                    patient_sample: patient_sample,
+                    final_vcf: vcf_file,
+                    tumor: recal_map.tumor,
+                    normal: recal_map.normal,
+                    tumor_bai: recal_map.tumor_bai,
+                    normal_bai: recal_map.normal_bai
+                ]
+            }
+            .set { allelecounter_input }
+
+        ALLELECOUNTER(allelecounter_input)
     }
 }
