@@ -1,8 +1,5 @@
 #!/bin/bash
-# Author: Ting Yang, George Wu
-# Lab: The Alexandrov Lab @ UCSD
-# Date: 2026.3
-# Version: 1.0
+# Post-EVC for consensus calling and filtering 
 
 ######################
 ## ACCEPT ARGUMENTS ##
@@ -254,7 +251,7 @@ python ${DATABASE_PATH}/EVC_nextflow/DKFZBiasFilter/scripts/biasFilter.py \
 grep -v "#" ${SAMPLE_NAME}_2outof4_bseq.vcf > temp_bseq
 mv temp_bseq ${SAMPLE_NAME}_2outof4_bseq.vcf
 # rm ${SAMPLE_NAME}_2outof4.vcf.tmp
-# rm -r tmp
+rm -r tmp
 
 echo "Annotating callers in SNVs..."
 echo "Variants after bseq filter: $(wc -l < ${SAMPLE_NAME}_2outof4_bseq.vcf)"
