@@ -33,14 +33,6 @@ process POST {
     echo "=== Conda Environment ==="
     which python
     python --version
-    
-    # Debug: Check input files
-    echo "=== Input Files ==="
-    ls -lh ${mutect2_vcf}
-    ls -lh ${muse_vcf}
-    ls -lh ${strelka_snv}
-    ls -lh ${sage_vcf}
-    ls -lh ${tumor_bam}
 
     bash /tscc/lustre/restricted/alexandrov-ddn/users/tiy002/projects/SMURFS3.0/filtering.sh \
         ${patient_sample} \
