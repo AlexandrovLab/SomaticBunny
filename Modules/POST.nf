@@ -17,9 +17,13 @@ process POST {
     path("snvs_filtered/2outof4/${patient_sample}_snv_final_annotated.vcf"), emit: snv_annotated, optional: true
     path("indels_filtered/2outof3/${patient_sample}_PASSed.vcf"), emit: indel_passed
     path("indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf"), emit: indel_annotated, optional: true
+    tuple val(patient_sample), path("*final.vcf"), emit: final_vcf
 
     script:
     """
+    # Clean up any leftover tmp directories from previous runs
+    rm -rf tmp 2>/dev/null || true
+    
     set -e  # Exit on error
     
     # Create symlink so pysam can find the index file
@@ -38,7 +42,7 @@ process POST {
     ls -lh ${sage_vcf}
     ls -lh ${tumor_bam}
 
-    bash ${params.database_path}/EVC_nextflow/Databases/filtering.sh \
+    bash /tscc/lustre/restricted/alexandrov-ddn/users/tiy002/projects/SMURFS3.0/filtering.sh \
         ${patient_sample} \
         ${mutect2_vcf} \
         ${muse_vcf} \
@@ -79,5 +83,10 @@ process POST {
     echo "Indels (for comparison):"
     wc -l indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf || echo "File not found"
     wc -l indels_filtered/2outof3/${patient_sample}_PASSed.vcf || echo "File not found"
+
+    # Creating the combined PASSed vcf for allelecounter
+    grep "^#" snvs_filtered/2outof4/${patient_sample}_PASSed.vcf > ${patient_sample}_final.vcf || true
+    grep -vh "^#" snvs_filtered/2outof4/${patient_sample}_PASSed.vcf indels_filtered/2outof3/${patient_sample}_PASSed.vcf | sort -k1,1V -k2,2n >> ${patient_sample}_final.vcf
+
     """
 }
