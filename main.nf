@@ -14,7 +14,7 @@ params.tool = ""
 // Initialize the log file with a header
 new File(params.log_file).text = """
 ==============================================
-EVC Pipeline Run - ${new Date()}
+Pipeline Run - ${new Date()}
 ==============================================
 
 """
