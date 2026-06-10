@@ -1,9 +1,9 @@
-# Somatic-Bunny
+# SomaticBunny
 
-Somatic-Bunny is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
+SomaticBunny is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
 
 <p align="center">
-  <img src="https://github.com/AlexandrovLab/Somatic-Bunny/blob/main/workflow_logo/Somatic-Bunny.png" alt="Somatic-Bunny Pipeline Workflow"/>
+  <img src="https://github.com/AlexandrovLab/SomaticBunny/blob/main/workflow_logo/SomaticBunny.png" alt="SomaticBunny Pipeline Workflow"/>
 </p>
 
 ## Table of Contents
@@ -20,7 +20,7 @@ Somatic-Bunny is an ensemble pipeline for somatic variant calling that integrate
 
 ## Overview
 
-The Somatic-Bunny pipeline integrates multiple variant calling tools to improve detection accuracy for:
+The SomaticBunny pipeline integrates multiple variant calling tools to improve detection accuracy for:
 - Single Nucleotide Variants (SNVs)
 - Insertions and Deletions (INDELs)
 - Structural Variants (SVs)
@@ -111,7 +111,7 @@ srun -N 1 -n 1 -c 16 --mem 250G -t 80:00:00 -p platinum -q hcp-ddp302 -A ddp302 
 conda activate env_nf
 ```
 
-3. Set TSCC temporary directory and Nextflow tmp directory and memories:
+3. Set TSCC temporary directory and Nextflow tmp directory, and memory:
 
 ```bash
 export TMPDIR=/path/to/restricted/folder/
@@ -127,7 +127,7 @@ nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] --f
 
 #### Pipeline Steps and Tools
 
-The Somatic-Bunny pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--first_step` parameter.
+The SomaticBunny pipeline workflow is divided into multiple steps that can be run individually or in sequence using the `--first_step` parameter.
 
 ##### Available first_step
 
