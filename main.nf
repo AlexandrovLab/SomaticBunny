@@ -5,7 +5,7 @@
 
 nextflow.enable.dsl=2
 
-params.database_path = "/tscc/projects/ps-lalexandrov/shared"
+params.database_path = "."
 params.log_file = "$projectDir/pipeline.log" 
 params.sample = "sample.csv"
 params.genome = ""
@@ -20,83 +20,83 @@ EVC Pipeline Run - ${new Date()}
 """
 params.genomes = [
     'GRCh38': [
-        ref: "${params.database_path}/EVC_nextflow/GRCh38_ref/GRCh38.d1.vd1.fa",
-        bed: "${params.database_path}/EVC_nextflow/GRCh38_ref/hg38_chr.bed.gz",
-        conpair_marker: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.bed",
-        conpair_marker_txt: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.txt",
-        mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh38_exome.bed",
-        muse_vcf: "${params.database_path}/EVC_nextflow/Databases/GRCh38/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
-        recal_knownsite1: "${params.database_path}/EVC_nextflow/Databases/GRCh38/resources_broad_hg38_v0_Homo_sapiens_assembly38.dbsnp138.vcf",
-        recal_knownsite2: "${params.database_path}/EVC_nextflow/Databases/GRCh38/Homo_sapiens_assembly38.known_indels.vcf.gz",
-        recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/whole_exome_illumina_coding_v1.Homo_sapiens_assembly38_canonical.targets.interval_list",
+        ref: "${params.database_path}/SomaticBunny/GRCh38_ref/GRCh38.d1.vd1.fa",
+        bed: "${params.database_path}/SomaticBunny/GRCh38_ref/hg38_chr.bed.gz",
+        conpair_marker: "${params.database_path}/SomaticBunny/Databases/GRCh38/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.bed",
+        conpair_marker_txt: "${params.database_path}/SomaticBunny/Databases/GRCh38/GRCh38.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.liftover.txt",
+        mosdepth_bed: "${params.database_path}/SomaticBunny/Databases/GRCh38/GRCh38_exome.bed",
+        muse_vcf: "${params.database_path}/SomaticBunny/Databases/GRCh38/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
+        recal_knownsite1: "${params.database_path}/SomaticBunny/Databases/GRCh38/resources_broad_hg38_v0_Homo_sapiens_assembly38.dbsnp138.vcf",
+        recal_knownsite2: "${params.database_path}/SomaticBunny/Databases/GRCh38/Homo_sapiens_assembly38.known_indels.vcf.gz",
+        recal_interval_wes: "${params.database_path}/SomaticBunny/Databases/GRCh38/whole_exome_illumina_coding_v1.Homo_sapiens_assembly38_canonical.targets.interval_list",
         sage: [
-            sage_ref_dir: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/38",
-            sage_hotspots: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/38/variants/KnownHotspots.somatic.38.vcf.gz",
-            sage_panel_bed: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/38/variants/ActionableCodingPanel.38.bed.gz",
-            sage_high_confidence_bed: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/38/variants/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz",
+            sage_ref_dir: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/38",
+            sage_hotspots: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/38/variants/KnownHotspots.somatic.38.vcf.gz",
+            sage_panel_bed: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/38/variants/ActionableCodingPanel.38.bed.gz",
+            sage_high_confidence_bed: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/38/variants/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz",
             sage_ref_genome_version: "38" 
         ],
         ASCAT: [
             ascat_ref_genome_version: "hg38",
-            ascat_allele_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/Alleles/G1000_alleles_hg38_chr",
-            ascat_loci_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/Loci/G1000_loci_hg38_chr",
-            ascat_GCcontentfile: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/GC_Correction/GC_G1000_hg38.txt",
-            ascat_replictimingfile: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WGS/hg38/RT_Correction/RT_G1000_hg38.txt",
-			ascat_allele_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/Alleles/G1000_alleles_hg38_chr",
-			ascat_loci_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/Loci/G1000_loci_hg38_chr",
-            ascat_GCcontentfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/GC_Correction/GC_G1000_hg38.txt",
-            ascat_replictimingfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh38/ASCAT/WES/hg38/RT_Correction/RT_G1000_hg38.txt"
+            ascat_allele_prefix: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WGS/hg38/Alleles/G1000_alleles_hg38_chr",
+            ascat_loci_prefix: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WGS/hg38/Loci/G1000_loci_hg38_chr",
+            ascat_GCcontentfile: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WGS/hg38/GC_Correction/GC_G1000_hg38.txt",
+            ascat_replictimingfile: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WGS/hg38/RT_Correction/RT_G1000_hg38.txt",
+			ascat_allele_prefix_wes: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WES/hg38/Alleles/G1000_alleles_hg38_chr",
+			ascat_loci_prefix_wes: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WES/hg38/Loci/G1000_loci_hg38_chr",
+            ascat_GCcontentfile_wes: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WES/hg38/GC_Correction/GC_G1000_hg38.txt",
+            ascat_replictimingfile_wes: "${params.database_path}/SomaticBunny/Databases/GRCh38/ASCAT/WES/hg38/RT_Correction/RT_G1000_hg38.txt"
         ],
         database_subdir: "GRCh38",
         mutect2_pon: "MuTect2.PON.5210.vcf.gz",
         mutect2_pon_wes: "MuTect2.PON.5210.vcf.gz",
         mutect2_germline: "af-only-gnomad.hg38_no_alt.vcf.gz",
         mutect2_interval_dir: "GRCh38_interval_list_20",
-        delly_excl: "${params.database_path}/EVC_nextflow/Databases/GRCh38/Delly/human.hg38.excl.tsv",
+        delly_excl: "${params.database_path}/SomaticBunny/Databases/GRCh38/Delly/human.hg38.excl.tsv",
         tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
     ],
     'GRCh37': [
-        ref: "${params.database_path}/EVC_nextflow/GRCh37_ref/GRCh37.fa", 
-        bed: "${params.database_path}/EVC_nextflow/GRCh37_ref/GRCh37_chr.bed.gz",
-        conpair_marker: "${params.database_path}/EVC_nextflow/Databases/GRCh37/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.bed",
-        conpair_marker_txt: "${params.database_path}/EVC_nextflow/Databases/GRCh38/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.txt",
-        mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/GRCh37/GRCh37_exome.bed",
-        muse_vcf: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf",
-        recal_knownsite1: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf.gz",
-        recal_knownsite2: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Homo_sapiens_assembly19.known_indels.vcf.gz",
-        recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/intervals_Broad.human.exome.b37.interval_list",
+        ref: "${params.database_path}/SomaticBunny/GRCh37_ref/GRCh37.fa", 
+        bed: "${params.database_path}/SomaticBunny/GRCh37_ref/GRCh37_chr.bed.gz",
+        conpair_marker: "${params.database_path}/SomaticBunny/Databases/GRCh37/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.bed",
+        conpair_marker_txt: "${params.database_path}/SomaticBunny/Databases/GRCh38/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.txt",
+        mosdepth_bed: "${params.database_path}/SomaticBunny/Databases/GRCh37/GRCh37_exome.bed",
+        muse_vcf: "${params.database_path}/SomaticBunny/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf",
+        recal_knownsite1: "${params.database_path}/SomaticBunny/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf.gz",
+        recal_knownsite2: "${params.database_path}/SomaticBunny/Databases/GRCh37/Homo_sapiens_assembly19.known_indels.vcf.gz",
+        recal_interval_wes: "${params.database_path}/SomaticBunny/Databases/GRCh37/intervals_Broad.human.exome.b37.interval_list",
         sage: [
-            sage_ref_dir: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/37",
-            sage_hotspots: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/37/dna/variants/KnownHotspots.somatic.37.vcf.gz",
-            sage_panel_bed: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/37/dna/variants/ActionableCodingPanel.37.bed.gz",
-            sage_high_confidence_bed: "${params.database_path}/EVC_nextflow/SAGE/v5_34/ref/37/dna/variants/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz",
+            sage_ref_dir: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/37",
+            sage_hotspots: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/37/dna/variants/KnownHotspots.somatic.37.vcf.gz",
+            sage_panel_bed: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/37/dna/variants/ActionableCodingPanel.37.bed.gz",
+            sage_high_confidence_bed: "${params.database_path}/SomaticBunny/SAGE/v5_34/ref/37/dna/variants/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz",
             sage_ref_genome_version: "37" 
         ],
         ASCAT: [
             ascat_ref_genome_version: "hg19",
-            ascat_allele_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/Alleles/G1000_alleles_hg19_chr",
-            ascat_loci_prefix: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/Loci/G1000_loci_hg19_chr",
-            ascat_GCcontentfile: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/GC_Correction/GC_G1000_hg19.txt",
-            ascat_replictimingfile: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WGS/hg19/RT_Correction/RT_G1000_hg19.txt",
-            ascat_allele_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/Alleles/G1000_alleles_hg19_chr",
-            ascat_loci_prefix_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/Loci/G1000_loci_hg19_chr",
-            ascat_GCcontentfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/GC_Correction/GC_G1000_hg19.txt",
-            ascat_replictimingfile_wes: "${params.database_path}/EVC_nextflow/Databases/GRCh37/ASCAT/WES/hg19/RT_Correction/RT_G1000_hg19.txt"
+            ascat_allele_prefix: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WGS/hg19/Alleles/G1000_alleles_hg19_chr",
+            ascat_loci_prefix: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WGS/hg19/Loci/G1000_loci_hg19_chr",
+            ascat_GCcontentfile: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WGS/hg19/GC_Correction/GC_G1000_hg19.txt",
+            ascat_replictimingfile: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WGS/hg19/RT_Correction/RT_G1000_hg19.txt",
+            ascat_allele_prefix_wes: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WES/hg19/Alleles/G1000_alleles_hg19_chr",
+            ascat_loci_prefix_wes: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WES/hg19/Loci/G1000_loci_hg19_chr",
+            ascat_GCcontentfile_wes: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WES/hg19/GC_Correction/GC_G1000_hg19.txt",
+            ascat_replictimingfile_wes: "${params.database_path}/SomaticBunny/Databases/GRCh37/ASCAT/WES/hg19/RT_Correction/RT_G1000_hg19.txt"
         ],
         database_subdir: "GRCh37",
         mutect2_pon: "Mutect2-WGS-panel-b37.vcf",
         mutect2_pon_wes: "Mutect2-exome-panel_b37.vcf",
         mutect2_germline: "af-only-gnomad.raw.sites.grch37.vcf.gz",
         mutect2_interval_dir: "GRCh37_interval_list_20",
-        delly_excl: "${params.database_path}/EVC_nextflow/Databases/GRCh37/Delly/human.hg19.excl.tsv",
+        delly_excl: "${params.database_path}/SomaticBunny/Databases/GRCh37/Delly/human.hg19.excl.tsv",
         tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
     ],
     'mm39': [
-        ref: "${params.database_path}/EVC_nextflow/mm39_ref/mm39.fa",
-        bed: "${params.database_path}/EVC_nextflow/mm39_ref/mm39_chr.bed.gz",
+        ref: "${params.database_path}/SomaticBunny/mm39_ref/mm39.fa",
+        bed: "${params.database_path}/SomaticBunny/mm39_ref/mm39_chr.bed.gz",
         database_subdir: "mm39",
-        mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/mm39/mm39_exome.bed",
-        recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/mm39/mm39_exome.interval_list",
+        mosdepth_bed: "${params.database_path}/SomaticBunny/Databases/mm39/mm39_exome.bed",
+        recal_interval_wes: "${params.database_path}/SomaticBunny/Databases/mm39/mm39_exome.interval_list",
         muse_vcf: "af_only_mgp_mm39_unique.vcf.gz",
         mutect2_pon: "PoN.mm39.vcf.gz",
         mutect2_pon_wes: "PoN.mm39.vcf.gz",
@@ -105,11 +105,11 @@ params.genomes = [
         tools: ["fastqc", "bwa_mem", "mkdup", "strelka", "muse", "mutect2", "cnvkit", "mosdepth", "manta"]
     ],
     'RN7': [
-        ref: "${params.database_path}/EVC_nextflow/RN7_ref/rn7.fa",
-        bed: "${params.database_path}/EVC_nextflow/RN7_ref/rn7_chr.bed.gz",
+        ref: "${params.database_path}/SomaticBunny/RN7_ref/rn7.fa",
+        bed: "${params.database_path}/SomaticBunny/RN7_ref/rn7_chr.bed.gz",
         database_subdir: "RN7",
-        mosdepth_bed: "${params.database_path}/EVC_nextflow/Databases/RN7/rn7_exome.bed",
-        recal_interval_wes: "${params.database_path}/EVC_nextflow/Databases/RN7/rn7_exome.interval_list",
+        mosdepth_bed: "${params.database_path}/SomaticBunny/Databases/RN7/rn7_exome.bed",
+        recal_interval_wes: "${params.database_path}/SomaticBunny/Databases/RN7/rn7_exome.interval_list",
         muse_vcf: "",
         mutect2_pon: "",
         mutect2_pon_wes: "",
@@ -217,7 +217,7 @@ params.ascat_GCcontentfile_wes = params.ascat_GCcontentfile_wes ?: (params.genom
 params.ascat_replictimingfile_wes = params.ascat_replictimingfile_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_replictimingfile_wes : null)
 
 
-params.database_dir = "${params.database_path}/EVC_nextflow/Databases"
+params.database_dir = "${params.database_path}/SomaticBunny/Databases"
 params.genome_database_dir = "${params.database_dir}/${params.genomes[params.genome].database_subdir}"
 
 // Genome-specific file paths for Mutect2
@@ -271,46 +271,46 @@ ${available_tools.join(', ')}
 
 params.bam_dir="$projectDir/RESULTS/BAM"
 params.report_dir="$projectDir/RESULTS/REPORT"
-params.manta_bed="${params.database_path}/EVC_nextflow/GRCh38_ref/manta.bed.gz"
+params.manta_bed="${params.database_path}/SomaticBunny/GRCh38_ref/manta.bed.gz"
 params.mkdup_temp_dir="$projectDir/mkdup_tmp"
-params.FASTQC="${params.database_path}/EVC_nextflow/FastQC"
+params.FASTQC="${params.database_path}/SomaticBunny/FastQC"
 params.FASTQC_dir="$projectDir/RESULTS/FASTQC"
 params.mkdup_dir="$projectDir/RESULTS/MKDUP"
 params.recal_dir="$projectDir/RESULTS/RECALIBRATE"
-params.SAGE_java="${params.database_path}/EVC_nextflow/SAGE/sage_v3.3.jar"
+params.SAGE_java="${params.database_path}/SomaticBunny/SAGE/sage_v3.3.jar"
 params.SAGE_dir="$projectDir/RESULTS/SAGE"
 params.strelka_dir="$projectDir/RESULTS/STRELKA"
 params.muse_dir="$projectDir/RESULTS/MuSE"
-params.MuSE2="${params.database_path}/EVC_nextflow/MuSE/MuSE"
+params.MuSE2="${params.database_path}/SomaticBunny/MuSE/MuSE"
 params.MUTECT2_dir="$projectDir/RESULTS/Mutect2"
 params.mosdepth_dir="$projectDir/RESULTS/mosdepth"
 params.conpair_dir="$projectDir/RESULTS/Conpair"
 params.cnvkit_dir="$projectDir/RESULTS/CNVkit"
 params.Delly_dir="$projectDir/RESULTS/Delly"
 params.ascat_dir="$projectDir/RESULTS/ASCAT"
-params.conpair="${params.database_path}/EVC_nextflow/Conpair-0.2"
-params.jre="${params.database_path}/EVC_nextflow/jre1.8.0_401"
+params.conpair="${params.database_path}/SomaticBunny/Conpair-0.2"
+params.jre="${params.database_path}/SomaticBunny/jre1.8.0_401"
 params.manta_dir="$projectDir/RESULTS/MANTA"
 params.post_dir="$projectDir/RESULTS/POST"
 params.intervals_dir="$projectDir/RESULTS/custom_intervals"
 params.VAF_dir="$projectDir/RESULTS/POST/VAF"
 
-params.bwamem2_env = "${params.database_path}/EVC_nextflow/yml/bwamem2.yml"
-params.mkdup_env = "${params.database_path}/EVC_nextflow/yml/mkdup.yml"
-params.conpair_env = "${params.database_path}/EVC_nextflow/yml/conpair.yml"
-params.samtools_env = "${params.database_path}/EVC_nextflow/yml/samtools.yml"
-params.strelka_env = "${params.database_path}/EVC_nextflow/yml/strelka_env.yml"
-params.mosdepth_env = "${params.database_path}/EVC_nextflow/yml/mosdepth_env.yml"
-params.summary_env = "${params.database_path}/EVC_nextflow/yml/py_summary.yml"
-params.java_env = "${params.database_path}/EVC_nextflow/yml/java.yml"
-params.fastqc_env = "${params.database_path}/EVC_nextflow/yml/fastqc_env.yml"
-params.cnvkit_env = "${params.database_path}/EVC_nextflow/yml/cnvkit.yml"
-params.delly_env = "${params.database_path}/EVC_nextflow/yml/delly.yml"
-params.ascat_env = "${params.database_path}/EVC_nextflow/yml/ascat.yml"
-params.alleleCounter_env = "${params.database_path}/EVC_nextflow/yml/alleleCounter.yml"
+params.bwamem2_env = "${params.database_path}/SomaticBunny/yml/bwamem2.yml"
+params.mkdup_env = "${params.database_path}/SomaticBunny/yml/mkdup.yml"
+params.conpair_env = "${params.database_path}/SomaticBunny/yml/conpair.yml"
+params.samtools_env = "${params.database_path}/SomaticBunny/yml/samtools.yml"
+params.strelka_env = "${params.database_path}/SomaticBunny/yml/strelka_env.yml"
+params.mosdepth_env = "${params.database_path}/SomaticBunny/yml/mosdepth_env.yml"
+params.summary_env = "${params.database_path}/SomaticBunny/yml/py_summary.yml"
+params.java_env = "${params.database_path}/SomaticBunny/yml/java.yml"
+params.fastqc_env = "${params.database_path}/SomaticBunny/yml/fastqc_env.yml"
+params.cnvkit_env = "${params.database_path}/SomaticBunny/yml/cnvkit.yml"
+params.delly_env = "${params.database_path}/SomaticBunny/yml/delly.yml"
+params.ascat_env = "${params.database_path}/SomaticBunny/yml/ascat.yml"
+params.alleleCounter_env = "${params.database_path}/SomaticBunny/yml/alleleCounter.yml"
 params.tmp_dir = '${workflow.workDir}/ascat_tmp'
-params.manta_env = "${params.database_path}/EVC_nextflow/yml/manta.yml"
-params.dkfz_env = "${params.database_path}/EVC_nextflow/yml/dkfz.yml"
+params.manta_env = "${params.database_path}/SomaticBunny/yml/manta.yml"
+params.dkfz_env = "${params.database_path}/SomaticBunny/yml/dkfz.yml"
 
 // Write configuration to log file
 writeToLog(params.log_file, configInfo)
