@@ -53,7 +53,7 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
    patient,sample,status,fastq_1,fastq_2
    UCSD101,A,normal,/PATH/TO/ERR5285401_1.fastq.gz,/PATH/TO/ERR5285401_2.fastq.gz,XY
    UCSD101,A,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
-   UCSD101,B,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
+   UCSD101,B,tumor,/PATH/TO/ERR5285403_1.fastq.gz,/PATH/TO/ERR5285403_2.fastq.gz,XY
    ```
    </details>
    <details>
@@ -74,7 +74,7 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
    patient,sample,status,fastq_1,fastq_2,sex
    UCSD101,A,normal,/PATH/TO/ERR5285401_1.fastq.gz,/PATH/TO/ERR5285401_2.fastq.gz,XY
    UCSD101,A,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
-   UCSD101,B,tumor,/PATH/TO/ERR5285402_1.fastq.gz,/PATH/TO/ERR5285402_2.fastq.gz,XY
+   UCSD101,B,tumor,/PATH/TO/ERR5285403_1.fastq.gz,/PATH/TO/ERR5285403_2.fastq.gz,XY
    ```
    </details>
 
@@ -122,7 +122,7 @@ export NXF_OPTS="-Djava.io.tmpdir=${TMPDIR} -Xms4g -Xmx16g"
 4. Run the pipeline:
 
 ```bash
-nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] --first_step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...]
+nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] --first_step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...] --database_path [/path/to/SomaticBunny_database] --ref [/path/to/ref/] --ref_fai [/path/to/ref_fai] --ref_dict [/path/to/ref_dict] --bed [/path/to/bed] --bed_tbi [/path/to/bed_tbi]
 ```
 
 #### Pipeline Steps and Tools
@@ -187,6 +187,7 @@ nextflow run main.nf \
   --genome GRCh38 \
   --first_step variant_calling \
   --sample sample.csv \
+  --database_path /path/to/SomaticBunny_database \
   --ref /path/to/hg38_genome.fa \
   --ref_fai /path/to/hg38_genome.fa.fai \
   --ref_dict /path/to/hg38_genome.dict \
