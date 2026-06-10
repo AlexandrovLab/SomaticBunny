@@ -20,7 +20,7 @@ EVC Pipeline Run - ${new Date()}
 """
 // Validate database being set
 if (!params.database_path) {
-    error "ERROR: --database_path is required. Please provide the path to your SomaticBunny_database  directory.\n" +
+    error "ERROR: --database_path is required. Please provide the path to your SomaticBunny_database directory.\n" +
           "Usage: nextflow run main.nf --database_path /path/to/SomaticBunny_database"
 }
 
