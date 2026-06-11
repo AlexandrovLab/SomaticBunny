@@ -22,7 +22,7 @@ process FilterMutectCalls {
 
     script:
     """
-    ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk FilterMutectCalls \
+    ${params.database_path}/gatk-4.6.0.0/gatk FilterMutectCalls \
     -R ${params.ref} \
     -V ${unfiltered_vcf} \
     --contamination-table ${contamination_table} \
