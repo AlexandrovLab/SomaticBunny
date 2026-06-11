@@ -24,7 +24,7 @@ process GENERATE_INTERVALS {
 
     mkdir -p interval_list
 
-    ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk SplitIntervals \
+    ${params.database_path}/gatk-4.6.0.0/gatk SplitIntervals \
         -R ${ref} \
         -L main_chromosomes.list \
         --scatter-count 20 \
