@@ -17,7 +17,7 @@ process RECALIBRATE_BaseRecal {
 
     script:
     """
-    ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk BaseRecalibrator \
+    ${params.database_path}/gatk-4.6.0.0/gatk BaseRecalibrator \
     -I ${bam} \
     -R ${params.ref} \
     --known-sites ${params.recal_knownsite1} \
