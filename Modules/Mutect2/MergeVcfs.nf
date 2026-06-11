@@ -16,7 +16,7 @@ process MergeVcfs {
   tuple val(map), path("*.idx"), emit: MUTECT2_idx
 
   script:
-  def cmd = "java -jar ${params.database_path}/EVC_nextflow/picard/build/libs/picard.jar MergeVcfs"
+  def cmd = "java -jar ${params.database_path}/picard/build/libs/picard.jar MergeVcfs"
 
   for( int i=0; i<20; i++ ) {
     cmd += " I= "
