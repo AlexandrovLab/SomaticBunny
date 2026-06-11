@@ -15,7 +15,7 @@ process RECALIBRATE_BQSR_exome {
 
     script:
     """
-    ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk ApplyBQSR \
+    ${params.database_path}/gatk-4.6.0.0/gatk ApplyBQSR \
     -R ${params.ref} \
     -I ${bam} \
     --bqsr-recal-file ${table} \
