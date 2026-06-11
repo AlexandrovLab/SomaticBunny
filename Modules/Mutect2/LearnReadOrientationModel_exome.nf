@@ -16,7 +16,7 @@ process LearnReadOrientationModel_exome {
 
   script:
   """
-  ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk LearnReadOrientationModel -I ${f1r2_files} -O ${map.patient}_${map.tumor_meta.sample}_read-orientation-model.tar.gz
+  ${params.database_path}/gatk-4.6.0.0/gatk LearnReadOrientationModel -I ${f1r2_files} -O ${map.patient}_${map.tumor_meta.sample}_read-orientation-model.tar.gz
   """
 
 }
