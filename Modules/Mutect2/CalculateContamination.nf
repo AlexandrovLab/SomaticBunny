@@ -17,6 +17,6 @@ process CalculateContamination {
 
     script:
     """
-    ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk CalculateContamination -I ${map.tumor} -matched ${map.normal} -O ${map.patient}_${map.tumor_meta.sample}_contamination.table --tumor-segmentation ${map.patient}_${map.tumor_meta.sample}_segments.table
+    ${params.database_path}/gatk-4.6.0.0/gatk CalculateContamination -I ${map.tumor} -matched ${map.normal} -O ${map.patient}_${map.tumor_meta.sample}_contamination.table --tumor-segmentation ${map.patient}_${map.tumor_meta.sample}_segments.table
     """
 }
