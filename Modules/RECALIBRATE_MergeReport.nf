@@ -17,7 +17,7 @@ process RECALIBRATE_MergeReport {
     tuple val(map.patient), val(map.meta), val(map.bam), path("*_merged_recal.table"), val(map.bai), emit: BQSR_input
 
     script:
-    def cmd = "${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk GatherBQSRReports --tmp-dir . -O ${map.meta.patient}_${map.meta.sample}_${map.meta.status}_merged_recal.table"
+    def cmd = "${params.database_path}/gatk-4.6.0.0/gatk GatherBQSRReports --tmp-dir . -O ${map.meta.patient}_${map.meta.sample}_${map.meta.status}_merged_recal.table"
 
     for( int i=0; i<20; i++ ) {
         cmd += " -I ${map.table[i]} "
