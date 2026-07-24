@@ -34,7 +34,7 @@ process POST {
     which python
     python --version
 
-    bash /tscc/lustre/restricted/alexandrov-ddn/users/tiy002/projects/SMURFS3.0/filtering.sh \
+    bash ${projectDir}/filtering.sh \
         ${patient_sample} \
         ${mutect2_vcf} \
         ${muse_vcf} \
