@@ -30,9 +30,6 @@ process ASCAT {
     """
     #!/usr/bin/env Rscript
 
-    install.packages("BiocManager", repos="https://cloud.r-project.org")
-    install.packages("ASCAT", repos="https://bioconductor.org/packages/release/bioc")
-
     library(ASCAT)
 
     # PrepareHTS: Extracting logR and BAF from HTS data (bam files)

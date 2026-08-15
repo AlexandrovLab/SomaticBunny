@@ -1,0 +1,15 @@
+name: conpair_test
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.8
+  - numpy
+  - scipy
+  - matplotlib
+  - pandas
+  - pysam
+  - gatk=3.8
+  - openjdk=8
+  - samtools=1.9
+  - htslib=1.9

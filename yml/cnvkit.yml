@@ -1,0 +1,10 @@
+name: cnvkit
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.9
+  - cnvkit=0.9.12
+  - r-base=4.3
+  - bioconductor-dnacopy

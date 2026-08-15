@@ -256,23 +256,33 @@ RESULTS/
 └── STRELKA
 ```
 
+
 ## Tool Versions
 
 | Category | Tool | Version |
-|----------|------|---------|
-| QC | FastQC | v0.12.1 |
-| Data Processing | Picard | v2.18.27 |
-| | samtools | v1.21 |
-| | bwa-mem2 | v2.2.1 |
-| | Conpair | v0.2 |
-| | Picard MarkDuplicates | v3.2.0-1 |
-| | GATK4 | v4.6.0.0 |
-| | mosdepth | v0.3.8 |
-| SNV/INDEL Callers | Strelka2 | v2.9.10 |
-| | Mutect2 | v4.6.0.0 |
-| | SAGE | v3.3 |
-| | MuSE2 | v2.1.2 |
-| Structural Variants | Delly | v1.3.1 |
-| | Manta | v1.6.0 |
-| Copy Number Variants | CNVkit | v0.9.8 |
-| | ASCAT | v3.2.0 |
+| --- | --- | --- |
+| Quality Control | FastQC | v0.12.1 |
+| Read Alignment | bwa-mem2 | v2.2.1 |
+| BAM/VCF Processing | samtools | v1.21 |
+|  | HTSlib | v1.21 |
+|  | Picard MarkDuplicates | v3.2.0 |
+|  | mosdepth | v0.3.8 |
+| Sample Identity/QC | Conpair | v0.2 |
+|  | GATK (Conpair dependency) | v3.8 |
+|  | samtools (Conpair dependency) | v1.9 |
+|  | HTSlib (Conpair dependency) | v1.9 |
+| SNV/INDEL Calling | Strelka2 | v2.9.10 |
+|  | Mutect2 (GATK4) | v4.6.0.0 |
+|  | SAGE | v3.3 |
+|  | MuSE2 | v2.1.2 |
+| Variant Filtering | DKFZ bias filter | v1.2.3a |
+| Structural Variant Calling | Delly | v1.3.1 |
+|  | BCFtools | v1.17 |
+|  | Manta | v1.6.0 |
+| Copy Number Analysis | CNVkit | v0.9.12 |
+|  | ASCAT | v3.1.1 |
+|  | cancerit-allelecount | v4.3.0 |
+| BAM/VCF Processing | pysam | v0.24.0 |
+| Reporting and Summarization | Python | v3.13.0 |
+|  | NumPy | v2.1.2 |
+|  | pandas | v2.2.3 |
