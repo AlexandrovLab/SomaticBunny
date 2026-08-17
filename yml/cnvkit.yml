@@ -1,10 +1,14 @@
 name: cnvkit
+
 channels:
   - conda-forge
   - bioconda
-  - defaults
+
 dependencies:
-  - python=3.9
-  - cnvkit=0.9.12
-  - r-base=4.3
-  - bioconductor-dnacopy
+  - python=3.9.20
+  - cnvkit=0.9.8
+  - numpy=1.23.5
+  - pandas=1.5.3
+  - matplotlib-base=3.7.3
+  - r-base=4.3.3
+  - bioconductor-dnacopy=1.76.0

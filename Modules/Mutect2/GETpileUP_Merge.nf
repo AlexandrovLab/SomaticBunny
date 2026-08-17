@@ -2,7 +2,6 @@ nextflow.enable.dsl=2
 
 process GETpileUP_Merge {
   scratch true
-  conda "${params.java_env}"
   label 'process_low'
   publishDir("${params.MUTECT2_dir}", mode: 'copy')
   errorStrategy 'retry'

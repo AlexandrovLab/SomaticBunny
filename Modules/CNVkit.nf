@@ -5,12 +5,10 @@ process CNVkit {
     scratch true
     label 'process_high'
     publishDir("${params.cnvkit_dir}", mode: 'copy')
-    // errorStrategy 'retry'
-    // maxRetries 3
 
     input:
-    val(map)
-    path(reference_cnn)
+    val map
+    path reference_cnn
 
     output:
     path("*.bed"), emit: CNVkit_bed
@@ -19,29 +17,35 @@ process CNVkit {
     path("*.png"), emit: CNVkit_png
 
     script:
-    if (params.type == "exome")
-        """
-        cnvkit.py batch \
-        ${map.tumor} \
-        -r ${reference_cnn} \
-        -p 16 \
-        --scatter --diagram
+    def tumor_prefix = map.tumor
+        .toString()
+        .tokenize("/")
+        .last()
+        .replaceFirst(/\.bam$/, "")
 
-        cnvkit.py call \
-        "${map.patient}_${map.sample}_tumor_recal.cns" \
-        -o ${map.patient}_${map.sample}_calls.cns
-        """
-    else
-        """
-        cnvkit.py batch \
-        ${map.tumor} \
-        -r ${reference_cnn} \
-        --method wgs \
-        -p 16 \
-        --scatter --diagram
+    def output_prefix = "${map.patient}_${map.sample}"
+    def method_option = params.type == "exome" ? "" : "--method wgs"
 
-        cnvkit.py call \
-        "${map.patient}_${map.sample}_tumor_recal.cns" \
-        -o ${map.patient}_${map.sample}_calls.cns
-        """
+    """
+    export PYTHONNOUSERSITE=1
+    unset PYTHONPATH
+
+    cnvkit.py batch \
+        "${map.tumor}" \
+        -r "${reference_cnn}" \
+        ${method_option} \
+        -p ${task.cpus} \
+        --scatter \
+        --diagram
+
+    test -s "${tumor_prefix}.cns"
+
+    cnvkit.py call \
+        "${tumor_prefix}.cns" \
+        -o "${output_prefix}_calls.cns"
+
+    cnvkit.py export bed \
+        "${output_prefix}_calls.cns" \
+        -o "${output_prefix}_calls.bed"
+    """
 }

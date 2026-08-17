@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 process LearnReadOrientationModel_exome {
   scratch true
-  conda "${params.java_env}"
+  conda "${params.gatk_env}"
   label 'process_low'
   publishDir("${params.MUTECT2_dir}", mode: 'copy')
   errorStrategy 'retry'
@@ -16,7 +16,7 @@ process LearnReadOrientationModel_exome {
 
   script:
   """
-  ${params.database_path}/gatk-4.6.0.0/gatk LearnReadOrientationModel -I ${f1r2_files} -O ${map.patient}_${map.tumor_meta.sample}_read-orientation-model.tar.gz
+  ${params.gatk} LearnReadOrientationModel -I ${f1r2_files} -O ${map.patient}_${map.tumor_meta.sample}_read-orientation-model.tar.gz
   """
 
 }

@@ -1,0 +1,8 @@
+name: picard_merge
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - picard=2.18.27

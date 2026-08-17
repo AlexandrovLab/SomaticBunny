@@ -12,28 +12,49 @@ process CONPAIR {
     val(map)
 
     output:
-    tuple val(map.patient), path("*txt"), emit: coverage
     tuple val(map.patient), path("*txt"), emit: CONPAIR_out
 
     script:
     """
-    # Create temp directory and set TMPDIR if not set
-    mkdir -p ./tmp_conpair
-    export TMPDIR=\${TMPDIR:-./tmp_conpair}
-    
-    export _JAVA_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=\${TMPDIR}/conpair"
-    export JAVA_TOOL_OPTIONS="-Xmx16g -Xms4g -Djava.io.tmpdir=\${TMPDIR}/conpair"
-    
-    export PATH=${params.jre}/bin:$PATH
-    export CONPAIR_DIR=${params.conpair}
-    export GATK_JAR=${params.database_dir}/GenomeAnalysisTK.jar
-    export PYTHONPATH=\${PYTHONPATH:-}:${params.conpair}/modules/
+    # Use a task-local temporary directory.
+    mkdir -p "\$PWD/tmp_conpair"
+    export TMPDIR="\$PWD/tmp_conpair"
+
+    # Force the pinned Conda Java instead of a Java installation inherited
+    # from the user's TSCC environment.
+    export JAVA_HOME="\$CONDA_PREFIX"
+    export PATH="\$CONDA_PREFIX/bin:\$PATH"
+    hash -r
+
+    # Java settings for GATK3.
+    unset _JAVA_OPTIONS
+    export JAVA_TOOL_OPTIONS="-Xms4g -Xmx16g -Djava.io.tmpdir=\$TMPDIR"
+
+    # External Conpair v0.2 source directory.
+    export CONPAIR_DIR="${params.conpair}"
+    export PYTHONPATH="\${PYTHONPATH:-}:${params.conpair}/modules"
+
+    # Locate the GATK3 JAR installed by the pinned Conda environment.
+    GATK_JAR=\$(find "\$CONDA_PREFIX" \
+        -type f \
+        -name 'GenomeAnalysisTK.jar' \
+        -print \
+        -quit)
+
+    if [[ -z "\$GATK_JAR" || ! -f "\$GATK_JAR" ]]; then
+        echo "ERROR: GenomeAnalysisTK.jar was not found in \$CONDA_PREFIX" >&2
+        exit 1
+    fi
+
+    echo "Python: \$(command -v python)"
+    echo "Java:   \$(command -v java)"
+    echo "GATK:   \$GATK_JAR"
 
     \$CONDA_PREFIX/bin/python ${params.conpair}/scripts/run_gatk_pileup_for_sample.py \
     -B ${map.normal} \
     -O ${map.patient}_${map.tumor_meta.sample}_normal.pileup \
     -D ${params.conpair} \
-    -G ${params.database_dir}/GenomeAnalysisTK.jar \
+    -G "\$GATK_JAR" \
     --reference ${params.ref} \
     --markers ${params.conpair_marker};
     
@@ -41,7 +62,7 @@ process CONPAIR {
     -B ${map.tumor} \
     -O ${map.patient}_${map.tumor_meta.sample}_tumor.pileup \
     -D ${params.conpair} \
-    -G ${params.database_dir}/GenomeAnalysisTK.jar \
+    -G "\$GATK_JAR" \
     --reference ${params.ref} \
     --markers ${params.conpair_marker};
 

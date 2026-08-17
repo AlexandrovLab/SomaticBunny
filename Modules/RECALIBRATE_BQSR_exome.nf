@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process RECALIBRATE_BQSR_exome {
-    conda "${params.java_env}"
+    conda "${params.gatk_env}"
     scratch true
     label 'RECALIBRATE'
     errorStrategy = 'retry'
@@ -15,7 +15,7 @@ process RECALIBRATE_BQSR_exome {
 
     script:
     """
-    ${params.database_path}/gatk-4.6.0.0/gatk ApplyBQSR \
+    ${params.gatk} ApplyBQSR \
     -R ${params.ref} \
     -I ${bam} \
     --bqsr-recal-file ${table} \

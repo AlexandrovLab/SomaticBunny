@@ -1,0 +1,8 @@
+name: muse
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - muse=2.1.2

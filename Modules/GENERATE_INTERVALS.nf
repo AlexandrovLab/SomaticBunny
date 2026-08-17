@@ -1,5 +1,5 @@
 process GENERATE_INTERVALS {
-    conda "${params.java_env}"
+    conda "${params.gatk_env}"
     scratch true
     label 'process_low'
     publishDir("${params.intervals_dir}", mode: 'copy')
@@ -24,7 +24,7 @@ process GENERATE_INTERVALS {
 
     mkdir -p interval_list
 
-    ${params.database_path}/gatk-4.6.0.0/gatk SplitIntervals \
+    ${params.gatk} SplitIntervals \
         -R ${ref} \
         -L main_chromosomes.list \
         --scatter-count 20 \

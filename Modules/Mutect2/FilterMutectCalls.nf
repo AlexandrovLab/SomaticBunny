@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 process FilterMutectCalls {
     scratch true
     label 'process_low'
-    conda "${params.java_env}"
+    conda "${params.gatk_env}"
     publishDir("${params.MUTECT2_dir}", mode: 'copy')
     errorStrategy = 'retry'
     maxRetries 3
@@ -22,7 +22,7 @@ process FilterMutectCalls {
 
     script:
     """
-    ${params.database_path}/gatk-4.6.0.0/gatk FilterMutectCalls \
+    ${params.gatk} FilterMutectCalls \
     -R ${params.ref} \
     -V ${unfiltered_vcf} \
     --contamination-table ${contamination_table} \

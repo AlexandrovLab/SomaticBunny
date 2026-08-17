@@ -1,0 +1,8 @@
+name: gatk_runtime
+
+channels:
+  - conda-forge
+
+dependencies:
+  - openjdk=17.0.18
+  - python=3.10.13

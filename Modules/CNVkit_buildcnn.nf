@@ -16,27 +16,43 @@ process CNVkit_buildcnn {
     path("*coverage.cnn"), emit: CNVkit_buildcnns
 
     script:
-    def bam_files = normal_files.findAll { it.toString().endsWith('.bam') }.join(' ')
-    
-    if (params.type == "exome")
-        """
-        cnvkit.py batch \
-        ${bam_files} \
-        -n \
-        --targets ${params.mosdepth_bed} \
-        --fasta ${params.ref} \
-        --output-reference reference.cnn \
-        -p 8
-        """
-    else
-        """
-        cnvkit.py batch \
-        ${bam_files} \
-        -n \
-        --method wgs \
-        --fasta ${params.ref} \
-        --output-reference reference.cnn \
-        -p 8
-        """
-}
+    def input_files = normal_files instanceof List ?
+        normal_files : [normal_files]
 
+    def normal_bams = input_files
+        .findAll { it.toString().endsWith(".bam") }
+
+    if (normal_bams.isEmpty()) {
+        error "CNVkit_buildcnn received no normal BAM files"
+    }
+
+    def bam_files = normal_bams
+        .collect { "\"${it}\"" }
+        .join(" ")
+
+    if (params.type == "exome") {
+        """
+        export PYTHONNOUSERSITE=1
+        unset PYTHONPATH
+
+        cnvkit.py batch \
+            -n ${bam_files} \
+            --targets "${params.mosdepth_bed}" \
+            --fasta "${params.ref}" \
+            --output-reference reference.cnn \
+            -p ${task.cpus}
+        """
+    } else {
+        """
+        export PYTHONNOUSERSITE=1
+        unset PYTHONPATH
+
+        cnvkit.py batch \
+            -n ${bam_files} \
+            --method wgs \
+            --fasta "${params.ref}" \
+            --output-reference reference.cnn \
+            -p ${task.cpus}
+        """
+    }
+}
