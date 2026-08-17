@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process RECALIBRATE_BQSR {
-    conda "${params.java_env}"
+    conda "${params.gatk_env}"
     scratch true
     label 'RECALIBRATE'
     errorStrategy 'terminate'
@@ -18,7 +18,7 @@ process RECALIBRATE_BQSR {
 
     script:
     """
-    ${params.database_path}/gatk-4.6.0.0/gatk ApplyBQSR \
+    ${params.gatk} ApplyBQSR \
     -R ${params.ref} \
     -I ${bam} \
     -L ${interval_dir}/${chunk}-scattered.interval_list \

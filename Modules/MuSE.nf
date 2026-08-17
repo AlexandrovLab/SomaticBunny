@@ -1,4 +1,5 @@
 process MuSE {
+    conda "${params.muse_env}"
     publishDir("${params.muse_dir}", mode: 'copy')
     scratch true
     label 'MuSE'
@@ -17,15 +18,15 @@ process MuSE {
     
     if (params.type == "exome")
         """
-        ${params.MuSE2} call -f ${params.ref} -n 8 -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
+        MuSE call -f ${params.ref} -n 8 -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
-        ${params.MuSE2} sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 8  -E -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
+        MuSE sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 8  -E -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
         """
     else
         """
-        ${params.MuSE2} call -f ${params.ref} -n 8  -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
+        MuSE call -f ${params.ref} -n 8  -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
-        ${params.MuSE2} sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 8 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
+        MuSE sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 8 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
         """
 }
 

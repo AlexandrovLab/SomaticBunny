@@ -1,7 +1,7 @@
 nextflow.enable.dsl=2
 
 process RECALIBRATE_BaseRecal_exome {
-    conda "${params.java_env}"
+    conda "${params.gatk_env}"
     scratch true
     label 'RECALIBRATE'
     errorStrategy = 'retry'
@@ -15,7 +15,7 @@ process RECALIBRATE_BaseRecal_exome {
 
     script:
     """
-    ${params.database_path}/EVC_nextflow/gatk-4.6.0.0/gatk BaseRecalibrator \
+    ${params.gatk} BaseRecalibrator \
     -I ${bam} \
     -R ${params.ref} \
     --known-sites ${params.recal_knownsite1} \

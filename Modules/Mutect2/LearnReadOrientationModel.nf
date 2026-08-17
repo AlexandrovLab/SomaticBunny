@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 process LearnReadOrientationModel {
   scratch true
-  conda "${params.java_env}"
+  conda "${params.gatk_env}"
   label 'process_low'
   publishDir("${params.MUTECT2_dir}", mode: 'copy')
   errorStrategy 'retry'
@@ -15,7 +15,7 @@ process LearnReadOrientationModel {
   tuple val(map), path("*read-orientation-model.tar.gz"), emit: MUTECT2_read_orientation
 
   script:
-  def cmd = "${params.database_path}/gatk-4.6.0.0/gatk LearnReadOrientationModel"
+  def cmd = "${params.gatk} LearnReadOrientationModel"
 
   for( int i=0; i<20; i++ ) {
     cmd += " -I "

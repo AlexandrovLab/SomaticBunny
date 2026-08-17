@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 
 process MergeMutectStats {
   scratch true
-  conda "${params.java_env}"
+  conda "${params.gatk_env}"
   label 'process_low'
   publishDir("${params.MUTECT2_dir}", mode: 'copy')
   errorStrategy 'retry'
@@ -15,7 +15,7 @@ process MergeMutectStats {
   tuple val(map), path("*.stats"), emit: MUTECT2_stats
 
   script:
-  def cmd = "${params.database_path}/gatk-4.6.0.0/gatk MergeMutectStats"
+  def cmd = "${params.gatk} MergeMutectStats"
 
   for( int i=0; i<20; i++ ) {
     cmd += " -stats "

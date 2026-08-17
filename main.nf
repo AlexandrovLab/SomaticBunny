@@ -65,7 +65,7 @@ params.genomes = [
         ref: "${params.database_path}/GRCh37_ref/GRCh37.fa", 
         bed: "${params.database_path}/GRCh37_ref/GRCh37_chr.bed.gz",
         conpair_marker: "${params.database_path}/Databases/GRCh37/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.bed",
-        conpair_marker_txt: "${params.database_path}/Databases/GRCh38/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.txt",
+        conpair_marker_txt: "${params.database_path}/Databases/GRCh37/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.txt",
         mosdepth_bed: "${params.database_path}/Databases/GRCh37/GRCh37_exome.bed",
         muse_vcf: "${params.database_path}/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf",
         recal_knownsite1: "${params.database_path}/Databases/GRCh37/Homo_sapiens_assembly19.dbsnp.vcf.gz",
@@ -284,11 +284,10 @@ params.FASTQC="${params.database_path}/FastQC"
 params.FASTQC_dir="$projectDir/RESULTS/FASTQC"
 params.mkdup_dir="$projectDir/RESULTS/MKDUP"
 params.recal_dir="$projectDir/RESULTS/RECALIBRATE"
-params.SAGE_java="${params.database_path}/SAGE/sage_v3.3.jar"
+params.SAGE_jar="${params.database_path}/SAGE/sage_v3.3.jar"
 params.SAGE_dir="$projectDir/RESULTS/SAGE"
 params.strelka_dir="$projectDir/RESULTS/STRELKA"
 params.muse_dir="$projectDir/RESULTS/MuSE"
-params.MuSE2="${params.database_path}/MuSE/MuSE"
 params.MUTECT2_dir="$projectDir/RESULTS/Mutect2"
 params.mosdepth_dir="$projectDir/RESULTS/mosdepth"
 params.conpair_dir="$projectDir/RESULTS/Conpair"
@@ -296,7 +295,6 @@ params.cnvkit_dir="$projectDir/RESULTS/CNVkit"
 params.Delly_dir="$projectDir/RESULTS/Delly"
 params.ascat_dir="$projectDir/RESULTS/ASCAT"
 params.conpair="${params.database_path}/Conpair-0.2"
-params.jre="${params.database_path}/jre1.8.0_401"
 params.manta_dir="$projectDir/RESULTS/MANTA"
 params.post_dir="$projectDir/RESULTS/POST"
 params.intervals_dir="$projectDir/RESULTS/custom_intervals"
@@ -309,7 +307,6 @@ params.samtools_env = "$projectDir/yml/samtools.yml"
 params.strelka_env = "$projectDir/yml/strelka_env.yml"
 params.mosdepth_env = "$projectDir/yml/mosdepth_env.yml"
 params.summary_env = "$projectDir/yml/py_summary.yml"
-params.java_env = "$projectDir/yml/java.yml"
 params.fastqc_env = "$projectDir/yml/fastqc_env.yml"
 params.cnvkit_env = "$projectDir/yml/cnvkit.yml"
 params.delly_env = "$projectDir/yml/delly.yml"
@@ -317,6 +314,11 @@ params.ascat_env = "$projectDir/yml/ascat.yml"
 params.alleleCounter_env = "$projectDir/yml/alleleCounter.yml"
 params.manta_env = "$projectDir/yml/manta.yml"
 params.dkfz_env = "$projectDir/yml/dkfz.yml"
+params.SAGE_java_env = "$projectDir/yml/sage_java.yml"
+params.muse_env = "$projectDir/yml/muse.yml"
+params.picard_merge_env = "$projectDir/yml/picard_merge.yml"
+params.gatk_env = "${projectDir}/yml/gatk_runtime.yml"
+params.gatk = "${params.database_path}/gatk-4.6.0.0/gatk"
 
 params.tmp_dir = '${workflow.workDir}/ascat_tmp'
 
