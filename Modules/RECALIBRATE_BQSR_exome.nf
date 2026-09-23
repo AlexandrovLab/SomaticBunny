@@ -11,7 +11,10 @@ process RECALIBRATE_BQSR_exome {
     tuple val(patient), val(meta), path(bam), path(table), path(bai)
 
     output:
-    tuple val(patient), val(meta), path("*bam"), emit: SortBam_input
+    tuple val(patient), val(meta),
+          path("*_recal.bam"),
+          path("*.bai"),
+          emit: pair_recal
 
     script:
     """
@@ -19,7 +22,7 @@ process RECALIBRATE_BQSR_exome {
     -R ${params.ref} \
     -I ${bam} \
     --bqsr-recal-file ${table} \
-    -O ${meta.patient}_${meta.sample}_${meta.status}_recalibrated.bam
+    --create-output-bam-index true \
+    -O ${meta.patient}_${meta.sample}_${meta.status}_recal.bam
     """
-
 }

@@ -75,7 +75,7 @@ process ALLELECOUNTER {
     grep -v "^#" \$vcf | awk 'length(\$4) != 1 || length(\$5) != 1' > indels_raw.vcf || true
 
     if [ -s indels_raw.vcf ]; then
-    python3 /tscc/lustre/restricted/alexandrov-ddn/users/tiy002/projects/SMURFS3.0/INDEL_VAF.py \
+    python3 ${params.indel_vaf_script} \
         indels_raw.vcf \
         ${map.tumor} \
         ${map.normal} \

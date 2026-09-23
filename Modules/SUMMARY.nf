@@ -7,14 +7,15 @@ process SUMMARY{
     errorStrategy = 'retry'
     maxRetries 3
     input:
-    val(saved_csv)
+    path saved_csv
+    path sample_csv
 
     output:
     stdout
 
     script:
     """
-    python $projectDir/summary.py "${saved_csv}" $projectDir/${params.sample}
+    python ${projectDir}/summary.py "${saved_csv}" "${sample_csv}"
     """
 
 }

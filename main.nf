@@ -233,9 +233,8 @@ params.mutect2_pon_wes = "${params.genome_database_dir}/${params.genomes[params.
 params.mutect2_interval_dir = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_interval_dir}"
 params.mutect2_germline = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
 
-params.mutect2_targets = params.type == "exome" ? 
-    "${params.mutect2_interval_dir}/${params.genomes[params.genome].mutect2_targets_exome}" : 
-    "${params.mutect2_interval_dir}/${params.genomes[params.genome].mutect2_targets_wgs}"
+params.indel_vaf_script =
+    params.indel_vaf_script ?: "${projectDir}/INDEL_VAF.py"
 
 // Define which tools are available for the selected genome
 def available_tools = params.genomes[params.genome].tools
@@ -280,7 +279,6 @@ params.bam_dir="$projectDir/RESULTS/BAM"
 params.report_dir="$projectDir/RESULTS/REPORT"
 params.manta_bed="${params.database_path}/GRCh38_ref/manta.bed.gz"
 params.mkdup_temp_dir="$projectDir/mkdup_tmp"
-params.FASTQC="${params.database_path}/FastQC"
 params.FASTQC_dir="$projectDir/RESULTS/FASTQC"
 params.mkdup_dir="$projectDir/RESULTS/MKDUP"
 params.recal_dir="$projectDir/RESULTS/RECALIBRATE"
@@ -319,8 +317,6 @@ params.muse_env = "$projectDir/yml/muse.yml"
 params.picard_merge_env = "$projectDir/yml/picard_merge.yml"
 params.gatk_env = "${projectDir}/yml/gatk_runtime.yml"
 params.gatk = "${params.database_path}/gatk-4.6.0.0/gatk"
-
-params.tmp_dir = '${workflow.workDir}/ascat_tmp'
 
 // Write configuration to log file
 writeToLog(params.log_file, configInfo)
@@ -369,12 +365,9 @@ include { ASCAT_logrbaf } from './Modules/ASCAT_exome/ASCAT_logrbaf'
 include { ASCAT_exome } from './Modules/ASCAT_exome/ASCAT_exome'
 
 include { MUTECT2_CALLING } from './Modules/Mutect2/MUTECT2_CALLING'
-include { MUTECT2_CALLING_exome } from './Modules/Mutect2/MUTECT2_CALLING_exome'
 include { GETpileUP } from './Modules/Mutect2/GETpileUP'
-include { GETpileUP_exome } from './Modules/Mutect2/GETpileUP_exome'
 include { GETpileUP_Merge } from './Modules/Mutect2/GETpileUP_Merge'
 include { LearnReadOrientationModel } from './Modules/Mutect2/LearnReadOrientationModel'
-include { LearnReadOrientationModel_exome } from './Modules/Mutect2/LearnReadOrientationModel_exome'
 include { MergeMutectStats } from './Modules/Mutect2/MergeMutectStats'
 include { MergeVcfs } from './Modules/Mutect2/MergeVcfs'
 include { CalculateContamination } from './Modules/Mutect2/CalculateContamination'
@@ -626,8 +619,7 @@ workflow {
 
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal_exome(sample_sheet).set{ RECALIBRATE_BaseRecal_out }
-                RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_BQSR_out }
-                RECALIBRATE_SortBam(RECALIBRATE_BQSR_out.SortBam_input).set{ RECALIBRATE_out }
+                RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_out }
             } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal(sample_sheet, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
 
@@ -654,9 +646,7 @@ workflow {
         } else {
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal_exome(MKDUP_out.pair_mutect).set{ RECALIBRATE_BaseRecal_out }
-                RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_BQSR_out }
-                RECALIBRATE_SortBam(RECALIBRATE_BQSR_out.SortBam_input).set{ RECALIBRATE_out }
-
+                RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_out }
             } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal(MKDUP_out.pair_mutect, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
 
