@@ -19,7 +19,7 @@ process SAGE {
     script:
     """
     java -Xms4G -Xmx32G -cp ${params.SAGE_jar} com.hartwig.hmftools.sage.SageApplication \
-        -threads 8 \
+        -threads ${task.cpus} \
         -reference ${map.patient}_${map.normal_meta.sample}_normal \
         -reference_bam  ${map.normal}\
         -tumor ${map.patient}_${map.tumor_meta.sample}_tumor \

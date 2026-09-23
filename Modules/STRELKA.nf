@@ -25,7 +25,7 @@ process STRELKA {
         """
         configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome
 
-        python2 strelka/runWorkflow.py -m local -j 10
+        python2 strelka/runWorkflow.py -m local -j ${task.cpus}
 
         mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz
         mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz.tbi
@@ -36,7 +36,7 @@ process STRELKA {
         """
         configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --callRegions ${params.bed}
 
-        python2 strelka/runWorkflow.py -m local -j 10
+        python2 strelka/runWorkflow.py -m local -j ${task.cpus}
 
         mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz
         mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz.tbi

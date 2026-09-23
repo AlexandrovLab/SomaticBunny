@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 process FASTQC {
     conda "${params.fastqc_env}"
     scratch true
-    label 'process_medium'
+    label 'FASTQC'
     publishDir("${params.FASTQC_dir}", mode: 'copy')
     errorStrategy 'retry'
     maxRetries 3
@@ -18,6 +18,6 @@ process FASTQC {
 
     script:
     """
-    fastqc -t 8 -o ./ ${meta.fastq_1} ${meta.fastq_2}
+    fastqc -t ${task.cpus} -o ./ ${meta.fastq_1} ${meta.fastq_2}
     """
 }

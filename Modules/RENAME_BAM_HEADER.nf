@@ -1,6 +1,6 @@
 process RENAME_BAM_HEADER {
     tag "${meta.patient}_${meta.sample}"
-    label 'RENAME_BAM_HEADER'
+    label 'process_low'
     conda "${params.mkdup_env}"
     
     input:
