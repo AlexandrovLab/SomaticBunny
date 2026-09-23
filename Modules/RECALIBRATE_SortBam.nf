@@ -21,7 +21,7 @@ process RECALIBRATE_SortBam {
     script:
     def sorted_bam = "${meta.patient}_${meta.sample}_${meta.status}_recal.bam"
     """
-    samtools sort -@ 4 ${bam} -o ${sorted_bam}
+    samtools sort -@ ${task.cpus} ${bam} -o ${sorted_bam}
     samtools index ${sorted_bam}
     """
 }

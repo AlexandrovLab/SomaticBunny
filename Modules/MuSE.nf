@@ -18,15 +18,15 @@ process MuSE {
     
     if (params.type == "exome")
         """
-        MuSE call -f ${params.ref} -n 8 -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
+        MuSE call -f ${params.ref} -n ${task.cpus} -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
-        MuSE sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 8  -E -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
+        MuSE sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n ${task.cpus}  -E -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
         """
     else
         """
-        MuSE call -f ${params.ref} -n 8  -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
+        MuSE call -f ${params.ref} -n ${task.cpus} -O ${map.patient}_${map.tumor_meta.sample} ${map.tumor} ${map.normal}
 
-        MuSE sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n 8 -G -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
+        MuSE sump -I ${map.patient}_${map.tumor_meta.sample}.MuSE.txt -n ${task.cpus} -G -O ${map.patient}_${map.tumor_meta.sample}.vcf ${dbsnp_param}
         """
 }
 

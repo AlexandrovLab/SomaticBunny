@@ -19,13 +19,13 @@ process MOSDEPTH {
     script:
     if (map.type == "exome")
         """
-        mosdepth -t 8 --by ${params.mosdepth_bed} ${map.patient}_${map.tumor_meta.sample}_tumor ${map.tumor}
-        mosdepth -t 8 --by ${params.mosdepth_bed} ${map.patient}_${map.tumor_meta.sample}_normal ${map.normal}
+        mosdepth -t ${task.cpus} --by ${params.mosdepth_bed} ${map.patient}_${map.tumor_meta.sample}_tumor ${map.tumor}
+        mosdepth -t ${task.cpus} --by ${params.mosdepth_bed} ${map.patient}_${map.tumor_meta.sample}_normal ${map.normal}
         """
 
     else
         """
-        mosdepth -t 8 -n --fast-mode --by 500 ${map.patient}_${map.tumor_meta.sample}_tumor ${map.tumor}
-        mosdepth -t 8  -n --fast-mode --by 500 ${map.patient}_${map.tumor_meta.sample}_normal ${map.normal}
+        mosdepth -t ${task.cpus} -n --fast-mode --by 500 ${map.patient}_${map.tumor_meta.sample}_tumor ${map.tumor}
+        mosdepth -t ${task.cpus}  -n --fast-mode --by 500 ${map.patient}_${map.tumor_meta.sample}_normal ${map.normal}
         """
 }
