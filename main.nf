@@ -304,7 +304,6 @@ params.conpair_env = "$projectDir/yml/conpair.yml"
 params.samtools_env = "$projectDir/yml/samtools.yml"
 params.strelka_env = "$projectDir/yml/strelka_env.yml"
 params.mosdepth_env = "$projectDir/yml/mosdepth_env.yml"
-params.summary_env = "$projectDir/yml/py_summary.yml"
 params.fastqc_env = "$projectDir/yml/fastqc_env.yml"
 params.cnvkit_env = "$projectDir/yml/cnvkit.yml"
 params.delly_env = "$projectDir/yml/delly.yml"
@@ -375,8 +374,6 @@ include { FilterMutectCalls } from './Modules/Mutect2/FilterMutectCalls'
 
 include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
-
-include { SUMMARY } from './Modules/SUMMARY.nf'
 
 include { POST } from './Modules/POST.nf'
 include { POST_scenario1 } from './Modules/POST_scenario1.nf'
