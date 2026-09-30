@@ -39,14 +39,6 @@ Process-specific settings are in `conf/base.config`.
 
 `intervals/wgs_20intervals.sorted.bed` splits chr1–22, X, Y, M into 20 equal-size intervals (GATK 4.6.0.0 `SplitIntervals`), the same 20 intervals SomaticBunny uses. `intervals/make_wgs_intervals.sh` rebuilds it.
 
-## Reference files
-
-| File | Source |
-|---|---|
-| dbSNP, known indels, `af-only-gnomad.hg38.vcf.gz` | GATK hg38 resource bundle |
-| `PON.sorted.vcf.gz` | TODO |
-| `GRCh38_exome_merged.bed` (WES) | TODO |
-
 ## Provenance
 
 `pipeline_info/<run>/` holds the files Sarek wrote to `results/pipeline_info/` for each benchmark run: parameters (`params_*.json`), tool versions (`nf_core_sarek_software_mqc_versions.yml`), and execution traces, reports and timelines.
