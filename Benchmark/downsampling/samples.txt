@@ -1,0 +1,6 @@
+# One sample ID per line (lines starting with # are ignored).
+TCGA-BA-6871
+TCGA-CN-5359
+TCGA-CQ-A4C7
+TCGA-CV-6936
+TCGA-CV-7102
