@@ -1,7 +1,7 @@
 // Author: Ting Yang, George Wu
 // Lab: The Alexandrov Lab @ UCSD
-// Date: 2026.6
-// Version: 3.0
+// Date: 2026.9
+// Version: 4.0
 
 nextflow.enable.dsl=2
 
@@ -10,6 +10,7 @@ params.log_file = "$projectDir/pipeline.log"
 params.sample = "sample.csv"
 params.genome = ""
 params.tool = ""
+params.cleanup = false 
 
 // Initialize the log file with a header
 new File(params.log_file).text = """
@@ -323,6 +324,24 @@ writeToLog(params.log_file, configInfo)
 // Also display in terminal
 log.info configInfo
 
+if (params.cleanup) {
+    def cleanupWarning = """
+==============================================
+WARNING: --cleanup is ENABLED
+==============================================
+Intermediate files will be permanently deleted during the run:
+  - BWA_MEM work directories and raw BAMs
+  - MKDUP BAMs and work directories
+  - Recalibration chunk/merged BAMs and work directories
+
+You will NOT be able to use -resume to reuse these steps.
+Only final outputs in RESULTS/ will be kept.
+==============================================
+"""
+    log.warn cleanupWarning
+    writeToLog(params.log_file, cleanupWarning)
+}
+
 include { FASTQC } from './Modules/FASTQC'
 include { BWA_MEM } from './Modules/BWA_MEM'
 include { CHECK_BAM_BWA } from './Modules/CHECK_BAM_BWA'
@@ -543,10 +562,14 @@ workflow {
             }
             RENAME_BAM_HEADER(sample_sheet)
             MKDUP(RENAME_BAM_HEADER.out.renamed_bam).set{ MKDUP_out }    
-            CLEANUP_BWA(MKDUP.out.cleanup_trigger)
+            if (params.cleanup) {
+                CLEANUP_BWA(MKDUP.out.cleanup_trigger)
+            }
         } else {
             MKDUP(BWA_MEM_out).set{ MKDUP_out }
-            CLEANUP_BWA(MKDUP.out.cleanup_trigger)
+            if (params.cleanup) {
+                CLEANUP_BWA(MKDUP.out.cleanup_trigger)
+            }            
             CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
             COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
         }
@@ -638,7 +661,9 @@ workflow {
 
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
 
-                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                if (params.cleanup) {
+                    CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                }
             }
         } else {
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
@@ -665,7 +690,9 @@ workflow {
 
                 RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
 
-                CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                if (params.cleanup) {
+                    CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
+                }
             }
         }
         CHECK_BAM_RECAL(RECALIBRATE_out.pair_recal).set{ CHECK_BAM_RECAL_out }
