@@ -17,12 +17,6 @@ process CNVkit {
     path("*.png"), emit: CNVkit_png
 
     script:
-    def tumor_prefix = map.tumor
-        .toString()
-        .tokenize("/")
-        .last()
-        .replaceFirst(/\.bam$/, "")
-
     def output_prefix = "${map.patient}_${map.sample}"
     def method_option = params.type == "exome" ? "" : "--method wgs"
 
@@ -38,10 +32,24 @@ process CNVkit {
         --scatter \
         --diagram
 
-    test -s "${tumor_prefix}.cns"
+    # Find the segment file CNVkit wrote: <base>.cns
+    shopt -s nullglob
+    segs=()
+    for f in *.cns; do
+        b="\${f%.cns}"
+        if [ -e "\$b.call.cns" ] && [ -e "\$b.bintest.cns" ]; then
+            segs+=("\$f")
+        fi
+    done
+    if [ "\${#segs[@]}" -ne 1 ]; then
+        echo "ERROR: expected 1 segment file from cnvkit.py batch, found \${#segs[@]}: \${segs[*]:-none}" >&2
+        ls -l >&2
+        exit 1
+    fi
+    test -s "\${segs[0]}"
 
     cnvkit.py call \
-        "${tumor_prefix}.cns" \
+        "\${segs[0]}" \
         -o "${output_prefix}_calls.cns"
 
     cnvkit.py export bed \
