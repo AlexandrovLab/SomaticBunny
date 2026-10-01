@@ -17,7 +17,7 @@ process MOSDEPTH {
     tuple val(map.patient), path("*regions.bed.gz"), emit:regions_bed
 
     script:
-    if (map.type == "exome")
+    if (params.type == "exome")
         """
         mosdepth -t ${task.cpus} --by ${params.mosdepth_bed} ${map.patient}_${map.tumor_meta.sample}_tumor ${map.tumor}
         mosdepth -t ${task.cpus} --by ${params.mosdepth_bed} ${map.patient}_${map.tumor_meta.sample}_normal ${map.normal}
