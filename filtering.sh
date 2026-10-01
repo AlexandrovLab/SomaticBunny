@@ -320,14 +320,14 @@ awk -F"\t" -v sevs="$sevs" '{
 awk -F"\t" '{OFS=FS; if($7=="lowTLOD"&&length($6)>5) {$7="PASS";gsub("mt,", "", $6);print} else if($7=="lowSomaticEVS"&&length($6)>5) {$7="PASS";gsub("st,", "", $6);gsub(",st", "", $6);print} else if($7=="lowTLOD;lowSomaticEVS"&&length($6)==11) {$7="PASS";$6="sa,ms";print} else {print}}' ${f}.tmp1 > ${f}.tmp2
 
 # Filter panel of normals
-grep -v "#" ../mutect_snvs/${SAMPLE_NAME}_mutect_snv.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_snv_PON.vcf || touch ${SAMPLE_NAME}_mutect_snv_PON.vcf
+grep -v "#" $WORK_DIR/${SAMPLE_NAME}_mutect_snv.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_snv_PON.vcf || touch ${SAMPLE_NAME}_mutect_snv_PON.vcf
 
 pon=$(cat ${SAMPLE_NAME}_mutect_snv_PON.vcf | wc -l)
 
 if [ $pon -eq 0 ]; then
     cp ${f}.tmp2 ${f}.tmp3
 else
-    awk -F"\t" 'NR==FNR{a[$1$2$4$5];next} NR>FNR{if($1$2$4$5 in a){$7=="PASS"?$7="panel_of_normals":$7=$7";panel_of_normals";print $0}else{print $0}}' OFS='\t' ${SAMPLE_NAME}_mutect_snv_PON.vcf ${f}.tmp2 > ${f}.tmp3
+    awk -F"\t" 'NR==FNR{a[$1,$2,$4,$5];next} NR>FNR{if(($1,$2,$4,$5) in a){$7=="PASS"?$7="panel_of_normals":$7=$7";panel_of_normals";print $0}else{print $0}}' OFS='\t' ${SAMPLE_NAME}_mutect_snv_PON.vcf ${f}.tmp2 > ${f}.tmp3
 fi
 
 mv ${f}.tmp3 ${SAMPLE_NAME}_snv_final_annotated.vcf
@@ -416,13 +416,13 @@ awk -F"\t" -v sevs="$sevs" '{
 cat ${f}.tmp1 | awk -F"\t" '{OFS=FS; if($7=="lowTLOD"&&length($6)>5) {$7="PASS";gsub("mt,", "", $6);print} else if($7=="lowSomaticEVS"&&length($6)>5) {$7="PASS";gsub("st,", "", $6);gsub(",st", "", $6);print} else if($7=="lowTLOD;lowSomaticEVS"&&length($6)==11) {$7="PASS";$6="sa,ms";print} else {print}}' > ${f}.tmp2
 
 # Filter panel of normals
-grep -v "#" ../mutect_indels/${SAMPLE_NAME}_mutect_indel.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_indel_PON.vcf || touch ${SAMPLE_NAME}_mutect_indel_PON.vcf
+grep -v "#" $WORK_DIR/${SAMPLE_NAME}_mutect_indel.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_indel_PON.vcf || touch ${SAMPLE_NAME}_mutect_indel_PON.vcf
 pon=$(cat ${SAMPLE_NAME}_mutect_indel_PON.vcf | wc -l)
 
 if [ $pon -eq 0 ]; then
     cp ${f}.tmp2 ${f}.tmp3
 else
-    awk -F"\t" 'NR==FNR{a[$1$2$4$5];next} NR>FNR{if($1$2$4$5 in a){$7=="PASS"?$7="panel_of_normals":$7=$7";panel_of_normals";print $0}else{print $0}}' OFS='\t' ${SAMPLE_NAME}_mutect_indel_PON.vcf ${f}.tmp2 > ${f}.tmp3
+    awk -F"\t" 'NR==FNR{a[$1,$2,$4,$5];next} NR>FNR{if(($1,$2,$4,$5) in a){$7=="PASS"?$7="panel_of_normals":$7=$7";panel_of_normals";print $0}else{print $0}}' OFS='\t' ${SAMPLE_NAME}_mutect_indel_PON.vcf ${f}.tmp2 > ${f}.tmp3
 fi
 
 mv ${f}.tmp3 ${SAMPLE_NAME}_indel_final_annotated.vcf
