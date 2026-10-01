@@ -176,6 +176,9 @@ if (!params.genomes.containsKey(params.genome)) {
     error "Invalid genome: ${params.genome}. Available options are: ${params.genomes.keySet().join(', ')}"
 }
 
+// Check if user inputs custom ref or not
+params.custom_ref = (params.ref && params.ref != params.genomes[params.genome].ref)
+
 if (params.custom_ref) {
     log.warn """
     WARNING: You are using a custom reference genome.
@@ -185,10 +188,6 @@ if (params.custom_ref) {
     SAGE, Conpair, and Delly to fail.
     """
 }
-
-// Check if user inputs custom ref or not
-params.custom_ref = (params.ref && params.ref != params.genomes[params.genome].ref)
-
 
 // Set genome-specific parameters
 params.ref = params.ref ?: params.genomes[params.genome].ref
@@ -300,7 +299,7 @@ params.intervals_dir="$projectDir/RESULTS/custom_intervals"
 params.VAF_dir="$projectDir/RESULTS/POST/VAF"
 
 params.bwamem2_env = "$projectDir/yml/bwamem2.yml"
-params.mkdup_env = "$projectDir/yml/mkdup.yml"
+params.mkdup_env = "$projectDir/yml/picard.yml"
 params.conpair_env = "$projectDir/yml/conpair.yml"
 params.samtools_env = "$projectDir/yml/samtools.yml"
 params.strelka_env = "$projectDir/yml/strelka_env.yml"
@@ -314,7 +313,7 @@ params.manta_env = "$projectDir/yml/manta.yml"
 params.dkfz_env = "$projectDir/yml/dkfz.yml"
 params.SAGE_java_env = "$projectDir/yml/sage_java.yml"
 params.muse_env = "$projectDir/yml/muse.yml"
-params.picard_merge_env = "$projectDir/yml/picard_merge.yml"
+params.picard_merge_env = "$projectDir/yml/picard.yml"
 params.gatk_env = "${projectDir}/yml/gatk_runtime.yml"
 params.gatk = "${params.database_path}/gatk-4.6.0.0/gatk"
 

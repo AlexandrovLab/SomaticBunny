@@ -1,8 +1,7 @@
-name: picard_merge
-
+name: picard
 channels:
   - conda-forge
   - bioconda
-
 dependencies:
-  - picard=2.18.27
+  - picard=3.4.0
+  - openjdk=17
