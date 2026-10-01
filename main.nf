@@ -104,7 +104,7 @@ params.genomes = [
         database_subdir: "mm39",
         mosdepth_bed: "${params.database_path}/Databases/mm39/mm39_exome.bed",
         recal_interval_wes: "${params.database_path}/Databases/mm39/mm39_exome.interval_list",
-        muse_vcf: "af_only_mgp_mm39_unique.vcf.gz",
+        muse_vcf: "${params.database_path}/Databases/mm39/af_only_mgp_mm39_unique.vcf.gz",
         mutect2_pon: "PoN.mm39.vcf.gz",
         mutect2_pon_wes: "PoN.mm39.vcf.gz",
         mutect2_germline: "af-only-mgp.mm39.vcf.gz",
