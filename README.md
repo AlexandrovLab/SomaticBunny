@@ -307,11 +307,10 @@ RESULTS/
 | Category | Tool | Version |
 |----------|------|---------|
 | QC | FastQC | v0.12.1 |
-| Data Processing | Picard | v2.18.27 |
+| Data Processing | Picard | v3.4.0 |
 | | samtools | v1.21 |
 | | bwa-mem2 | v2.2.1 |
 | | Conpair | v0.2 |
-| | Picard MarkDuplicates | v3.2.0-1 |
 | | GATK4 | v4.6.0.0 |
 | | mosdepth | v0.3.8 |
 | SNV/INDEL Callers | Strelka2 | v2.9.10 |
