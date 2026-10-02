@@ -315,7 +315,7 @@ RESULTS/
 | | mosdepth | v0.3.8 |
 | SNV/INDEL Callers | Strelka2 | v2.9.10 |
 | | Mutect2 | v4.6.0.0 |
-| | SAGE | v3.3 |
+| | SAGE | v4.2 |
 | | MuSE2 | v2.1.2 |
 | Structural Variants | Delly | v1.3.1 |
 | | Manta | v1.6.0 |

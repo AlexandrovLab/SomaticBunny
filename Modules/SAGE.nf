@@ -21,7 +21,7 @@ process SAGE {
     java -Xms4G -Xmx32G -cp ${params.SAGE_jar} com.hartwig.hmftools.sage.SageApplication \
         -threads ${task.cpus} \
         -reference ${map.patient}_${map.normal_meta.sample}_normal \
-        -reference_bam  ${map.normal}\
+        -reference_bam ${map.normal} \
         -tumor ${map.patient}_${map.tumor_meta.sample}_tumor \
         -tumor_bam ${map.tumor} \
         -ref_genome_version ${params.SAGE_ref_genome_version} \
@@ -30,7 +30,7 @@ process SAGE {
         -panel_bed ${params.SAGE_panel_bed} \
         -high_confidence_bed ${params.SAGE_high_confidence_bed} \
         -ensembl_data_dir ${params.SAGE_ref_dir}/common/ensembl_data \
-        -out ${map.patient}_${map.tumor_meta.sample}.sage.vcf.gz
+        -output_vcf ${map.patient}_${map.tumor_meta.sample}.sage.vcf.gz
     """
 }
 
