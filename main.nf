@@ -315,7 +315,7 @@ params.SAGE_java_env = "$projectDir/yml/sage_java.yml"
 params.muse_env = "$projectDir/yml/muse.yml"
 params.picard_merge_env = "$projectDir/yml/picard.yml"
 params.gatk_env = "${projectDir}/yml/gatk_runtime.yml"
-params.gatk = "${params.database_path}/gatk-4.6.0.0/gatk"
+params.gatk = "${params.database_path}/gatk-4.6.2.0/gatk"
 
 // Write configuration to log file
 writeToLog(params.log_file, configInfo)

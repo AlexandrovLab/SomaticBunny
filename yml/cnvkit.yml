@@ -6,8 +6,8 @@ channels:
 
 dependencies:
   - python=3.9.20
-  - cnvkit=0.9.8
-  - numpy=1.23.5
+  - cnvkit=0.9.13
+  - numpy=1.24.4
   - pandas=1.5.3
   - matplotlib-base=3.7.3
   - r-base=4.3.3
