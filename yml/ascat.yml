@@ -5,5 +5,5 @@ channels:
   - bioconda
 dependencies:
   - conda-forge::r-base=4.2.2
-  - bioconda::ascat=3.1.1
+  - bioconda::ascat=3.2.0
   - bioconda::cancerit-allelecount=4.3.0

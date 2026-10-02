@@ -308,18 +308,18 @@ RESULTS/
 |----------|------|---------|
 | QC | FastQC | v0.12.1 |
 | Data Processing | Picard | v3.4.0 |
-| | samtools | v1.21 |
-| | bwa-mem2 | v2.2.1 |
+| | samtools | v1.24 |
+| | bwa-mem2 | v2.3 |
 | | Conpair | v0.2 |
-| | GATK4 | v4.6.0.0 |
-| | mosdepth | v0.3.8 |
+| | GATK4 | v4.6.2.0 |
+| | mosdepth | v0.3.14 |
 | SNV/INDEL Callers | Strelka2 | v2.9.10 |
-| | Mutect2 | v4.6.0.0 |
+| | Mutect2 | v4.6.2.0 |
 | | SAGE | v4.2 |
 | | MuSE2 | v2.1.2 |
 | Structural Variants | Delly | v2.6.0 |
 | | Manta | v1.6.0 |
-| Copy Number Variants | CNVkit | v0.9.8 |
+| Copy Number Variants | CNVkit | v0.9.13 |
 | | ASCAT | v3.2.0 |
 
 ## Benchmark
