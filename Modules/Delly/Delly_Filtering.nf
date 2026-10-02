@@ -22,7 +22,7 @@ process Delly_Filtering {
     echo "Processing file: ${pre_bcf}"
     echo "Base name extracted: ${base_name}"
     
-    delly call -g ${params.ref} \
+    delly sr -h ${task.cpus} -g ${params.ref} \
         -v ${pre_bcf}  \
         -o ${base_name}_geno.bcf  \
         -x ${params.delly_excl}  \
@@ -33,6 +33,6 @@ process Delly_Filtering {
         -z 5
 
     # Create index for the output BCF file
-    bcftools index ${base_name}_geno.bcf
+    bcftools index -f ${base_name}_geno.bcf
     """
 }

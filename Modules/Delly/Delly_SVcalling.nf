@@ -16,7 +16,7 @@ process Delly_SVcalling {
 
     script:
     """
-    delly call -x ${params.delly_excl}  \
+    delly sr -h ${task.cpus} -x ${params.delly_excl}  \
         -o ${map.patient}_${map.sample}.bcf \
         -g ${params.ref} \
         ${map.tumor} \

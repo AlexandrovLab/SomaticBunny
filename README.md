@@ -317,7 +317,7 @@ RESULTS/
 | | Mutect2 | v4.6.0.0 |
 | | SAGE | v4.2 |
 | | MuSE2 | v2.1.2 |
-| Structural Variants | Delly | v1.3.1 |
+| Structural Variants | Delly | v2.6.0 |
 | | Manta | v1.6.0 |
 | Copy Number Variants | CNVkit | v0.9.8 |
 | | ASCAT | v3.2.0 |
