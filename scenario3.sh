@@ -50,6 +50,14 @@ fi
 cp $MUTECT2_VCF ${SAMPLE_NAME}_mutect.vcf
 cp $MUSE_VCF ${SAMPLE_NAME}_muse_snv.vcf
 
+bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_mutect.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_mutect.vcf
+bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_strelka_indel.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_strelka_indel.vcf
+bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_strelka_snv.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_strelka_snv.vcf
+bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_sage.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_sage.vcf
+bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_muse_snv.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_muse_snv.vcf
+
+
+
 #######################
 ## Fix Mutect2 files ##
 #######################
