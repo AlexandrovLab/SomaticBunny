@@ -30,7 +30,8 @@ process SAGE {
         -panel_bed ${params.SAGE_panel_bed} \
         -high_confidence_bed ${params.SAGE_high_confidence_bed} \
         -ensembl_data_dir ${params.SAGE_ref_dir}/common/ensembl_data \
-        -output_vcf ${map.patient}_${map.tumor_meta.sample}.sage.vcf.gz
+        -output_vcf ${map.patient}_${map.tumor_meta.sample}.sage.vcf.gz \
+        -skip_msi_jitter
     """
 }
 
