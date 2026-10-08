@@ -60,6 +60,7 @@ params.genomes = [
         mutect2_germline: "af-only-gnomad.hg38_no_alt.vcf.gz",
         mutect2_interval_dir: "GRCh38_interval_list_20",
         delly_excl: "${params.database_path}/Databases/GRCh38/Delly/human.hg38.excl.tsv",
+        manta_region: "${params.database_path}/Databases/GRCh38/manta_callregions_GRCh38.bed.gz",
         tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
     ],
     'GRCh37': [
@@ -96,6 +97,7 @@ params.genomes = [
         mutect2_germline: "af-only-gnomad.raw.sites.grch37.vcf.gz",
         mutect2_interval_dir: "GRCh37_interval_list_20",
         delly_excl: "${params.database_path}/Databases/GRCh37/Delly/human.hg19.excl.tsv",
+        manta_region: "${params.database_path}/Databases/GRCh37/manta_callregions_GRCh37.bed.gz",
         tools: ["fastqc", "bwa_mem", "mkdup", "recalibrate", "sage", "strelka", "muse", "mutect2", "ascat", "delly", "cnvkit", "mosdepth", "conpair", "manta"]
     ],
     'mm39': [
@@ -203,6 +205,7 @@ params.recal_knownsite1 = params.recal_knownsite1 ?: params.genomes[params.genom
 params.recal_knownsite2 = params.recal_knownsite2 ?: params.genomes[params.genome].recal_knownsite2
 params.recal_interval_wes = params.recal_interval_wes ?: params.genomes[params.genome].recal_interval_wes
 params.delly_excl = params.delly_excl ?: params.genomes[params.genome].delly_excl
+params.manta_region = params.manta_region ?: params.genomes[params.genome].manta_region
 
 // Set SAGE-specific parameters
 params.SAGE_ref_dir = params.SAGE_ref_dir ?: (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_ref_dir : null)
