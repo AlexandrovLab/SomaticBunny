@@ -1,0 +1,3 @@
+patient,sex,status,sample,lane,fastq_1,fastq_2
+TCGA-XX-XXXX,XX,0,TCGA-XX-XXXX_normal,lane_1,/path/to/fastq/TCGA-XX-XXXX_normal_1.fastq.gz,/path/to/fastq/TCGA-XX-XXXX_normal_2.fastq.gz
+TCGA-XX-XXXX,XX,1,TCGA-XX-XXXX_tumor,lane_1,/path/to/fastq/TCGA-XX-XXXX_tumor_1.fastq.gz,/path/to/fastq/TCGA-XX-XXXX_tumor_2.fastq.gz
