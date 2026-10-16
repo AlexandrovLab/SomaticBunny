@@ -17,8 +17,8 @@ process POST_scenario3 {
     path("snvs_filtered/2outof4/${patient_sample}_PASSed.vcf"), emit: snv_passed
     path("snvs_filtered/2outof4/${patient_sample}_snv_final_annotated.vcf"), emit: snv_annotated, optional: true
     path("indels_filtered/2outof3/${patient_sample}_PASSed.vcf"), emit: indel_passed
-    path("indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf"), emit: indel_annotated, optional: true
-    tuple val(patient_sample), path("*final.vcf"), emit: merge_input
+    path("indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf"), emit: indel_annotated, optional: true 
+    tuple val(patient_sample), path(mutect2_vcf), path(muse_vcf), path(strelka_snv), path(sage_vcf), path("*final.vcf"),emit: merge_input
 
     script:
     """
