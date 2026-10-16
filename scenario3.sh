@@ -379,7 +379,7 @@ grep -v "#" ../mutect_snvs/${SAMPLE_NAME}_mutect_snv.vcf | grep panel_of_normals
 
 pon=$(cat ${SAMPLE_NAME}_mutect_snv_PON.vcf | wc -l)
 
-≈if [ $pon -eq 0 ]; then
+if [ $pon -eq 0 ]; then
     cp ${f}.tmp2 ${f}.tmp3
 else
     awk -F"\t" 'NR==FNR{a[$1$2$4$5];next} NR>FNR{if($1$2$4$5 in a){$7=="PASS"?$7="panel_of_normals":$7=$7";panel_of_normals";print $0}else{print $0}}' OFS='\t' ${SAMPLE_NAME}_mutect_snv_PON.vcf ${f}.tmp2 > ${f}.tmp3
