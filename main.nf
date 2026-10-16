@@ -1157,10 +1157,16 @@ workflow {
         POST_scenario5(postInput)
         POST_scenario6(postInput)
 
-		MERGE_HEADER(postInput,POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') })
-		MERGE_HEADER(postInput,POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') })
-		MERGE_HEADER(postInput,POST_scenario5.out.merge_input.map { file -> tuple(file, 'scenario_5') })
-		MERGE_HEADER(postInput,POST_scenario6.out.merge_input.map { file -> tuple(file, 'scenario_6') })
+        merge_3 = POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') }
+        merge_4 = POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') }
+        merge_5 = POST_scenario5.out.merge_input.map { file -> tuple(file, 'scenario_5') }
+        merge_6 = POST_scenario6.out.merge_input.map { file -> tuple(file, 'scenario_6') }
+
+        merge_all = merge_3.mix(merge_4, merge_5, merge_6)
+
+		MERGE_HEADER(postInput,merge_all)
+
+		
 
         // AlleleCounter for VAF calculation
         def vaf_source = (params.first_step == "variant_calling") ? 
