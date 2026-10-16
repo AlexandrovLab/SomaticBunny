@@ -18,7 +18,7 @@ process MERGE_HEADER {
     bash ${projectDir}/rename_info.sh \
         ${map[1]} \
         ${map[3]} \
-        ${muse_vcf[4]}
+        ${map[2]}
 
     bash ${projectDir}/merge_header.sh \
         output_mutect.vcf \
