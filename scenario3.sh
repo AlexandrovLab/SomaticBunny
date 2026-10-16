@@ -56,6 +56,17 @@ bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_strelka_snv.vcf -Oz -o temp.v
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_sage.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_sage.vcf
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_muse_snv.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_muse_snv.vcf
 
+suffix_1="mutect2"
+suffix_2="strelka"
+suffix_3="muse" 
+
+echo "INFO/DP DP_${suffix_1}" > rename_mutect.txt
+echo "INFO/DP DP_${suffix_2}" > rename_strelka.txt
+echo "INFO/SOMATIC SOMATIC_${suffix_2}" >> rename_strelka.txt
+echo "INFO/SOMATIC SOMATIC_${suffix_3}" > rename_muse.txt
+bcftools annotate --rename-annots rename_mutect.txt ${SAMPLE_NAME}_mutect.vcf -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_mutect.vcf
+bcftools annotate --rename-annots rename_strelka.txt ${SAMPLE_NAME}_strelka_snv.vcf  -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_strelka_snv.vcf 
+bcftools annotate --rename-annots rename_muse.txt ${SAMPLE_NAME}_muse_snv.vcf -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_muse_snv.vcf 
 
 
 #######################
@@ -345,54 +356,30 @@ awk -F "\t" 'NR==FNR{a[$1$2$3$4$5]=$7"\t"$8;next}
             print $0, "."
         }
     }' ../muse_snvs/${SAMPLE_NAME}_muse_snv.vcf ${SAMPLE_NAME}_match3.vcf > ${SAMPLE_NAME}_match4.vcf
-cat ${SAMPLE_NAME}_match4.vcf | awk '{OFS="\t";a=substr($8,3,length($8));$9=a"|"$10"|"$11"|"$12"|"$13;print $1,$2,$3,$4,$5,$6,$7,".",$9}' > ${SAMPLE_NAME}_bseq_annotated.vcf
+# cat ${SAMPLE_NAME}_match4.vcf | awk '{OFS="\t";a=substr($8,3,length($8));$9=a"|"$10"|"$11"|"$12"|"$13;print $1,$2,$3,$4,$5,$6,$7,".",$9}' > ${SAMPLE_NAME}_bseq_annotated.vcf
+
+cat ${SAMPLE_NAME}_match4.vcf | awk 'BEGIN{FS=OFS="\t"} {
+    s=""
+    for (i=10; i<=13; i++)
+        if ($i != ".") s = (s=="" ? $i : s"&"$i)
+    if (s=="") s="."
+    print $1,$2,$3,$4,$5,$6,$7,s
+}' > ${SAMPLE_NAME}_bseq_annotated.vcf
 
 rm *match*
 
 # Apply filters
 f="${SAMPLE_NAME}_bseq_annotated.vcf"
 
-cat $f | \
-awk -F"\t" -v tlod="$tlod" '{
-    OFS=FS
-    split($9,caller,"|")
-    for(j=1; j<=length(caller); j++) {
-        split(caller[j],t,";")
-        for(i in t) {
-            if(t[i] ~ /^TLOD=/) {
-                split(t[i],ta,"=")
-                ta[2]<tlod?($7=="PASS"?$7="lowTLOD":$7=$7";lowTLOD"):$7=$7
-                break
-            }
-        }
-    }
-    print
-}' | \
-awk -F"\t" -v sevs="$sevs" '{
-    OFS=FS
-    split($9,caller,"|")
-    for(j=1; j<=length(caller); j++) {
-        split(caller[j],t,";")
-        for(i in t) {
-            if(t[i] ~ /^SomaticEVS=/) {
-                split(t[i],ta,"=")
-                ta[2]<sevs?($7=="PASS"?$7="lowSomaticEVS":$7=$7";lowSomaticEVS"):$7=$7
-                break
-            }
-        }
-    }
-    print
-}' > ${f}.tmp1
-
 # awk -F"\t" '{OFS=FS; if($7=="lowTLOD"&&length($6)>5) {$7="PASS";gsub("mt,", "", $6);print} else if($7=="lowSomaticEVS"&&length($6)>5) {$7="PASS";gsub("st,", "", $6);gsub(",st", "", $6);print} else if($7=="lowTLOD;lowSomaticEVS"&&length($6)==11) {$7="PASS";$6="sa,ms";print} else {print}}' ${f}.tmp1 > ${f}.tmp2
-awk -F"\t" '{OFS=FS; if(length($6)>4) {print}}' ${f}.tmp1 > ${f}.tmp2
+awk -F"\t" '{OFS=FS; if(length($6)>4) {print}}' $f > ${f}.tmp2
 
 # Filter panel of normals
 grep -v "#" ../mutect_snvs/${SAMPLE_NAME}_mutect_snv.vcf | grep panel_of_normals > ${SAMPLE_NAME}_mutect_snv_PON.vcf || touch ${SAMPLE_NAME}_mutect_snv_PON.vcf
 
 pon=$(cat ${SAMPLE_NAME}_mutect_snv_PON.vcf | wc -l)
 
-if [ $pon -eq 0 ]; then
+≈if [ $pon -eq 0 ]; then
     cp ${f}.tmp2 ${f}.tmp3
 else
     awk -F"\t" 'NR==FNR{a[$1$2$4$5];next} NR>FNR{if($1$2$4$5 in a){$7=="PASS"?$7="panel_of_normals":$7=$7";panel_of_normals";print $0}else{print $0}}' OFS='\t' ${SAMPLE_NAME}_mutect_snv_PON.vcf ${f}.tmp2 > ${f}.tmp3
@@ -403,11 +390,26 @@ rm -f *tmp* *mutect_snv_PON.vcf
 
 # Generate final PASS file for SNVs
 # cat ${SAMPLE_NAME}_snv_final_annotated.vcf | \
-#     awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
+#     awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8}' | \
 #     awk -v OFS="\t" '$1=$1' | \
 #     sort -k1,1V -k2,2n > ${SAMPLE_NAME}_PASSed.vcf
 sort -k1,1V -k2,2n ${SAMPLE_NAME}_snv_final_annotated.vcf \
 > ${SAMPLE_NAME}_PASSed.vcf
+
+awk -F'\t' -v OFS='\t' '
+/^#CHROM/ {
+    print "##INFO=<ID=callers,Number=.,Type=String,Description=\"Callers that called the variant\">"
+    print "##INFO=<ID=caller_filter,Number=.,Type=String,Description=\"Filter status reported by each caller\">"
+    print; next
+}
+/^#/ { print; next }
+{
+    add = "callers=" $6 ";caller_filter=" $7
+    $8 = ($8 == "." || $8 == "") ? add : $8 ";" add
+    $6 = "."; $7 = "."
+    print
+}' ${SAMPLE_NAME}_PASSed.vcf > temp.vcf && mv temp.vcf ${SAMPLE_NAME}_PASSed.vcf
+
 ###############################
 ## Merge and Annotate INDELs ##
 ###############################
