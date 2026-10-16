@@ -257,7 +257,7 @@ echo "Running bseq..."
 echo "Variants before bseq filter: $(wc -l < ${SAMPLE_NAME}_2outof4.vcf)"
 
 # Add bseq header and run bias filter
-cat ${DATABASE_PATH}/EVC_nextflow/bseq_header ${SAMPLE_NAME}_2outof4.vcf > ${SAMPLE_NAME}_2outof4_bseq.vcf
+cat ${DATABASE_PATH}/bseq_header ${SAMPLE_NAME}_2outof4.vcf > ${SAMPLE_NAME}_2outof4_bseq.vcf
 # python ${DATABASE_PATH}/EVC_nextflow/DKFZBiasFilter/scripts/biasFilter.py \
 #     ${SAMPLE_NAME}_2outof4.vcf.tmp \
 #     $TUMOR_BAM_ABS \
