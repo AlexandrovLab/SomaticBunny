@@ -4,10 +4,10 @@ process POST_scenario6 {
     conda "${params.POST_env}"
     scratch true
     label 'process_low'  
-    publishDir("${params.post_dir}/${patient_sample}/scenario_6/snvs", mode: 'copy', pattern: 'snvs_filtered/2outof4/*_PASSed.vcf')
-    publishDir("${params.post_dir}/${patient_sample}/scenario_6/snvs", mode: 'copy', pattern: 'snvs_filtered/2outof4/*_snv_final_annotated.vcf')
-    publishDir("${params.post_dir}/${patient_sample}/scenario_6/indels", mode: 'copy', pattern: 'indels_filtered/2outof3/*_PASSed.vcf')
-    publishDir("${params.post_dir}/${patient_sample}/scenario_6/indels", mode: 'copy', pattern: 'indels_filtered/2outof3/*_indel_final_annotated.vcf')
+    publishDir("${params.post_dir}/${patient_sample}/scenario6/snvs", mode: 'copy', pattern: 'snvs_filtered/2outof4/*_PASSed.vcf')
+    publishDir("${params.post_dir}/${patient_sample}/scenario6/snvs", mode: 'copy', pattern: 'snvs_filtered/2outof4/*_snv_final_annotated.vcf')
+    publishDir("${params.post_dir}/${patient_sample}/scenario6/indels", mode: 'copy', pattern: 'indels_filtered/2outof3/*_PASSed.vcf')
+    publishDir("${params.post_dir}/${patient_sample}/scenario6/indels", mode: 'copy', pattern: 'indels_filtered/2outof3/*_indel_final_annotated.vcf')
     
     input:
     tuple val(patient_sample), path(mutect2_vcf), path(muse_vcf), path(strelka_snv), path(strelka_indel), path(sage_vcf), path(tumor_bam), path(tumor_bai)
