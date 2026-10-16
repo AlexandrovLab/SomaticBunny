@@ -1156,6 +1156,11 @@ workflow {
         POST_scenario5(postInput)
         POST_scenario6(postInput)
 
+		MERGE_HEADER(postInput,POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') }
+		MERGE_HEADER(postInput,POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') }
+		MERGE_HEADER(postInput,POST_scenario5.out.merge_input.map { file -> tuple(file, 'scenario_5') }
+		MERGE_HEADER(postInput,POST_scenario6.out.merge_input.map { file -> tuple(file, 'scenario_6') }
+
         // AlleleCounter for VAF calculation
         def vaf_source = (params.first_step == "variant_calling") ? 
             RENAME_BAM_HEADER.out.renamed_bam.map { meta, bam, bai -> [meta.patient, meta, bam, bai] } :
