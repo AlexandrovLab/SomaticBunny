@@ -401,6 +401,7 @@ include { POST_scenario3 } from './Modules/POST_scenario3.nf'
 include { POST_scenario4 } from './Modules/POST_scenario4.nf'
 include { POST_scenario5 } from './Modules/POST_scenario5.nf'
 include { POST_scenario6 } from './Modules/POST_scenario6.nf'
+include { MERGE_HEADER } from './Modules/MERGE_HEADER.nf'
 include { ALLELECOUNTER } from './Modules/ALLELECOUNTER.nf'
 
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
