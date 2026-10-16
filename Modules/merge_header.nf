@@ -8,7 +8,7 @@ process merge_header {
 
     input:
     tuple val(patient_sample), path(mutect2_vcf), path(muse_vcf), path(strelka_snv), path(strelka_indel), path(sage_vcf), path(tumor_bam), path(tumor_bai)
-    tuple val(patient_sample), path(final_vcf)
+    tuple val(patient_sample), path(final_vcf), val(scenario)
 
     output:
     path("*_standard_PASSed.vcf"), emit: final_standard_vcf
@@ -39,7 +39,7 @@ process merge_header {
         output_muse.vcf \
         ${sage_vcf} > merged_header.vcf
 
-    cat merged_header.vcf ${final_vcf} > ${sample}_standard_PASSed.vcf
+    cat merged_header.vcf ${final_vcf} > ${sample}_${scenario}_standard_PASSed.vcf
     """
 
 }
