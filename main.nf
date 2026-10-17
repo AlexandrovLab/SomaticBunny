@@ -316,6 +316,7 @@ params.muse_env = "$projectDir/yml/muse.yml"
 params.picard_merge_env = "$projectDir/yml/picard.yml"
 params.gatk_env = "${projectDir}/yml/gatk_runtime.yml"
 params.POST_env = "${projectDir}/yml/POST.yml"
+params.POST_rename_env = "${projectDir}/yml/POST_rename.yml"
 params.gatk = "${params.database_path}/gatk-4.6.2.0/gatk"
 
 // Write configuration to log file
@@ -395,6 +396,7 @@ include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
 
 include { POST } from './Modules/POST.nf'
+include { POST_rename } from './Modules/POST_rename.nf'
 include { POST_scenario1 } from './Modules/POST_scenario1.nf'
 include { POST_scenario2 } from './Modules/POST_scenario2.nf'
 include { POST_scenario3 } from './Modules/POST_scenario3.nf'
