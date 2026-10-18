@@ -81,5 +81,10 @@ process POST_scenario3 {
     echo "Indels (for comparison):"
     wc -l indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf || echo "File not found"
     wc -l indels_filtered/2outof3/${patient_sample}_PASSed.vcf || echo "File not found"
+
+    # Creating the combined PASSed vcf for allelecounter
+    grep "^#" snvs_filtered/2outof4/${patient_sample}_PASSed.vcf > ${patient_sample}_final.vcf || true
+    grep -vh "^#" snvs_filtered/2outof4/${patient_sample}_PASSed.vcf indels_filtered/2outof3/${patient_sample}_PASSed.vcf | sort -k1,1V -k2,2n >> ${patient_sample}_final.vcf
+
     """
 }
