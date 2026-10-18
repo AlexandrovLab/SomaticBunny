@@ -50,23 +50,16 @@ fi
 cp $MUTECT2_VCF ${SAMPLE_NAME}_mutect.vcf
 cp $MUSE_VCF ${SAMPLE_NAME}_muse_snv.vcf
 
+
+which bcftools
+bcftools --version
+
+
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_mutect.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_mutect.vcf
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_strelka_indel.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_strelka_indel.vcf
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_strelka_snv.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_strelka_snv.vcf
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_sage.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_sage.vcf
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_muse_snv.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_muse_snv.vcf
-
-suffix_1="mutect2"
-suffix_2="strelka"
-suffix_3="muse" 
-
-echo "INFO/DP DP_${suffix_1}" > rename_mutect.txt
-echo "INFO/DP DP_${suffix_2}" > rename_strelka.txt
-echo "INFO/SOMATIC SOMATIC_${suffix_2}" >> rename_strelka.txt
-echo "INFO/SOMATIC SOMATIC_${suffix_3}" > rename_muse.txt
-bcftools annotate --rename-annots rename_mutect.txt ${SAMPLE_NAME}_mutect.vcf -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_mutect.vcf
-bcftools annotate --rename-annots rename_strelka.txt ${SAMPLE_NAME}_strelka_snv.vcf  -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_strelka_snv.vcf 
-bcftools annotate --rename-annots rename_muse.txt ${SAMPLE_NAME}_muse_snv.vcf -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_muse_snv.vcf 
 
 
 #######################
@@ -269,8 +262,8 @@ cat ${DATABASE_PATH}/bseq_header ${SAMPLE_NAME}_2outof4.vcf > ${SAMPLE_NAME}_2ou
 
 grep -v "#" ${SAMPLE_NAME}_2outof4_bseq.vcf > temp_bseq
 mv temp_bseq ${SAMPLE_NAME}_2outof4_bseq.vcf
-# rm ${SAMPLE_NAME}_2outof4.vcf.tmp
-# rm -r tmp
+rm ${SAMPLE_NAME}_2outof4.vcf.tmp
+rm -r tmp
 
 echo "Annotating callers in SNVs..."
 echo "Variants after bseq filter: $(wc -l < ${SAMPLE_NAME}_2outof4_bseq.vcf)"

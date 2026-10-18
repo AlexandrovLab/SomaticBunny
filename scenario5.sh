@@ -56,19 +56,6 @@ bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_strelka_snv.vcf -Oz -o temp.v
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_sage.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_sage.vcf
 bcftools norm -f $REF_FASTA -m -any ${SAMPLE_NAME}_muse_snv.vcf -Oz -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_muse_snv.vcf
 
-
-suffix_1="mutect2"
-suffix_2="strelka"
-suffix_3="muse" 
-
-echo "INFO/DP DP_${suffix_1}" > rename_mutect.txt
-echo "INFO/DP DP_${suffix_2}" > rename_strelka.txt
-echo "INFO/SOMATIC SOMATIC_${suffix_2}" >> rename_strelka.txt
-echo "INFO/SOMATIC SOMATIC_${suffix_3}" > rename_muse.txt
-bcftools annotate --rename-annots rename_mutect.txt ${SAMPLE_NAME}_mutect.vcf -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_mutect.vcf
-bcftools annotate --rename-annots rename_strelka.txt ${SAMPLE_NAME}_strelka_snv.vcf  -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_strelka_snv.vcf 
-bcftools annotate --rename-annots rename_muse.txt ${SAMPLE_NAME}_muse_snv.vcf -o temp.vcf $$ mv temp.vcf ${SAMPLE_NAME}_muse_snv.vcf 
-
 #######################
 ## Fix Mutect2 files ##
 #######################
