@@ -1151,13 +1151,14 @@ workflow {
             }
         
         // POST(postInput)
+        POST_rename(postInput)
 
-        POST_scenario1(postInput)
-        POST_scenario2(postInput)
-        POST_scenario3(postInput)
-        POST_scenario4(postInput)
-        POST_scenario5(postInput)
-        POST_scenario6(postInput)
+        POST_scenario1(POST_rename.out.renamed_postInput)
+        POST_scenario2(POST_rename.out.renamed_postInput)
+        POST_scenario3(POST_rename.out.renamed_postInput)
+        POST_scenario4(POST_rename.out.renamed_postInput)
+        POST_scenario5(POST_rename.out.renamed_postInput)
+        POST_scenario6(POST_rename.out.renamed_postInput)
 
         merge_3 = POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') }
         merge_4 = POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') }
