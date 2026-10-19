@@ -286,7 +286,17 @@ awk -F "\t" 'NR==FNR{a[$1$2$3$4$5]=$8;next} NR>FNR{if($1$2$3$4$5 in a){OFS="\t";
 awk -F "\t" 'NR==FNR{a[$1$2$3$4$5]=$8;next} NR>FNR{if($1$2$3$4$5 in a){OFS="\t";if($6=="."){$6="ms"}else{$6=$6",ms"};print $0"\t"a[$1$2$3$4$5]}else{OFS="\t";print $0"\t."}}' \
     ../muse_snvs/${SAMPLE_NAME}_muse_snv.vcf ${SAMPLE_NAME}_match3.vcf > ${SAMPLE_NAME}_match4.vcf
 
-cat ${SAMPLE_NAME}_match4.vcf | awk '{OFS="\t";a=substr($8,3,length($8));$9=a"|"$10"|"$11"|"$12"|"$13;print $1,$2,$3,$4,$5,$6,$7,".",$9}' > ${SAMPLE_NAME}_bseq_annotated.vcf
+# cat ${SAMPLE_NAME}_match4.vcf | awk '{OFS="\t";a=substr($8,3,length($8));$9=a"|"$10"|"$11"|"$12"|"$13;print $1,$2,$3,$4,$5,$6,$7,".",$9}' > ${SAMPLE_NAME}_bseq_annotated.vcf
+
+cat ${SAMPLE_NAME}_match4.vcf | awk 'BEGIN{FS=OFS="\t"} {
+    s=""
+    for (i=10; i<=13; i++)
+        if ($i != ".") s = (s=="" ? $i : s"&"$i)
+    if (s=="") s="."
+    print $1,$2,$3,$4,$5,$6,$7,s
+}' > ${SAMPLE_NAME}_bseq_annotated.vcf
+
+
 
 rm *match*
 
@@ -296,7 +306,7 @@ f="${SAMPLE_NAME}_bseq_annotated.vcf"
 cat $f | \
 awk -F"\t" -v tlod="$tlod" '{
     OFS=FS
-    split($9,caller,"|")
+    split($8,caller,"|")
     for(j=1; j<=length(caller); j++) {
         split(caller[j],t,";")
         for(i in t) {
@@ -311,7 +321,7 @@ awk -F"\t" -v tlod="$tlod" '{
 }' | \
 awk -F"\t" -v sevs="$sevs" '{
     OFS=FS
-    split($9,caller,"|")
+    split($8,caller,"|")
     for(j=1; j<=length(caller); j++) {
         split(caller[j],t,";")
         for(i in t) {
@@ -343,9 +353,25 @@ rm -f *tmp* *mutect_snv_PON.vcf
 
 # Generate final PASS file for SNVs
 cat ${SAMPLE_NAME}_snv_final_annotated.vcf | \
-    awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8, $9}' | \
+    awk '$7 == "PASS" {print $1, $2, $3, $4, $5, $6, $7, $8}' | \
     awk -v OFS="\t" '$1=$1' | \
     sort -k1,1V -k2,2n > ${SAMPLE_NAME}_PASSed.vcf
+
+
+awk -F'\t' -v OFS='\t' '
+/^#CHROM/ {
+    print "##INFO=<ID=callers,Number=.,Type=String,Description=\"Callers that called the variant\">"    
+    print; next
+}
+/^#/ { print; next }
+{
+    add = "callers=" $6
+    $8 = ($8 == "." || $8 == "") ? add : $8 ";" add
+    $6 = "."; $7 = "."
+    print
+}' ${SAMPLE_NAME}_PASSed.vcf > temp.vcf && mv temp.vcf ${SAMPLE_NAME}_PASSed.vcf
+
+
 
 ###############################
 ## Merge and Annotate INDELs ##

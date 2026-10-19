@@ -316,6 +316,7 @@ params.muse_env = "$projectDir/yml/muse.yml"
 params.picard_merge_env = "$projectDir/yml/picard.yml"
 params.gatk_env = "${projectDir}/yml/gatk_runtime.yml"
 params.POST_env = "${projectDir}/yml/POST.yml"
+params.POST_rename_env = "${projectDir}/yml/POST_rename.yml"
 params.gatk = "${params.database_path}/gatk-4.6.2.0/gatk"
 
 // Write configuration to log file
@@ -395,12 +396,14 @@ include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
 
 include { POST } from './Modules/POST.nf'
+include { POST_rename } from './Modules/POST_rename.nf'
 include { POST_scenario1 } from './Modules/POST_scenario1.nf'
 include { POST_scenario2 } from './Modules/POST_scenario2.nf'
 include { POST_scenario3 } from './Modules/POST_scenario3.nf'
 include { POST_scenario4 } from './Modules/POST_scenario4.nf'
 include { POST_scenario5 } from './Modules/POST_scenario5.nf'
 include { POST_scenario6 } from './Modules/POST_scenario6.nf'
+include { MERGE_HEADER } from './Modules/MERGE_HEADER.nf'
 include { ALLELECOUNTER } from './Modules/ALLELECOUNTER.nf'
 
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
@@ -1148,13 +1151,25 @@ workflow {
             }
         
         // POST(postInput)
+        POST_rename(postInput)
 
-        POST_scenario1(postInput)
-        POST_scenario2(postInput)
-        POST_scenario3(postInput)
-        POST_scenario4(postInput)
-        POST_scenario5(postInput)
-        POST_scenario6(postInput)
+        POST_scenario1(POST_rename.out.renamed_postInput)
+        POST_scenario2(POST_rename.out.renamed_postInput)
+        POST_scenario3(POST_rename.out.renamed_postInput)
+        POST_scenario4(POST_rename.out.renamed_postInput)
+        POST_scenario5(POST_rename.out.renamed_postInput)
+        POST_scenario6(POST_rename.out.renamed_postInput)
+
+        merge_3 = POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') }
+        merge_4 = POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') }
+        merge_5 = POST_scenario5.out.merge_input.map { file -> tuple(file, 'scenario_5') }
+        merge_6 = POST_scenario6.out.merge_input.map { file -> tuple(file, 'scenario_6') }
+
+        merge_all = merge_3.mix(merge_4, merge_5, merge_6)
+
+		MERGE_HEADER(merge_all)
+
+		
 
         // AlleleCounter for VAF calculation
         def vaf_source = (params.first_step == "variant_calling") ? 

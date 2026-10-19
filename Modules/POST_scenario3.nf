@@ -17,7 +17,8 @@ process POST_scenario3 {
     path("snvs_filtered/2outof4/${patient_sample}_PASSed.vcf"), emit: snv_passed
     path("snvs_filtered/2outof4/${patient_sample}_snv_final_annotated.vcf"), emit: snv_annotated, optional: true
     path("indels_filtered/2outof3/${patient_sample}_PASSed.vcf"), emit: indel_passed
-    path("indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf"), emit: indel_annotated, optional: true
+    path("indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf"), emit: indel_annotated, optional: true 
+    tuple val(patient_sample), path(mutect2_vcf), path(muse_vcf), path(strelka_snv), path(sage_vcf), path("*final.vcf"),emit: merge_input
 
     script:
     """
@@ -80,5 +81,9 @@ process POST_scenario3 {
     echo "Indels (for comparison):"
     wc -l indels_filtered/2outof3/${patient_sample}_indel_final_annotated.vcf || echo "File not found"
     wc -l indels_filtered/2outof3/${patient_sample}_PASSed.vcf || echo "File not found"
+    # Creating the combined PASSed vcf for allelecounter
+    grep "^#" snvs_filtered/2outof4/${patient_sample}_PASSed.vcf > ${patient_sample}_final.vcf || true
+    grep -vh "^#" snvs_filtered/2outof4/${patient_sample}_PASSed.vcf indels_filtered/2outof3/${patient_sample}_PASSed.vcf | sort -k1,1V -k2,2n >> ${patient_sample}_final.vcf
+
     """
 }
