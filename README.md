@@ -21,10 +21,6 @@
 - [Tool Versions](#tool-versions)
 - [Benchmark](#benchmark)
 
-<p align="center">
-  <img src="https://github.com/AlexandrovLab/SomaticBunny/blob/main/workflow_logo/SomaticBunny.png" alt="SomaticBunny Pipeline Workflow"/>
-</p>
-
 ## Overview
 
 The SomaticBunny pipeline integrates multiple variant calling tools to improve detection accuracy for:
@@ -34,6 +30,11 @@ The SomaticBunny pipeline integrates multiple variant calling tools to improve d
 - Copy Number Variants (CNVs)
 
 This pipeline is designed to work with paired tumor-normal whole-genome or whole-exome sequencing data.
+
+<p align="center">
+  <img src="https://github.com/AlexandrovLab/SomaticBunny/blob/main/workflow_logo/SomaticBunny.png" alt="SomaticBunny Pipeline Workflow"/>
+</p>
+
 
 ## Prerequisites
 
