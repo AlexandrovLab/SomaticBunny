@@ -1,10 +1,11 @@
 # SomaticBunny
 
-SomaticBunny is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
+<img src="workflow_logo/SomaticBunny_Logo.png" alt="SomaticBunny Logo" width="300" align="left"/>
 
-<p align="center">
-  <img src="https://github.com/AlexandrovLab/SomaticBunny/blob/main/workflow_logo/SomaticBunny.png" alt="SomaticBunny Pipeline Workflow"/>
-</p>
+**SomaticBunny** is an ensemble pipeline for somatic variant calling that integrates multiple tools to provide comprehensive variant detection in tumor-normal paired samples.
+
+<br clear="left"/>
+
 
 ## Table of Contents
 - [Overview](#overview)
@@ -19,6 +20,10 @@ SomaticBunny is an ensemble pipeline for somatic variant calling that integrates
 - [Output](#output)
 - [Tool Versions](#tool-versions)
 - [Benchmark](#benchmark)
+
+<p align="center">
+  <img src="https://github.com/AlexandrovLab/SomaticBunny/blob/main/workflow_logo/SomaticBunny.png" alt="SomaticBunny Pipeline Workflow"/>
+</p>
 
 ## Overview
 
