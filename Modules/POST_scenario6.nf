@@ -26,7 +26,9 @@ process POST_scenario6 {
     set -e  # Exit on error
     
     # Create symlink so pysam can find the index file
-    ln -sf ${tumor_bam} ${tumor_bam}.bai
+    if [[ "${tumor_bai}" != "${tumor_bam}.bai" ]]; then
+        ln -sfn "${tumor_bai}" "${tumor_bam}.bai"
+    fi
 
     # Debug: Check conda environment
     echo "=== Conda Environment ==="
