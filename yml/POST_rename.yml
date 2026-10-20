@@ -37,4 +37,3 @@ dependencies:
   - openssl=3.6.5=h781a0a9_0
   - perl=5.44.0=1_h7cc23a3_perl5
   - zstd=1.5.7=hb78ec9c_7
-prefix: /tscc/nfs/home/rwu1/miniconda3/envs/bio_env
