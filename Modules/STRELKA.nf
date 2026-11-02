@@ -20,28 +20,18 @@ process STRELKA {
 
 
     script:
-    if (params.type == "exome")
+    def exome_flag = params.type == "exome" ? "--exome" : ""
+    def prefix     = "${map.patient}_${map.tumor_meta.sample}"
+    """
+    configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} \\
+        --callRegions ${params.bed} ${exome_flag} --runDir strelka
 
-        """
-        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --exome
+    python2 strelka/runWorkflow.py -m local -j ${task.cpus}
 
-        python2 strelka/runWorkflow.py -m local -j ${task.cpus}
-
-        mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz
-        mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz.tbi
-        mv strelka/results/variants/somatic.snvs.vcf.gz       ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz
-        mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz.tbi
-        """
-    else
-        """
-        configureStrelkaSomaticWorkflow.py --referenceFasta ${params.ref} --normalBam ${map.normal} --tumorBam ${map.tumor} --runDir strelka --callRegions ${params.bed}
-
-        python2 strelka/runWorkflow.py -m local -j ${task.cpus}
-
-        mv strelka/results/variants/somatic.indels.vcf.gz     ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz
-        mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${map.patient}_${map.tumor_meta.sample}.somatic_indels.vcf.gz.tbi
-        mv strelka/results/variants/somatic.snvs.vcf.gz       ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz
-        mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${map.patient}_${map.tumor_meta.sample}.somatic_snvs.vcf.gz.tbi
-        """
+    mv strelka/results/variants/somatic.indels.vcf.gz     ${prefix}.somatic_indels.vcf.gz
+    mv strelka/results/variants/somatic.indels.vcf.gz.tbi ${prefix}.somatic_indels.vcf.gz.tbi
+    mv strelka/results/variants/somatic.snvs.vcf.gz       ${prefix}.somatic_snvs.vcf.gz
+    mv strelka/results/variants/somatic.snvs.vcf.gz.tbi   ${prefix}.somatic_snvs.vcf.gz.tbi
+    """
 }
 
