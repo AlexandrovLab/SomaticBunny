@@ -989,34 +989,9 @@ workflow {
                     ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
 
                     ASCAT_allelecount.out.allelecount
-                        .map { map, chr, file ->
-                            def patient = map.patient
-                            def sample = map.sample
-                            def gender = map.gender
-                            [patient, sample, gender, file]
-                        }
-                        .groupTuple(by: [0, 1, 2])  // Group by patient, sample, and gender
-                        // Restructure from pairs to separate normal and tumor lists
-                        .map { patient, sample, gender, files ->
-                            // Extract normal and tumor files from the nested structure
-                            def normalFiles = []
-                            def tumorFiles = []
-
-                            // Flatten any nested structure if present
-                            def flatFiles = files.flatten()
-
-                            // Separate normal and tumor files
-                            flatFiles.each { file ->
-                                if (file.toString().contains("_normal_")) {
-                                    normalFiles << file
-                                } else if (file.toString().contains("_tumor_")) {
-                                    tumorFiles << file
-                                }
-                            }
-
-                            [patient, sample, gender, normalFiles, tumorFiles]
-                        }
-                        .set { ascat_logrbaf_input }
+                    .map { map, chr, tumor_file, normal_file -> [map.patient, map.sample, map.gender, normal_file, tumor_file] }
+                    .groupTuple(by: [0, 1, 2])   // -> [patient, sample, gender, normalFiles, tumorFiles]
+                    .set { ascat_logrbaf_input }
 
                     ASCAT_logrbaf(ascat_logrbaf_input)
                     ASCAT_exome(ASCAT_logrbaf.out.ascat_input)
