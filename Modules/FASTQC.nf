@@ -9,7 +9,7 @@ process FASTQC {
     maxRetries 3
 
     input:
-    val(meta)
+    tuple val(meta), path(fastq_1), path(fastq_2)
 
     output:
     path("*.html"), emit: html
@@ -18,6 +18,6 @@ process FASTQC {
 
     script:
     """
-    fastqc -t ${task.cpus} -o ./ ${meta.fastq_1} ${meta.fastq_2}
+    fastqc -t ${task.cpus} -o ./ ${fastq_1} ${fastq_2}
     """
 }

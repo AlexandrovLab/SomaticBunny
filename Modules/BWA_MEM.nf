@@ -10,7 +10,7 @@ process BWA_MEM {
     maxRetries 3
 
     input:
-    val(meta)
+    tuple val(meta), path(fastq_1), path(fastq_2)
 
     output:
     tuple val(meta), path("*.bam"), emit: bam
@@ -22,14 +22,14 @@ process BWA_MEM {
     def rg_sm        = "${meta.patient}_${meta.sample}_${meta.status}"  
     """
     # PU = <flowcell>.<lane> of the first read (Illumina read names); falls back to the sample name
-    pu=\$(gzip -cdf ${meta.fastq_1} | head -n 1 | awk -F'[:[:space:]]' '/^@/ && NF>=7 {print \$3"."\$4}')
+    pu=\$(gzip -cdf ${fastq_1} | head -n 1 | awk -F'[:[:space:]]' '/^@/ && NF>=7 {print \$3"."\$4}')
     [ -n "\$pu" ] || pu=${rg_sm}
 
     set -o pipefail
 
     bwa-mem2 mem -Y -T 30 -t ${bwa_threads} -K ${batch_bases} \\
         -R "@RG\\tID:${rg_sm}\\tSM:${rg_sm}\\tLB:${rg_sm}\\tPL:ILLUMINA\\tPU:\$pu" \\
-        ${params.ref} ${meta.fastq_1} ${meta.fastq_2} \\
+        ${params.ref} ${fastq_1} ${fastq_2} \\
     | samtools sort -@ ${sort_threads - 1} -T ${rg_sm} -o ${rg_sm}_raw.bam -
 
     """
