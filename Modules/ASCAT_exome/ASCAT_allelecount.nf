@@ -11,7 +11,9 @@ process ASCAT_allelecount {
     each chr
 
     output:
-    tuple val(map), val(chr), path("*_${chr}.txt"), emit: allelecount
+    tuple val(map), val(chr),
+          path("${map.patient}_${map.sample}_tumor_${chr}.txt"),
+          path("${map.patient}_${map.sample}_normal_${chr}.txt"), emit: allelecount
 
     script:
     """
