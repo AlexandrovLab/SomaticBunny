@@ -56,7 +56,6 @@ params.genomes = [
         ],
         database_subdir: "GRCh38",
         mutect2_pon: "MuTect2.PON.5210.vcf.gz",
-        mutect2_pon_wes: "MuTect2.PON.5210.vcf.gz",
         mutect2_germline: "af-only-gnomad.hg38_no_alt.vcf.gz",
         mutect2_interval_dir: "GRCh38_interval_list_20",
         delly_excl: "${params.database_path}/Databases/GRCh38/Delly/human.hg38.excl.tsv",
@@ -92,7 +91,6 @@ params.genomes = [
         ],
         database_subdir: "GRCh37",
         mutect2_pon: "Mutect2-WGS-panel-b37.vcf",
-        mutect2_pon_wes: "Mutect2-exome-panel_b37.vcf",
         mutect2_germline: "af-only-gnomad.raw.sites.grch37.vcf.gz",
         mutect2_interval_dir: "GRCh37_interval_list_20",
         delly_excl: "${params.database_path}/Databases/GRCh37/Delly/human.hg19.excl.tsv",
@@ -106,7 +104,6 @@ params.genomes = [
         recal_interval_wes: "${params.database_path}/Databases/mm39/mm39_exome.interval_list",
         muse_vcf: "${params.database_path}/Databases/mm39/af_only_mgp_mm39_unique.vcf.gz",
         mutect2_pon: "PoN.mm39.vcf.gz",
-        mutect2_pon_wes: "PoN.mm39.vcf.gz",
         mutect2_germline: "af-only-mgp.mm39.vcf.gz",
         mutect2_interval_dir: "mm39_interval_list_20",
         tools: ["fastqc", "bwa_mem", "mkdup", "strelka", "muse", "mutect2", "cnvkit", "mosdepth", "manta"]
@@ -119,7 +116,6 @@ params.genomes = [
         recal_interval_wes: "${params.database_path}/Databases/RN7/rn7_exome.interval_list",
         muse_vcf: "",
         mutect2_pon: "",
-        mutect2_pon_wes: "",
         mutect2_germline: "af-only_rn7.vcf.gz",
         mutect2_interval_dir: "RN7_interval_list_20",
         tools: ["fastqc", "bwa_mem", "mkdup", "strelka", "muse", "mutect2", "cnvkit", "mosdepth", "manta"]
