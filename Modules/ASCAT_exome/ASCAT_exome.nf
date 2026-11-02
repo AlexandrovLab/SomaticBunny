@@ -5,8 +5,6 @@ process ASCAT_exome {
     scratch true
     label 'process_low'
     publishDir("${params.ascat_dir}", mode: 'copy')
-    errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
-    maxRetries 3
 
     input:
     tuple val(patient), val(sample), val(gender), path(tumor_logr), path(tumor_baf), path(normal_logr), path(normal_baf)

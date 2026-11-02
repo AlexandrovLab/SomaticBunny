@@ -5,8 +5,6 @@ process ASCAT_allelecount {
     scratch true
     label 'process_low'
     publishDir("${params.ascat_dir}", mode: 'copy')
-    errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
-    maxRetries 3
 
     input:
     val(map)

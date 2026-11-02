@@ -459,11 +459,16 @@ include { SAVE_CSV_MOSDEPTH } from './Modules/SAVE_CSV/SAVE_CSV_MOSDEPTH'
 
 // Define a workflow completion handler
 workflow.onComplete {
+    def ignored = workflow.stats.ignoredCount
+    def status  = !workflow.success ? 'FAILED'
+                : ignored > 0       ? "COMPLETED WITH ${ignored} IGNORED TASK FAILURE(S) - outputs missing, see .nextflow.log"
+                :                     'SUCCESS'
     def completionStatus = """
 ==============================================
 Pipeline Execution Completed
 ==============================================
-Status        : ${workflow.success ? 'SUCCESS' : 'FAILED'}
+Status        : ${status}
+Tasks         : ${workflow.stats.succeedCount} succeeded, ${workflow.stats.failedCount} failed, ${ignored} ignored
 Completed at  : ${workflow.complete}
 Duration      : ${workflow.duration}
 Success       : ${workflow.success}

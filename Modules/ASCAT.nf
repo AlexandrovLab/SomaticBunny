@@ -5,8 +5,6 @@ process ASCAT {
     scratch true
     label 'process_medium'
     publishDir("${params.ascat_dir}", mode: 'copy')
-    errorStrategy = { task.attempt <= maxRetries ? 'retry' : 'ignore'}
-    maxRetries 3
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/cancerit-allelecount:4.3.0--h41abebc_0' :
         'biocontainers/cancerit-allelecount:4.3.0--h41abebc_0' }"

@@ -5,9 +5,6 @@ process ASCAT_logrbaf {
     label 'process_low'
     publishDir("${params.ascat_dir}", mode: 'copy', overwrite: true, failOnError: false)
 
-    errorStrategy 'retry'
-    maxRetries 3
-
     input:
     // Accept separate collections for normal and tumor files
     tuple val(patient), val(sample), val(gender), path(normal_files), path(tumor_files)
