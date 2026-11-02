@@ -25,6 +25,11 @@ if (!params.database_path) {
           "Usage: nextflow run main.nf --database_path /path/to/SomaticBunny_database"
 }
 
+if (!(params.type in ['genome', 'exome'])) {
+    error "ERROR: --type must be 'genome' or 'exome' (got: ${params.type == null ? 'not set' : "'${params.type}'"}).\n" +
+          "Usage: nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] ..."
+}
+
 params.genomes = [
     'GRCh38': [
         ref: "${params.database_path}/GRCh38_ref/GRCh38.d1.vd1.fa",
@@ -229,6 +234,46 @@ params.mutect2_interval_dir = "${params.genome_database_dir}/${params.genomes[pa
 params.mutect2_germline = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
 
 params.vaf_script = params.vaf_script ?: "${projectDir}/VAF.py"
+
+// Custom reference: every packaged resource this run will use must share the reference's contig names and
+// lengths. severity = what the consuming tool does on a mismatch: GATK aborts ('error'); SAGE, mosdepth, MuSE,
+// Strelka/Manta and Delly silently ignore or mis-annotate ('warn'). A missing file is always an error.
+if (params.custom_ref) {
+    def human = params.genome in ['GRCh38', 'GRCh37']
+    def tools = params.tool ? params.tool.toString().split(',')*.trim() : []
+    def resources = [
+        [label: '--ref_dict',       path: params.ref_dict,         kind: 'dict'],
+        [label: '--bed',            path: params.bed,              kind: 'bed', severity: 'warn'],
+        [label: 'Mutect2 germline', path: params.mutect2_germline, kind: 'vcf'],
+        [label: 'Mutect2 PON',      path: params.mutect2_pon,      kind: 'vcf'],
+        [label: 'MuSE dbSNP',       path: params.muse_vcf,         kind: 'vcf', severity: 'warn'],
+    ]
+    if (params.type == 'exome')
+        resources << [label: 'mosdepth exome BED', path: params.mosdepth_bed, kind: 'bed', severity: 'warn']
+    if (human && params.first_step != 'variant_calling') {
+        resources << [label: 'BQSR known sites 1', path: params.recal_knownsite1, kind: 'vcf']
+        resources << [label: 'BQSR known sites 2', path: params.recal_knownsite2, kind: 'vcf']
+        if (params.type == 'exome')
+            resources << [label: 'BQSR exome intervals', path: params.recal_interval_wes, kind: 'interval_list']
+    }
+    if (human) {
+        resources << [label: 'SAGE hotspots',            path: params.SAGE_hotspots,            kind: 'vcf', severity: 'warn']
+        resources << [label: 'SAGE panel BED',           path: params.SAGE_panel_bed,           kind: 'bed', severity: 'warn']
+        resources << [label: 'SAGE high-confidence BED', path: params.SAGE_high_confidence_bed, kind: 'bed', severity: 'warn']
+        resources << [label: 'Conpair markers',          path: params.conpair_marker,           kind: 'bed']
+    }
+    if ('delly' in tools)
+        resources << [label: 'Delly exclude list', path: params.delly_excl, kind: 'bed', severity: 'warn', allowUnknown: true]
+
+    def check = ReferenceCheck.run(params.ref_fai, resources)
+    check.warnings.each { log.warn "Custom reference check: ${it}" }
+    if (check.errors) {
+        error "ERROR: custom reference ${params.ref} is not compatible with the packaged resources for genome '${params.genome}':\n  - " +
+              check.errors.join('\n  - ') +
+              "\nProvide resources built for this reference through the matching --<resource> options, or use the packaged reference."
+    }
+    log.info "Custom reference check: ${resources.count { it.path }} packaged resources checked against ${params.ref}, ${check.warnings.size()} warning(s)"
+}
 
 // Define which tools are available for the selected genome
 def available_tools = params.genomes[params.genome].tools
