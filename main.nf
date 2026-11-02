@@ -228,8 +228,7 @@ params.mutect2_pon = "${params.genome_database_dir}/${params.genomes[params.geno
 params.mutect2_interval_dir = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_interval_dir}"
 params.mutect2_germline = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
 
-params.indel_vaf_script =
-    params.indel_vaf_script ?: "${projectDir}/INDEL_VAF.py"
+params.vaf_script = params.vaf_script ?: "${projectDir}/VAF.py"
 
 // Define which tools are available for the selected genome
 def available_tools = params.genomes[params.genome].tools
