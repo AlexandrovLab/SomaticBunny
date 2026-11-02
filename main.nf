@@ -488,8 +488,34 @@ def isToolSelected(String tool) {
     return false
 }
 
+def validatePairing(sheet) {
+    def sampleFile = file(sheet)
+    if (!sampleFile.exists()) error "ERROR: Sample sheet file '${sheet}' does not exist"
+    def header = sampleFile.readLines()[0].split(',')*.trim()
+    if (!['patient', 'sample', 'status'].every { it in header }) return      // reported by the per-step column check
+    def rows = sampleFile.splitCsv(header: true)
+    def problems = []
+    rows.groupBy { [it.patient?.trim(), it.sample?.trim(), it.status?.trim()] }.each { k, v ->
+        if (v.size() > 1) problems << "patient ${k[0]}, sample ${k[1]}, status ${k[2]}: listed ${v.size()} times"
+    }
+    rows.groupBy { it.patient?.trim() }.each { patient, prows ->
+        def status  = prows.collect { it.status?.trim() }
+        def unknown = status.findAll { !(it in ['tumor', 'normal']) }.unique()
+        if (unknown)                  problems << "patient ${patient}: status must be 'tumor' or 'normal' (got: ${unknown.join(', ')})"
+        def nNormal = status.count('normal'), nTumor = status.count('tumor')
+        if (nNormal != 1)             problems << "patient ${patient}: ${nNormal} normal sample(s), exactly 1 is required"
+        if (nTumor == 0)              problems << "patient ${patient}: no tumor sample"
+    }
+    if (problems) {
+        error "ERROR: tumor/normal pairing of sample sheet ${sheet} is ambiguous:\n  - " + problems.join('\n  - ') +
+              "\nEach patient needs exactly one row with status 'normal' and one or more with status 'tumor'."
+    }
+    log.info "Sample sheet ${sheet}: ${rows.count { it.status?.trim() == 'tumor' }} tumor/normal pair(s) across ${rows*.patient.unique().size()} patient(s)"
+}
+
 
 workflow {
+    validatePairing(params.sample)
     chunk = Channel.of(1..20)
 
     // Check if need to build custom intervals from user provided ref fa file
@@ -550,21 +576,13 @@ workflow {
             exit 1
         }
 
-        if (params.tool && params.tool.contains('ascat')) {
-            Channel.fromPath(params.sample)
-            | splitCsv(header:true)
-            | map { row ->
-                meta = row.subMap('patient', 'sample', 'status', 'fastq_1', 'fastq_2', 'sex')
-                return meta
-            } | set { sample_sheet }
-        } else {
-            Channel.fromPath(params.sample)
-            | splitCsv(header:true)
-            | map { row ->
-                meta = row.subMap('patient', 'sample', 'status', 'fastq_1', 'fastq_2')
-                return meta
-            } | set { sample_sheet }
-        }
+        Channel.fromPath(params.sample)
+        | splitCsv(header:true)
+        | map { row ->
+            def keys = ['patient', 'sample', 'status'] + (isToolSelected('ascat') ? ['sex'] : [])
+            def meta = row.subMap(keys)
+            [meta, file(row.fastq_1, checkIfExists: true), file(row.fastq_2, checkIfExists: true)]
+        } | set { sample_sheet }
         FASTQC(sample_sheet)
         BWA_MEM(sample_sheet).set { BWA_MEM_out }
         CHECK_BAM_BWA(BWA_MEM_out.bam).set{ CHECK_BAM_BWA_out }
@@ -1044,43 +1062,18 @@ workflow {
 	        if (params.type == "exome") {
 	            ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
 	
-	            ASCAT_allelecount.out.allelecount
-	                .map { map, chr, file ->
-	                    def patient = map.patient
-	                    def sample = map.sample
-	                    def gender = map.gender
-	                    [patient, sample, gender, file]
-	                }
-	                .groupTuple(by: [0, 1, 2])  // Group by patient, sample, and gender
-	                // Restructure from pairs to separate normal and tumor lists
-	                .map { patient, sample, gender, files ->
-	                    // Extract normal and tumor files from the nested structure
-	                    def normalFiles = []
-	                    def tumorFiles = []
-	
-	                    // Flatten any nested structure if present
-	                    def flatFiles = files.flatten()
-	
-	                    // Separate normal and tumor files
-	                    flatFiles.each { file ->
-	                        if (file.toString().contains("_normal_")) {
-	                            normalFiles << file
-	                        } else if (file.toString().contains("_tumor_")) {
-	                            tumorFiles << file
-	                        }
-	                    }
-	
-	                    [patient, sample, gender, normalFiles, tumorFiles]
-	                }
-	                .set { ascat_logrbaf_input }
-	
-	            ASCAT_logrbaf(ascat_logrbaf_input)
-	            ASCAT_exome(ASCAT_logrbaf.out.ascat_input)
-	
-	        } else if (params.type == "genome") {
-	            ASCAT(RECALIBRATE_out_MAP_CN)
-	        }
-	    }
+                ASCAT_allelecount.out.allelecount
+                    .map { map, chr, tumor_file, normal_file -> [map.patient, map.sample, map.gender, normal_file, tumor_file] }
+                    .groupTuple(by: [0, 1, 2])   // -> [patient, sample, gender, normalFiles, tumorFiles]
+                    .set { ascat_logrbaf_input }
+        
+                    ASCAT_logrbaf(ascat_logrbaf_input)
+                    ASCAT_exome(ASCAT_logrbaf.out.ascat_input)
+        
+                } else if (params.type == "genome") {
+                    ASCAT(RECALIBRATE_out_MAP_CN)
+                }
+            }
 	
 	    // CNVkit
 	    if (params.tool && params.tool.contains('cnvkit')) {
