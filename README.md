@@ -166,6 +166,13 @@ The SomaticBunny pipeline workflow is divided into multiple steps that can be ru
 | mm39  | 
 | RN7  | 
 
+> [!NOTE]
+> **`--type genome` vs `--type exome`.** The SNV/INDEL callers run on the same regions for both
+> data types: the callable-regions BED (`--bed`, by default the primary chromosomes of the
+> selected genome). `--type exome` does not restrict calling to exome targets. It only switches
+> Strelka and Manta to `--exome` mode, MuSE to `-E`, base quality score recalibration to the
+> exome interval list, and mosdepth and ASCAT to their exome resources.
+
 ##### Available Tools
 
 Use the `--tool` parameter to specify which variant callers to run. You can select multiple tools by separating them with commas.
@@ -313,11 +320,38 @@ RESULTS/
 ├── mosdepth
 ├── MuSE
 ├── Mutect2
+├── POST
+│   ├── <patient>_<sample>/scenario1 ... scenario_6   consensus SNV and INDEL calls per scenario
+│   └── VAF                                           allele counts and VAFs for the scenario 4-6 consensus calls
 ├── RECALIBRATE (optional)
 ├── REPORT
 ├── SAGE
 └── STRELKA
 ```
+
+### Variant allele fractions (`RESULTS/POST/VAF`)
+
+For each tumor sample and each of scenarios 4, 5 and 6, the pipeline writes
+`<patient>_<sample>_<scenario>_VAF.tsv`: one row per consensus variant, 19 fixed
+tab-separated columns, header without `#`, so it loads directly into pandas or R.
+
+| Column | Content |
+|--------|---------|
+| `sample` | `<patient>_<sample>_<scenario>` |
+| `CHROM`, `POS`, `ID`, `REF`, `ALT` | as in the consensus VCF |
+| `TYPE` | `SNV`, `INDEL`, `MNP`, `MULTIALLELIC` or `INVALID` |
+| `CALLERS`, `CALLER_FILTER` | callers that reported the variant and their filter values |
+| `TUMOR_REF`, `TUMOR_ALT`, `TUMOR_DEPTH`, `TUMOR_VAF` | tumor counts and `ALT / DEPTH` |
+| `NORMAL_REF`, `NORMAL_ALT`, `NORMAL_DEPTH`, `NORMAL_VAF` | the same for the matched normal |
+| `STATUS` | `OK`, `NO_COVERAGE` (depth 0 in tumor or normal), or why counts are `NA` (`MNP`, `MULTIALLELIC`, `INVALID`) |
+| `NORMALIZED` | `.`, or `POS:REF>ALT` of the left-aligned indel that was counted when it differs from the VCF record |
+
+SNV counts come from alleleCounter (base quality >= 20, mapping quality >= 35); depth is
+alleleCounter's `Good_depth`. INDEL counts are taken from the BAMs with the same thresholds:
+a read supports `ALT` only if it carries exactly the called event after left-normalisation,
+supports `REF` only if it is aligned without any indel across the event, and is otherwise
+excluded; depth is `REF + ALT`. The raw alleleCounter outputs
+(`*_tumor_alleleCounter.txt`, `*_normal_alleleCounter.txt`) are kept next to the table.
 
 ## Tool Versions
 
