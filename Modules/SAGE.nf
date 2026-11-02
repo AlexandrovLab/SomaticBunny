@@ -17,8 +17,9 @@ process SAGE {
     tuple val(map),path("*vcf.gz"), emit: SAGE_out
 
     script:
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
     """
-    java -Xms4G -Xmx32G -cp ${params.SAGE_jar} com.hartwig.hmftools.sage.SageApplication \
+    java -Xmx${xmx}M -cp ${params.SAGE_jar} com.hartwig.hmftools.sage.SageApplication \
         -threads ${task.cpus} \
         -reference ${map.patient}_${map.normal_meta.sample}_normal \
         -reference_bam ${map.normal} \

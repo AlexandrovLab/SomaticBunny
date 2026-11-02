@@ -15,6 +15,7 @@ process CONPAIR {
     tuple val(map.patient), path("*txt"), emit: CONPAIR_out
 
     script:
+     def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
     """
     # Use a task-local temporary directory.
     mkdir -p "\$PWD/tmp_conpair"
@@ -28,7 +29,7 @@ process CONPAIR {
 
     # Java settings for GATK3.
     unset _JAVA_OPTIONS
-    export JAVA_TOOL_OPTIONS="-Xms4g -Xmx16g -Djava.io.tmpdir=\$TMPDIR"
+    export JAVA_TOOL_OPTIONS="-Xmx${xmx}M -Djava.io.tmpdir=\$TMPDIR"
 
     # External Conpair v0.2 source directory.
     export CONPAIR_DIR="${params.conpair}"
