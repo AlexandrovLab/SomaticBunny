@@ -402,6 +402,7 @@ include { POST_scenario3 } from './Modules/POST_scenario3.nf'
 include { POST_scenario4 } from './Modules/POST_scenario4.nf'
 include { POST_scenario5 } from './Modules/POST_scenario5.nf'
 include { POST_scenario6 } from './Modules/POST_scenario6.nf'
+include { POST_SCENARIOS } from './Modules/POST_scenarios.nf'
 include { MERGE_HEADER } from './Modules/MERGE_HEADER.nf'
 include { ALLELECOUNTER } from './Modules/ALLELECOUNTER.nf'
 
@@ -1150,23 +1151,24 @@ workflow {
             }
         
         // POST(postInput)
-        POST_rename(postInput)
+        // POST_rename(postInput)
 
-        POST_scenario1(POST_rename.out.renamed_postInput)
-        POST_scenario2(POST_rename.out.renamed_postInput)
-        POST_scenario3(POST_rename.out.renamed_postInput)
-        POST_scenario4(POST_rename.out.renamed_postInput)
-        POST_scenario5(POST_rename.out.renamed_postInput)
-        POST_scenario6(POST_rename.out.renamed_postInput)
+        // POST_scenario1(POST_rename.out.renamed_postInput)
+        // POST_scenario2(POST_rename.out.renamed_postInput)
+        // POST_scenario3(POST_rename.out.renamed_postInput)
+        // POST_scenario4(POST_rename.out.renamed_postInput)
+        // POST_scenario5(POST_rename.out.renamed_postInput)
+        // POST_scenario6(POST_rename.out.renamed_postInput)
+		POST_SCENARIOS(postInput)
 
-        merge_3 = POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') }
-        merge_4 = POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') }
-        merge_5 = POST_scenario5.out.merge_input.map { file -> tuple(file, 'scenario_5') }
-        merge_6 = POST_scenario6.out.merge_input.map { file -> tuple(file, 'scenario_6') }
+        // merge_3 = POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') }
+        // merge_4 = POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') }
+        // merge_5 = POST_scenario5.out.merge_input.map { file -> tuple(file, 'scenario_5') }
+        // merge_6 = POST_scenario6.out.merge_input.map { file -> tuple(file, 'scenario_6') }
 
-        merge_all = merge_3.mix(merge_4, merge_5, merge_6)
+        // merge_all = merge_3.mix(merge_4, merge_5, merge_6)
 
-		MERGE_HEADER(merge_all)
+		// MERGE_HEADER(merge_all)
 
 		
 
@@ -1190,7 +1192,7 @@ workflow {
             }
             .set { recal_map_keyed }
 
-        POST_scenario4.out.final_vcf
+        POST_SCENARIOS.out.final_vcf_s4
             .join(recal_map_keyed)
             .map { patient_sample, vcf_file, recal_map -> 
                 [
@@ -1205,7 +1207,7 @@ workflow {
             .set { allelecounter_input_4 }
 
 
-        POST_scenario5.out.final_vcf
+        POST_SCENARIOS.out.final_vcf_s5
             .join(recal_map_keyed)
             .map { patient_sample, vcf_file, recal_map -> 
                 [
@@ -1219,7 +1221,7 @@ workflow {
             }
             .set { allelecounter_input_5 }
 
-        POST_scenario6.out.final_vcf
+        POST_SCENARIOS.out.final_vcf_s6
             .join(recal_map_keyed)
             .map { patient_sample, vcf_file, recal_map -> 
                 [
