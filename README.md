@@ -87,6 +87,17 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
    ```
    </details>
 
+  > [!NOTE]
+  > **One FASTQ pair per sample.** `sample.csv` takes exactly one `fastq_1`/`fastq_2` pair per
+  > sample. If a sample was sequenced on several lanes or runs, concatenate the lanes into one
+  > pair before running the pipeline. Each BAM therefore carries a single read group:
+  > `ID`, `SM` and `LB` are `<patient>_<sample>_<status>`, `PL` is `ILLUMINA`, and `PU` is the
+  > flowcell and lane of the first read (or the sample name if the read names are not in the
+  > Illumina format). Because merged lanes share one read group, base quality score
+  > recalibration models one error profile per sample rather than per lane.
+  > bwa-mem2 runs with `-Y` (soft-clipped supplementary alignments) and a fixed batch size
+  > `-K 160000000`, so alignments do not depend on the number of CPUs assigned.
+
 
 
 ## Configuration
