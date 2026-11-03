@@ -13,15 +13,16 @@ process RECALIBRATE_BQSR {
     path interval_dir
 
     output:
-    tuple val(patient), val(meta), path("*bam"), emit: MergeBam_input
+    tuple val(patient), val(meta), path("${meta.patient}_${meta.sample}_${meta.status}_recalibrated_${chunk}.bam"), emit: MergeBam_input
 
 
     script:
+    def unmapped = chunk == 20 ? '-L unmapped' : ''
     """
     ${params.gatk} ApplyBQSR \
     -R ${params.ref} \
     -I ${bam} \
-    -L ${interval_dir}/${chunk}-scattered.interval_list \
+    -L ${interval_dir}/bqsr/${chunk}-contigs.interval_list ${unmapped} \
     --bqsr-recal-file ${table} \
     -O ${meta.patient}_${meta.sample}_${meta.status}_recalibrated_${chunk}.bam
 

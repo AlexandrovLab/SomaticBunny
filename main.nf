@@ -730,7 +730,12 @@ workflow {
 
                 RECALIBRATE_MergeBam(BaseRecal_BQSR_out_MAP).set{ RECALIBRATE_MergeBam_out }
 
-                RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
+                RECALIBRATE_MergeBam_out.MergeBam_input
+                    .map { patient, meta, merged -> [[patient, meta.sample, meta.status], patient, meta, merged] }
+                    .join( RECALIBRATE_MergeReport_out.BQSR_input.map { patient, meta, bam, table, bai -> [[patient, meta.sample, meta.status], bam, bai] }, failOnMismatch: true )
+                    .map { key, patient, meta, merged, mkdup_bam, mkdup_bai -> [patient, meta, merged, mkdup_bam, mkdup_bai] }
+                    .set { SortBam_input }
+                RECALIBRATE_SortBam(SortBam_input).set{ RECALIBRATE_out }
 
                 if (params.cleanup) {
                     CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
@@ -759,7 +764,12 @@ workflow {
 
                 RECALIBRATE_MergeBam(BaseRecal_BQSR_out_MAP).set{ RECALIBRATE_MergeBam_out }
 
-                RECALIBRATE_SortBam(RECALIBRATE_MergeBam_out.MergeBam_input).set{ RECALIBRATE_out }
+                RECALIBRATE_MergeBam_out.MergeBam_input
+                    .map { patient, meta, merged -> [[patient, meta.sample, meta.status], patient, meta, merged] }
+                    .join( RECALIBRATE_MergeReport_out.BQSR_input.map { patient, meta, bam, table, bai -> [[patient, meta.sample, meta.status], bam, bai] }, failOnMismatch: true )
+                    .map { key, patient, meta, merged, mkdup_bam, mkdup_bai -> [patient, meta, merged, mkdup_bam, mkdup_bai] }
+                    .set { SortBam_input }
+                RECALIBRATE_SortBam(SortBam_input).set{ RECALIBRATE_out }
 
                 if (params.cleanup) {
                     CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
