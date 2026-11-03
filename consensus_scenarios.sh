@@ -2,7 +2,7 @@
 # Post-EVC consensus calling with six selectable scenarios.
 #
 # Usage:
-#   consensus_scenarios.sh [-s SCENARIOS] [-t TLOD] [-e SOMATIC_EVS] \
+#   consensus_scenarios.sh [-s SCENARIOS] [-t TLOD] [-e SOMATIC_EVS] [-p] \
 #       SAMPLE MUTECT2_VCF MUSE_VCF STRELKA_SNV STRELKA_INDEL SAGE_VCF \
 #       TUMOR_BAM DATABASE_PATH REF_FASTA
 #
@@ -10,6 +10,8 @@
 #       Default: 6
 #   -t  Minimum Mutect2 TLOD for scenario 6 (default 10)
 #   -e  Minimum Strelka2 SomaticEVS for scenario 6 (default 13)
+#   -p  Scenario 6 drops variants that Mutect2 flagged panel_of_normals.
+#       Default: off (PON sites are kept; the flag stays visible in caller_filters)
 #
 # Scenarios (callers: mt=Mutect2, sa=SAGE, st=Strelka2, ms=MuSE; MuSE is SNV-only,
 # so indels have 3 callers):
@@ -19,7 +21,7 @@
 #   S4  Called by >= 2 callers, at least one of which is PASS.
 #   S5  PASS in >= 2 callers.
 #   S6  S5, then (SNVs only) DKFZ bias filter, then TLOD / SomaticEVS thresholds with
-#       rescue, then Mutect2 panel-of-normals veto.
+#       rescue, then (only with -p) Mutect2 panel-of-normals veto.
 #       Rescue: a PASS caller that fails its threshold is demoted; the variant
 #       still passes if >= 2 PASS callers remain.
 #
@@ -39,7 +41,7 @@
 set -euo pipefail
 
 usage() {
-    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//' >&2
     exit 1
 }
 
@@ -49,11 +51,13 @@ usage() {
 SCENARIOS=6
 TLOD=10
 SEVS=13
-while getopts ":s:t:e:h" opt; do
+PON_VETO=0
+while getopts ":s:t:e:ph" opt; do
     case $opt in
         s) SCENARIOS=$OPTARG ;;
         t) TLOD=$OPTARG ;;
         e) SEVS=$OPTARG ;;
+        p) PON_VETO=1 ;;
         h|*) usage ;;
     esac
 done
@@ -233,14 +237,14 @@ apply_bias_filter() {
     rm -rf "$tmp"
 }
 
-# Scenario 6, step 2: TLOD / SomaticEVS thresholds with rescue, then PON veto.
+# Scenario 6, step 2: TLOD / SomaticEVS thresholds with rescue, then (with -p) PON veto.
 # Only INFO from PASS callers is checked. A PASS caller below a threshold is
 # demoted (its FILTER column becomes lowTLOD / lowSomaticEVS). If >= 2 PASS
 # callers remain the variant keeps its status; otherwise the flags are added
-# to the variant. Mutect2 panel_of_normals vetoes the variant.
+# to the variant. With -p, Mutect2 panel_of_normals vetoes the variant.
 apply_thresholds() {
     local in=$1 out=$2
-    awk -F'\t' -v OFS='\t' -v tlod="$TLOD" -v sevs="$SEVS" '
+    awk -F'\t' -v OFS='\t' -v tlod="$TLOD" -v sevs="$SEVS" -v pon="$PON_VETO" '
         function addflag(f) { if ($6 !~ ("(^|;)" f "(;|$)")) $6 = ($6 == "PASS" ? f : $6 ";" f) }
         $6 == "lt2PASScallers" { print; next }
         {
@@ -265,7 +269,7 @@ apply_thresholds() {
                     for (j in low) { m = split(low[j], r, ";"); for (i = 1; i <= m; i++) addflag(r[i]) }
                 }
             }
-            if ($7 ~ /(^|;)panel_of_normals(;|$)/) addflag("panel_of_normals")
+            if (pon == 1 && $7 ~ /(^|;)panel_of_normals(;|$)/) addflag("panel_of_normals")
             print
         }
     ' "$in" > "$out"
@@ -294,7 +298,7 @@ write_outputs() {
         cat "$table"
     } > "$tsv"
 
-    awk -F'\t' -v OFS='\t' -v sc="$sc" -v ref="$(readlink -f "$REF_FASTA")" -v contigs="$INT_DIR/${S}_mutect.vcf" '
+    awk -F'\t' -v OFS='\t' -v sc="$sc" -v pon="$PON_VETO" -v ref="$(readlink -f "$REF_FASTA")" -v contigs="$INT_DIR/${S}_mutect.vcf" '
         BEGIN {
             split("mt sa st ms", T, " ")
             split("Mutect2 SAGE Strelka2 MuSE", NAME, " ")
@@ -351,7 +355,7 @@ write_outputs() {
             print "##source=consensus_scenarios.sh scenario " sc
             print "##reference=file://" ref
             while ((getline line < contigs) > 0) { if (line ~ /^##contig=/) print line; else if (line !~ /^##/) break }
-            print "##FILTER=<ID=PASS,Description=\"Called PASS by >= 2 callers" (sc == 6 ? "; also passed scenario 6 bias filter, TLOD/SomaticEVS and panel-of-normals checks" : "") "\">"
+            print "##FILTER=<ID=PASS,Description=\"Called PASS by >= 2 callers" (sc == 6 ? "; also passed scenario 6 bias filter and TLOD/SomaticEVS checks" (pon == 1 ? " and the Mutect2 panel-of-normals veto" : "") : "") "\">"
             print "##FILTER=<ID=OnePassCaller,Description=\"Called PASS by exactly 1 caller (see caller_filters)\">"
             print "##FILTER=<ID=NoPassCaller,Description=\"Not called PASS by any caller (see caller_filters)\">"
             print "##INFO=<ID=callers,Number=.,Type=String,Description=\"Callers reporting the variant, any FILTER (mt=Mutect2, sa=SAGE, st=Strelka2, ms=MuSE)\">"
