@@ -19,9 +19,13 @@ INDELs : counts come from the BAMs via pysam.  The query event is first normalis
          window.  Any other read (longer / shorter / nearby indel, soft clip, read ending inside) is excluded
          from both counts.  Depth = REF + ALT.
 
-Output columns (always 19, tab-separated, header without '#'):
-  sample CHROM POS ID REF ALT TYPE CALLERS CALLER_FILTER
+Output columns (always 21, tab-separated, header without '#'):
+  sample CHROM POS ID REF ALT TYPE FILTER CALLERS PASS_CALLERS CALLER_FILTERS
   TUMOR_REF TUMOR_ALT TUMOR_DEPTH TUMOR_VAF NORMAL_REF NORMAL_ALT NORMAL_DEPTH NORMAL_VAF STATUS NORMALIZED
+FILTER        : the consensus FILTER of the VCF record (PASS | OnePassCaller | NoPassCaller)
+CALLERS       : INFO callers=        (callers reporting the variant, any FILTER)
+PASS_CALLERS  : INFO pass_callers=   (callers with FILTER=PASS), '.' when absent
+CALLER_FILTERS: INFO caller_filters= (per-caller FILTER as caller:filter, multiple filters joined with |)
 STATUS: OK | NO_COVERAGE (depth 0 in tumor or normal) | MNP | MULTIALLELIC | INVALID (not A/C/G/T)
 NORMALIZED: '.' or POS:REF>ALT of the normalised indel when it differs from the VCF record.
 """
@@ -29,7 +33,7 @@ import argparse
 import re
 import sys
 
-COLUMNS = ["sample", "CHROM", "POS", "ID", "REF", "ALT", "TYPE", "CALLERS", "CALLER_FILTER",
+COLUMNS = ["sample", "CHROM", "POS", "ID", "REF", "ALT", "TYPE", "FILTER", "CALLERS", "PASS_CALLERS", "CALLER_FILTERS",
            "TUMOR_REF", "TUMOR_ALT", "TUMOR_DEPTH", "TUMOR_VAF",
            "NORMAL_REF", "NORMAL_ALT", "NORMAL_DEPTH", "NORMAL_VAF", "STATUS", "NORMALIZED"]
 BASES = "ACGT"
@@ -44,8 +48,9 @@ def die(msg):
 # ───────────────────────────── VCF ─────────────────────────────
 
 def parse_vcf(path):
-    """Yield one dict per record. Tolerates the two row layouts of SomaticBunny final VCFs:
-    8 columns (INFO carries callers=..;caller_filter=..) and 9 columns (col 6 = callers, col 7 = filter)."""
+    """One dict per record of a SomaticBunny consensus VCF (sites-only, 8 columns): FILTER from column 7,
+    callers / pass_callers / caller_filters from INFO. The older 9-column layout (col 6 = callers, col 7 =
+    filter) and the older INFO key caller_filter= are still accepted."""
     records = []
     with open(path) as fh:
         for n, line in enumerate(fh, 1):
@@ -57,14 +62,18 @@ def parse_vcf(path):
             chrom, pos, vid, ref, alt = f[0], f[1], f[2], f[3].upper(), f[4].upper()
             if not pos.isdigit():
                 die(f"{path} line {n}: POS '{pos}' is not an integer")
-            callers, cfilter = ".", "."
-            m = re.search(r"(?:^|[;\t])callers=([^;\t]*)", "\t".join(f[5:]))
+            vfilter = f[6] if len(f) >= 7 and f[6] else "."
+            callers, pcallers, cfilter = ".", ".", "."
+            rest = "\t".join(f[5:])
+            m = re.search(r"(?:^|[;\t])callers=([^;\t]*)", rest)
             if m:
                 callers = m.group(1)
-                m2 = re.search(r"(?:^|[;\t])caller_filter=([^;\t]*)", "\t".join(f[5:]))
-                cfilter = m2.group(1) if m2 else "."
+                m2 = re.search(r"(?:^|[;\t])pass_callers=([^;\t]*)", rest)
+                pcallers = m2.group(1) if m2 else "."
+                m3 = re.search(r"(?:^|[;\t])caller_filters?=([^;\t]*)", rest)
+                cfilter = m3.group(1) if m3 else "."
             elif len(f) >= 7 and re.fullmatch(r"[A-Za-z,]+", f[5] or ""):
-                callers, cfilter = f[5], f[6]
+                callers, cfilter, vfilter = f[5], f[6], "."
             if "," in alt:
                 vtype = "MULTIALLELIC"
             elif len(ref) == 1 and len(alt) == 1:
@@ -76,7 +85,7 @@ def parse_vcf(path):
             if vtype in ("SNV", "INDEL") and (set(ref) - set(BASES) or set(alt) - set(BASES)):
                 vtype = "INVALID"
             records.append(dict(chrom=chrom, pos=int(pos), id=vid, ref=ref, alt=alt, type=vtype,
-                                callers=callers, cfilter=cfilter, line=n))
+                                vfilter=vfilter, callers=callers, pcallers=pcallers, cfilter=cfilter, line=n))
     return records
 
 
@@ -258,13 +267,13 @@ def build_table(args):
                 t, n = (ct[0], ct[1], ct[2], vaf(ct[1], ct[2])), (cn[0], cn[1], cn[2], vaf(cn[1], cn[2]))
                 status = "OK" if ct[2] > 0 and cn[2] > 0 else "NO_COVERAGE"
         rows.append([args.sample, r["chrom"], str(r["pos"]), r["id"], r["ref"], r["alt"], r["type"],
-                     r["callers"], r["cfilter"], *map(str, t), *map(str, n), status, normalized])
+                     r["vfilter"], r["callers"], r["pcallers"], r["cfilter"], *map(str, t), *map(str, n), status, normalized])
 
     # schema self-check before anything is written
     for row in rows:
         if len(row) != len(COLUMNS):
             die(f"internal error: row with {len(row)} columns")
-        for i in (9, 10, 11, 13, 14, 15):
+        for i in (COLUMNS.index(c) for c in ("TUMOR_REF", "TUMOR_ALT", "TUMOR_DEPTH", "NORMAL_REF", "NORMAL_ALT", "NORMAL_DEPTH")):
             if row[i] != NA and not row[i].isdigit():
                 die(f"internal error: non-integer count in {row[1]}:{row[2]}")
     with open(args.out, "w") as out:
