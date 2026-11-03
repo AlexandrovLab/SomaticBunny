@@ -24,6 +24,9 @@ process GENERATE_INTERVALS {
 
     mkdir -p interval_list
 
+    # Whole-contig lists for ApplyBQSR: every contig of the dictionary in exactly one list (bin/make_contig_groups.py)
+    make_contig_groups.py ${ref_dict} 20 interval_list/bqsr
+
     ${params.gatk} SplitIntervals \
         -R ${ref} \
         -L main_chromosomes.list \
