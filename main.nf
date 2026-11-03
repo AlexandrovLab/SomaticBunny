@@ -525,6 +525,37 @@ workflow {
         BWA_MEM(sample_sheet).set { BWA_MEM_out }
         CHECK_BAM_BWA(BWA_MEM_out.bam).set{ CHECK_BAM_BWA_out }
         COMBINE_REPORTS_BWA(CHECK_BAM_BWA_out.individual_reports_bwa.collect())
+
+        // Drop BAMs that failed samtools quickcheck, then drop any patient left
+        // without at least one passing normal AND one passing tumor BAM.
+        // Number of BAMs expected per patient, so each patient is released as soon
+        // as all of its own BAMs are checked (not after the whole cohort).
+        sample_sheet
+            .map { meta -> meta.patient }
+            .toList()
+            .map { patients -> patients.countBy { it } }
+            .set { bams_per_patient }
+
+        CHECK_BAM_BWA_out.checked
+            .combine(bams_per_patient)
+            .map { meta, bam, qc, counts -> tuple(groupKey(meta.patient, counts[meta.patient]), meta, bam, qc) }
+            .groupTuple()
+            .flatMap { patient, metas, bams, qcs ->
+                def rows = [metas, bams, qcs].transpose()
+                def good = rows.findAll { m, b, q -> q == 'PASS' }
+                rows.findAll { m, b, q -> q != 'PASS' }.each { m, b, q ->
+                    log.warn "quickcheck FAIL: removing ${m.patient}_${m.sample}_${m.status} (${b.name})"
+                }
+                def has_normal = good.any { m, b, q -> m.status == 'normal' }
+                def has_tumor  = good.any { m, b, q -> m.status == 'tumor' }
+                if (!(has_normal && has_tumor)) {
+                    def missing = [has_normal ? null : 'normal', has_tumor ? null : 'tumor'].findAll()
+                    log.warn "Skipping patient ${patient}: no passing ${missing.join(' or ')} BAM"
+                    return []
+                }
+                good.collect { m, b, q -> tuple(m, b) }
+            }
+            .set { BWA_MEM_good }
     }
 
     // starts from markduplicate
@@ -575,7 +606,7 @@ workflow {
                 CLEANUP_BWA(MKDUP.out.cleanup_trigger)
             }
         } else {
-            MKDUP(BWA_MEM_out).set{ MKDUP_out }
+            MKDUP(BWA_MEM_good).set{ MKDUP_out }
             if (params.cleanup) {
                 CLEANUP_BWA(MKDUP.out.cleanup_trigger)
             }            
