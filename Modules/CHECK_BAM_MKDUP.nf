@@ -1,28 +1,47 @@
 nextflow.enable.dsl=2
 
+/*
+ * Runs samtools quickcheck on one BAM and reports PASS or FAIL.
+ *
+ * The task itself always succeeds when quickcheck runs, so every sample gets
+ * checked and gets a report. main.nf passes only PASS BAMs on to recalibration.
+ *
+ * Outputs:
+ *   checked                   tuple(meta, bam, bai, status)   status = "PASS" or "FAIL"
+ *   individual_reports_mkdup  <patient>_<sample>_<status>_quickcheck_mkdup.txt
+ */
 process CHECK_BAM_MKDUP {
     label 'process_low'
     conda "${params.samtools_env}"
-    errorStrategy 'retry'
+    // Retry only for infrastructure problems (killed job, out of memory, etc.).
+    // A corrupt BAM is reported as FAIL, not as a task error, so it is never retried.
+    errorStrategy { task.attempt <= 3 ? 'retry' : 'terminate' }
     maxRetries 3
 
     input:
     tuple val(meta), path(bam), path(bai)
 
     output:
-    path("*.txt"), emit: individual_reports_mkdup
+    tuple val(meta), path(bam), path(bai), env(QC_STATUS), emit: checked
+    path("*_quickcheck_mkdup.txt"),                        emit: individual_reports_mkdup
 
     script:
+    def report = "${meta.patient}_${meta.sample}_${meta.status}_quickcheck_mkdup.txt"
     """
-    echo "Sample: ${meta.patient}_${meta.status}" >> ${meta.patient}_${meta.status}_quickcheck_mkdup.txt
-    echo "Checking: ${bam}" >> ${meta.patient}_${meta.status}_quickcheck_mkdup.txt
-    result=\$(samtools quickcheck ${bam} 2>&1)
-    if [ -z "\$result" ]; then
-        echo "PASS: No issues detected" >> ${meta.patient}_${meta.status}_quickcheck_mkdup.txt
+    {
+        echo "Sample: ${meta.patient}_${meta.sample}_${meta.status}"
+        echo "Checking: ${bam}"
+    } > ${report}
+
+    # quickcheck signals failure through its exit code; -v prints the failing file name.
+    if samtools quickcheck -v ${bam} > quickcheck.log 2>&1; then
+        QC_STATUS=PASS
+        echo "PASS: No issues detected" >> ${report}
     else
-        echo "FAIL: Issues detected" >> ${meta.patient}_${meta.status}_quickcheck_mkdup.txt
-        echo "\$result" >> ${meta.patient}_${meta.status}_quickcheck_mkdup.txt
+        QC_STATUS=FAIL
+        echo "FAIL: Issues detected" >> ${report}
+        cat quickcheck.log >> ${report}
     fi
-    echo "------------------------" >> ${meta.patient}_${meta.status}_quickcheck_mkdup.txt
+    echo "------------------------" >> ${report}
     """
 }
