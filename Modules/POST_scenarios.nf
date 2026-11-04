@@ -3,6 +3,7 @@ nextflow.enable.dsl=2
 // Scenario 6 thresholds; override in nextflow.config or on the command line.
 params.tlod        = 10
 params.somatic_evs = 13
+params.pon_veto    = false   // true: scenario 6 drops Mutect2 panel_of_normals sites
 
 /*
  * Runs all six consensus scenarios in one task with consensus_scenarios.sh.
@@ -95,6 +96,7 @@ process POST_SCENARIOS {
         -s all \\
         -t ${params.tlod} \\
         -e ${params.somatic_evs} \\
+        ${params.pon_veto ? '-p' : ''} \\
         ${patient_sample} \\
         ${mutect2_vcf} \\
         ${muse_vcf} \\
@@ -134,4 +136,3 @@ process POST_SCENARIOS {
     done
     """
 }
-

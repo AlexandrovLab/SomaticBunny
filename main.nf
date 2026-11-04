@@ -448,6 +448,10 @@ def isToolSelected(String tool) {
 workflow {
     chunk = Channel.of(1..20)
 
+    // BAMs removed by samtools quickcheck (CHECK_BAM_BWA / CHECK_BAM_MKDUP), as
+    // tuple(patient, meta, stage). Used by the pair filter after CHECK_BAM_RECAL.
+    qc_failed = Channel.empty()
+
     // Check if need to build custom intervals from user provided ref fa file
     if (params.custom_ref) {
     GENERATE_INTERVALS(
@@ -525,6 +529,30 @@ workflow {
         BWA_MEM(sample_sheet).set { BWA_MEM_out }
         CHECK_BAM_BWA(BWA_MEM_out.bam).set{ CHECK_BAM_BWA_out }
         COMBINE_REPORTS_BWA(CHECK_BAM_BWA_out.individual_reports_bwa.collect())
+
+        // Number of BAMs per patient in the sample sheet (used by the pair filter)
+        sample_sheet
+            .map { meta -> meta.patient }
+            .toList()
+            .map { patients -> patients.countBy { it } }
+            .set { bams_per_patient }
+
+        // Only BAMs that pass quickcheck go on to MarkDuplicates
+        CHECK_BAM_BWA_out.checked
+            .branch { meta, bam, qc ->
+                pass: qc == 'PASS'
+                fail: true
+            }
+            .set { bwa_qc }
+        bwa_qc.pass
+            .map { meta, bam, qc -> tuple(meta, bam) }
+            .set { BWA_MEM_good }
+        qc_failed = qc_failed.mix(
+            bwa_qc.fail.map { meta, bam, qc ->
+                log.warn "quickcheck FAIL after BWA: removing ${meta.patient}_${meta.sample}_${meta.status} (${bam.name})"
+                tuple(meta.patient, meta, 'BWA')
+            }
+        )
     }
 
     // starts from markduplicate
@@ -569,29 +597,54 @@ workflow {
                     return [meta, file(row.bam), file(row.bai)]
                 } | set { sample_sheet }
             }
+            sample_sheet
+                .map { meta, bam, bai -> meta.patient }
+                .toList()
+                .map { patients -> patients.countBy { it } }
+                .set { bams_per_patient }
+
             RENAME_BAM_HEADER(sample_sheet)
             MKDUP(RENAME_BAM_HEADER.out.renamed_bam).set{ MKDUP_out }    
             if (params.cleanup) {
                 CLEANUP_BWA(MKDUP.out.cleanup_trigger)
             }
         } else {
-            MKDUP(BWA_MEM_out).set{ MKDUP_out }
+            MKDUP(BWA_MEM_good).set{ MKDUP_out }
             if (params.cleanup) {
                 CLEANUP_BWA(MKDUP.out.cleanup_trigger)
             }            
-            CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
-            COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
         }
 
+        CHECK_BAM_MKDUP(MKDUP_out.mkdup_bam).set{ CHECK_BAM_MKDUP_out }
+        COMBINE_REPORTS_MKDUP(CHECK_BAM_MKDUP_out.individual_reports_mkdup.collect())
+
+        // Only BAMs that pass quickcheck go on to recalibration.
+        // MKDUP_good has the same shape as MKDUP's pair_mutect output: tuple(patient, meta, bam, bai)
+        CHECK_BAM_MKDUP_out.checked
+            .branch { meta, bam, bai, qc ->
+                pass: qc == 'PASS'
+                fail: true
+            }
+            .set { mkdup_qc }
+        mkdup_qc.pass
+            .map { meta, bam, bai, qc -> tuple(meta.patient, meta, bam, bai) }
+            .set { MKDUP_good }
+        qc_failed = qc_failed.mix(
+            mkdup_qc.fail.map { meta, bam, bai, qc ->
+                log.warn "quickcheck FAIL after MarkDuplicates: removing ${meta.patient}_${meta.sample}_${meta.status} (${bam.name})"
+                tuple(meta.patient, meta, 'MKDUP')
+            }
+        )
+
         if (params.genome in ['mm39', 'RN7']){
-            MKDUP_out.pair_mutect.filter{it[1].status == 'normal'}.set{normal}
-            MKDUP_out.pair_mutect.filter{it[1].status == 'tumor'}.set{tumor}
+            MKDUP_good.filter{it[1].status == 'normal'}.set{normal}
+            MKDUP_good.filter{it[1].status == 'tumor'}.set{tumor}
             normal.cross(tumor){it[0]}.map{
                 normal, tumor ->
                 [patient:normal[0], normal:normal[2], tumor:tumor[2], tumor_meta:tumor[1], normal_meta:normal[1]]
             }.set{ RECALIBRATE_out_MAP }
 
-            RECALIBRATE_out = [pair_recal: MKDUP_out.pair_mutect]
+            RECALIBRATE_out = [pair_recal: MKDUP_good]
         }
     }
 
@@ -638,6 +691,12 @@ workflow {
                 } | set { sample_sheet_raw }
             }
 
+            sample_sheet_raw
+                .map { meta, bam, bai -> meta.patient }
+                .toList()
+                .map { patients -> patients.countBy { it } }
+                .set { bams_per_patient }
+
             // Rename BAM headers to standardized format
             RENAME_BAM_HEADER(sample_sheet_raw)
 
@@ -676,10 +735,10 @@ workflow {
             }
         } else {
             if (params.type == "exome" && params.genome in ['GRCh38', 'GRCh37']) {
-                RECALIBRATE_BaseRecal_exome(MKDUP_out.pair_mutect).set{ RECALIBRATE_BaseRecal_out }
+                RECALIBRATE_BaseRecal_exome(MKDUP_good).set{ RECALIBRATE_BaseRecal_out }
                 RECALIBRATE_BQSR_exome(RECALIBRATE_BaseRecal_out.BQSR_input).set { RECALIBRATE_out }
             } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
-                RECALIBRATE_BaseRecal(MKDUP_out.pair_mutect, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
+                RECALIBRATE_BaseRecal(MKDUP_good, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
 
                 RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
                 BaseRecal_out_pair.map{
@@ -706,6 +765,36 @@ workflow {
         }
         CHECK_BAM_RECAL(RECALIBRATE_out.pair_recal).set{ CHECK_BAM_RECAL_out }
         COMBINE_REPORTS_RECAL(CHECK_BAM_RECAL_out.individual_reports_recal.collect())
+
+        // Pair filter: keep only BAMs that passed every quickcheck, and only for
+        // patients that still have at least one normal and one tumor BAM.
+        // Every BAM in the sample sheet ends here exactly once, either as a
+        // recalibrated BAM or as a quickcheck failure from an earlier step, so each
+        // patient is released as soon as all of its own BAMs are accounted for.
+        CHECK_BAM_RECAL_out.checked
+            .map { patient, meta, bam, bai, qc ->
+                if (qc != 'PASS') {
+                    log.warn "quickcheck FAIL after recalibration: removing ${meta.patient}_${meta.sample}_${meta.status} (${bam.name})"
+                }
+                tuple(patient, meta, qc == 'PASS' ? [bam, bai] : null, qc == 'PASS' ? 'PASS' : 'RECAL')
+            }
+            .mix(qc_failed.map { patient, meta, stage -> tuple(patient, meta, null, stage) })
+            .combine(bams_per_patient)
+            .map { patient, meta, files, stage, counts -> tuple(groupKey(patient, counts[patient]), meta, files, stage) }
+            .groupTuple()
+            .flatMap { patient, metas, files, stages ->
+                def rows = [metas, files, stages].transpose()
+                def good = rows.findAll { m, f, s -> s == 'PASS' }
+                def has_normal = good.any { m, f, s -> m.status == 'normal' }
+                def has_tumor  = good.any { m, f, s -> m.status == 'tumor' }
+                if (!(has_normal && has_tumor)) {
+                    def missing = [has_normal ? null : 'normal', has_tumor ? null : 'tumor'].findAll()
+                    log.warn "Skipping patient ${patient}: no passing ${missing.join(' or ')} BAM"
+                    return []
+                }
+                good.collect { m, f, s -> tuple(m.patient, m, f[0], f[1]) }
+            }
+            .set { RECAL_good }
     }
 
     // starts from variant calling
@@ -930,8 +1019,8 @@ workflow {
 
         } else {
 
-            RECALIBRATE_out.pair_recal.filter{it[1].status == 'normal'}.set{normal}
-            RECALIBRATE_out.pair_recal.filter{it[1].status == 'tumor'}.set{tumor}
+            RECAL_good.filter{it[1].status == 'normal'}.set{normal}
+            RECAL_good.filter{it[1].status == 'tumor'}.set{tumor}
             normal.cross(tumor){it[0]}.map{
                 normal, tumor ->
                 [patient:normal[0], normal:normal[2], tumor:tumor[2], tumor_meta:tumor[1], normal_meta:normal[1]]
@@ -958,7 +1047,7 @@ workflow {
                 MOSDEPTH(RECALIBRATE_out_MAP)
             }
 
-            GETpileUP(RECALIBRATE_out.pair_recal, chunk, interval_dir_ch).set { GETpileUP_out }
+            GETpileUP(RECAL_good, chunk, interval_dir_ch).set { GETpileUP_out }
             MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
             MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
             MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
@@ -1130,7 +1219,7 @@ workflow {
         // Choose the source based on first_step
         sourceChannel = (params.first_step == "variant_calling") ? 
             sample_sheet : 
-            RECALIBRATE_out.pair_recal
+            RECAL_good
 
         // Create recalChannel from the chosen source
         normal_post = sourceChannel.filter{it[1].status == 'normal'}
@@ -1175,7 +1264,7 @@ workflow {
         // AlleleCounter for VAF calculation
         def vaf_source = (params.first_step == "variant_calling") ? 
             RENAME_BAM_HEADER.out.renamed_bam.map { meta, bam, bai -> [meta.patient, meta, bam, bai] } :
-            RECALIBRATE_out.pair_recal
+            RECAL_good
 
         vaf_source.filter{it[1].status == 'normal'}.set{normal_vaf}
         vaf_source.filter{it[1].status == 'tumor'}.set{tumor_vaf}
