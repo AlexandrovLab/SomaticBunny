@@ -332,7 +332,7 @@ RESULTS/
 ### Variant allele fractions (`RESULTS/POST/VAF`)
 
 For each tumor sample and each of scenarios 4, 5 and 6, the pipeline writes
-`<patient>_<sample>_<scenario>_VAF.tsv`: one row per consensus variant, 19 fixed
+`<patient>_<sample>_<scenario>_VAF.tsv`: one row per consensus variant, 21 fixed
 tab-separated columns, header without `#`, so it loads directly into pandas or R.
 
 | Column | Content |
@@ -340,7 +340,8 @@ tab-separated columns, header without `#`, so it loads directly into pandas or R
 | `sample` | `<patient>_<sample>_<scenario>` |
 | `CHROM`, `POS`, `ID`, `REF`, `ALT` | as in the consensus VCF |
 | `TYPE` | `SNV`, `INDEL`, `MNP`, `MULTIALLELIC` or `INVALID` |
-| `CALLERS`, `CALLER_FILTER` | callers that reported the variant and their filter values |
+| `FILTER` | consensus FILTER (`PASS`, `OnePassCaller`, `NoPassCaller`) |
+| `CALLERS`, `PASS_CALLERS`, `CALLER_FILTERS` | callers that reported the variant, those that passed, and each caller's filter value |
 | `TUMOR_REF`, `TUMOR_ALT`, `TUMOR_DEPTH`, `TUMOR_VAF` | tumor counts and `ALT / DEPTH` |
 | `NORMAL_REF`, `NORMAL_ALT`, `NORMAL_DEPTH`, `NORMAL_VAF` | the same for the matched normal |
 | `STATUS` | `OK`, `NO_COVERAGE` (depth 0 in tumor or normal), or why counts are `NA` (`MNP`, `MULTIALLELIC`, `INVALID`) |

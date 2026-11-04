@@ -4,7 +4,7 @@ process RECALIBRATE_BQSR {
     conda "${params.gatk_env}"
     scratch true
     label 'RECALIBRATE'
-    errorStrategy 'terminate'
+    errorStrategy 'retry'
     maxRetries 3
         
     input: 

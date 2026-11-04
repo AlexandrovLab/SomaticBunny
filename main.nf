@@ -349,13 +349,11 @@ params.delly_env = "$projectDir/yml/delly.yml"
 params.ascat_env = "$projectDir/yml/ascat.yml"
 params.alleleCounter_env = "$projectDir/yml/alleleCounter.yml"
 params.manta_env = "$projectDir/yml/manta.yml"
-params.dkfz_env = "$projectDir/yml/dkfz.yml"
 params.SAGE_java_env = "$projectDir/yml/sage_java.yml"
 params.muse_env = "$projectDir/yml/muse.yml"
 params.picard_merge_env = "$projectDir/yml/picard.yml"
 params.gatk_env = "${projectDir}/yml/gatk_runtime.yml"
 params.POST_env = "${projectDir}/yml/POST.yml"
-params.POST_rename_env = "${projectDir}/yml/POST_rename.yml"
 params.gatk = "${params.database_path}/gatk-4.6.2.0/gatk"
 
 // Write configuration to log file
@@ -433,17 +431,7 @@ include { FilterMutectCalls } from './Modules/Mutect2/FilterMutectCalls'
 
 include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
-
-include { POST } from './Modules/POST.nf'
-include { POST_rename } from './Modules/POST_rename.nf'
-include { POST_scenario1 } from './Modules/POST_scenario1.nf'
-include { POST_scenario2 } from './Modules/POST_scenario2.nf'
-include { POST_scenario3 } from './Modules/POST_scenario3.nf'
-include { POST_scenario4 } from './Modules/POST_scenario4.nf'
-include { POST_scenario5 } from './Modules/POST_scenario5.nf'
-include { POST_scenario6 } from './Modules/POST_scenario6.nf'
 include { POST_SCENARIOS } from './Modules/POST_scenarios.nf'
-include { MERGE_HEADER } from './Modules/MERGE_HEADER.nf'
 include { ALLELECOUNTER } from './Modules/ALLELECOUNTER.nf'
 
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
@@ -595,7 +583,7 @@ workflow {
 
         // Number of BAMs per patient in the sample sheet (used by the pair filter)
         sample_sheet
-            .map { meta -> meta.patient }
+            .map { meta, fq1, fq2 -> meta.patient }
             .toList()
             .map { patients -> patients.countBy { it } }
             .set { bams_per_patient }
@@ -1261,29 +1249,9 @@ workflow {
             .map { patient_sample, mutect2_vcf, muse_vcf, strelka_vcf, sage_vcf, recal_bam ->
                 [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1], recal_bam[2]]
             }
-        
-        // POST(postInput)
-        // POST_rename(postInput)
-
-        // POST_scenario1(POST_rename.out.renamed_postInput)
-        // POST_scenario2(POST_rename.out.renamed_postInput)
-        // POST_scenario3(POST_rename.out.renamed_postInput)
-        // POST_scenario4(POST_rename.out.renamed_postInput)
-        // POST_scenario5(POST_rename.out.renamed_postInput)
-        // POST_scenario6(POST_rename.out.renamed_postInput)
-		POST_SCENARIOS(postInput)
-
-        // merge_3 = POST_scenario3.out.merge_input.map { file -> tuple(file, 'scenario_3') }
-        // merge_4 = POST_scenario4.out.merge_input.map { file -> tuple(file, 'scenario_4') }
-        // merge_5 = POST_scenario5.out.merge_input.map { file -> tuple(file, 'scenario_5') }
-        // merge_6 = POST_scenario6.out.merge_input.map { file -> tuple(file, 'scenario_6') }
-
-        // merge_all = merge_3.mix(merge_4, merge_5, merge_6)
-
-		// MERGE_HEADER(merge_all)
-
 		
-
+        POST_SCENARIOS(postInput)
+        
         // AlleleCounter for VAF calculation
         def vaf_source = (params.first_step == "variant_calling") ? 
             RENAME_BAM_HEADER.out.renamed_bam.map { meta, bam, bai -> [meta.patient, meta, bam, bai] } :
