@@ -5,7 +5,7 @@ Sarek was run with `-r 3.8.0` on four datasets (WGS 30x, 60x, 90x and WES) for c
 ## To Run
 
 1. Edit `paths.env` (reference files, `TMPDIR`) and the `tscc_slurm` profile in `nextflow.config` (partition/account).
-2. Activate a conda environment with Nextflow ≥ 25.10.2 (the benchmark used `env_nf`).
+2. Activate a conda environment with Nextflow ≥ 25 (the benchmark used `env_nf`).
 3. From an empty launch directory:
 
 ```bash
