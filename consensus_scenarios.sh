@@ -27,8 +27,7 @@
 #
 # All scenarios: inputs are normalized with bcftools norm (left-align, split
 # multiallelics), MNVs are split into SNVs, each caller votes at most once per
-# variant (CHROM/POS/REF/ALT), and contigs containing "_" plus chrM are excluded.
-#
+# variant (CHROM/POS/REF/ALT), and only primary chromosomes (chr1-22, X, Y, with or without the chr prefix) are kept.
 # Outputs, per scenario N:
 #   scenarioN/<SAMPLE>_snv.vcf     retained SNVs (valid sites-only VCF)
 #   scenarioN/<SAMPLE>_indel.vcf   retained indels
@@ -143,7 +142,7 @@ split_variants() {
 emit_long() {
     local tag=$1 file=$2
     awk -F'\t' -v OFS='\t' -v tag="$tag" '
-        !/^#/ && $5 != "." && $1 !~ /_/ && $1 != "chrM" {
+        !/^#/ && $5 != "." && $1 ~ /^(chr)?([0-9]+|X|Y)$/ {
             print $1, $2, $4, $5, tag, ($7 == "." ? "MISSING" : $7), $8
         }
     ' "$file"
