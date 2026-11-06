@@ -8,6 +8,7 @@ nextflow.enable.dsl=2
 params.database_path = null
 params.log_file = "$projectDir/pipeline.log" 
 params.sample = "sample.csv"
+params.first_step = null
 params.genome = ""
 params.tool = ""
 params.cleanup = false 
@@ -28,6 +29,18 @@ if (!params.database_path) {
 if (!(params.type in ['genome', 'exome'])) {
     error "ERROR: --type must be 'genome' or 'exome' (got: ${params.type == null ? 'not set' : "'${params.type}'"}).\n" +
           "Usage: nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] ..."
+}
+
+// --first_step: allowed values, and the genome x first_step combinations that are implemented.
+def FIRST_STEPS = ['mapping', 'markdup', 'recalibration', 'variant_calling']
+if (!(params.first_step in FIRST_STEPS)) {
+    error "ERROR: --first_step must be one of ${FIRST_STEPS.join(', ')} (got: ${params.first_step ?: 'not set'})."
+}
+// mm39 and RN7 run no base quality score recalibration (their callers use the duplicate-marked BAMs),
+// so 'recalibration' is not an entry point for them.
+if (params.genome in ['mm39', 'RN7'] && params.first_step == 'recalibration') {
+    error "ERROR: --first_step recalibration is not available for genome '${params.genome}': this genome runs no BQSR. " +
+          "Start from 'markdup' (raw BAMs) or 'variant_calling' (duplicate-marked BAMs)."
 }
 
 params.genomes = [
