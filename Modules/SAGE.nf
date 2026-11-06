@@ -15,10 +15,13 @@ process SAGE {
     path("*vcf.gz"), emit: SAGE_vcf_gz
     path("*vcf.gz.tbi"), emit: SAGE_vcf_gz_tbi
     tuple val(map),path("*vcf.gz"), emit: SAGE_out
+    path("*.sage.log"), emit: SAGE_log
 
     script:
     def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
     """
+    set -o pipefail
+    sha256sum ${params.SAGE_jar} | tee ${map.patient}_${map.tumor_meta.sample}.sage.log
     java -Xmx${xmx}M -cp ${params.SAGE_jar} com.hartwig.hmftools.sage.SageApplication \
         -threads ${task.cpus} \
         -reference ${map.patient}_${map.normal_meta.sample}_normal \
@@ -32,7 +35,7 @@ process SAGE {
         -high_confidence_bed ${params.SAGE_high_confidence_bed} \
         -ensembl_data_dir ${params.SAGE_ref_dir}/common/ensembl_data \
         -output_vcf ${map.patient}_${map.tumor_meta.sample}.sage.vcf.gz \
-        -skip_msi_jitter
+        -skip_msi_jitter 2>&1 | tee -a ${map.patient}_${map.tumor_meta.sample}.sage.log
     """
 }
 

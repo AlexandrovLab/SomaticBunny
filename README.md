@@ -367,7 +367,7 @@ excluded; depth is `REF + ALT`. The raw alleleCounter outputs
 | | mosdepth | v0.3.14 |
 | SNV/INDEL Callers | Strelka2 | v2.9.10 |
 | | Mutect2 | v4.6.2.0 |
-| | SAGE | v4.2 |
+| | SAGE | v4.2 with HMF pipeline resources 2.3.0--2 (no REDUX, -skip_msi_jitter) |
 | | MuSE2 | v2.1.2 |
 | Structural Variants | Delly | v2.6.0 |
 | | Manta | v1.6.0 |
