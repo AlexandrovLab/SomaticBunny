@@ -6,7 +6,8 @@
 nextflow.enable.dsl=2
 
 params.database_path = null
-params.log_file = "$projectDir/pipeline.log" 
+params.outdir = "${launchDir}/RESULTS"   
+params.log_file = "${launchDir}/pipeline.log"
 params.sample = "sample.csv"
 params.first_step = null
 params.genome = ""
@@ -250,32 +251,29 @@ params.database_dir = "${params.database_path}/Databases"
 params.genome_database_dir = "${params.database_dir}/${params.genomes[params.genome].database_subdir}"
 
 // Genome-specific file paths for Mutect2
-params.mutect2_pon = params.genomes[params.genome].mutect2_pon ? "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon}" : null
+params.mutect2_pon = params.mutect2_pon ?: (params.genomes[params.genome].mutect2_pon ? "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon}" : null)
 if (params.mutect2_pon && !file(params.mutect2_pon).exists())
     error "ERROR: Mutect2 panel of normals not found: ${params.mutect2_pon}"
 if (!params.mutect2_pon)
     log.warn "Genome ${params.genome} has no Mutect2 panel of normals: Mutect2 runs without -pon (lower specificity; not validated for RN7)"
-
 params.mutect2_interval_dir = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_interval_dir}"
-params.mutect2_germline = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
+params.mutect2_germline = params.mutect2_germline ?: "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
 
 params.vaf_script = params.vaf_script ?: "${projectDir}/VAF.py"
 
-// Custom reference: every packaged resource this run will use must share the reference's contig names and
-// lengths. severity = what the consuming tool does on a mismatch: GATK aborts ('error'); SAGE, mosdepth, MuSE,
-// Strelka/Manta and Delly silently ignore or mis-annotate ('warn'). A missing file is always an error.
+// Custom reference: every packaged resource this run will use must share the reference's contig names and lengths (the criterion GATK applies to sequence dictionaries). Any mismatch stops the run before a task is submitted, whatever the consuming tool would do on its own: GATK aborts, but SAGE, mosdepth, MuSE, Strelka, Manta, Delly and ASCAT silently ignore unmatched regions or mis-annotate, which alters the calls.
 if (params.custom_ref) {
     def human = params.genome in ['GRCh38', 'GRCh37']
     def tools = params.tool ? params.tool.toString().split(',')*.trim() : []
     def resources = [
         [label: '--ref_dict',       path: params.ref_dict,         kind: 'dict'],
-        [label: '--bed',            path: params.bed,              kind: 'bed', severity: 'warn'],
+        [label: '--bed',            path: params.bed,              kind: 'bed'],
         [label: 'Mutect2 germline', path: params.mutect2_germline, kind: 'vcf'],
         [label: 'Mutect2 PON',      path: params.mutect2_pon,      kind: 'vcf'],
-        [label: 'MuSE dbSNP',       path: params.muse_vcf,         kind: 'vcf', severity: 'warn'],
+        [label: 'MuSE dbSNP',       path: params.muse_vcf,         kind: 'vcf'],
     ]
     if (params.type == 'exome')
-        resources << [label: 'mosdepth exome BED', path: params.mosdepth_bed, kind: 'bed', severity: 'warn']
+        resources << [label: 'mosdepth exome BED', path: params.mosdepth_bed, kind: 'bed']
     if (human && params.first_step != 'variant_calling') {
         resources << [label: 'BQSR known sites 1', path: params.recal_knownsite1, kind: 'vcf']
         resources << [label: 'BQSR known sites 2', path: params.recal_knownsite2, kind: 'vcf']
@@ -283,22 +281,31 @@ if (params.custom_ref) {
             resources << [label: 'BQSR exome intervals', path: params.recal_interval_wes, kind: 'interval_list']
     }
     if (human) {
-        resources << [label: 'SAGE hotspots',            path: params.SAGE_hotspots,            kind: 'vcf', severity: 'warn']
-        resources << [label: 'SAGE panel BED',           path: params.SAGE_panel_bed,           kind: 'bed', severity: 'warn']
-        resources << [label: 'SAGE high-confidence BED', path: params.SAGE_high_confidence_bed, kind: 'bed', severity: 'warn']
+        resources << [label: 'SAGE hotspots',            path: params.SAGE_hotspots,            kind: 'vcf']
+        resources << [label: 'SAGE panel BED',           path: params.SAGE_panel_bed,           kind: 'bed']
+        resources << [label: 'SAGE high-confidence BED', path: params.SAGE_high_confidence_bed, kind: 'bed']
         resources << [label: 'Conpair markers',          path: params.conpair_marker,           kind: 'bed']
     }
     if ('delly' in tools)
-        resources << [label: 'Delly exclude list', path: params.delly_excl, kind: 'bed', severity: 'warn', allowUnknown: true]
+        resources << [label: 'Delly exclude list', path: params.delly_excl, kind: 'bed', allowUnknown: true]
+    if ('ascat' in tools && human) {
+        // alleleCounter loci (chromosome, position per line), one file per chromosome. The allele, GC-content
+        // and replication-timing files of the same bundle share these coordinates.
+        def loci_prefix = params.type == 'exome' ? params.ascat_loci_prefix_wes : params.ascat_loci_prefix
+        ((1..22).collect { it.toString() } + ['X']).each { c ->
+            resources << [label: "ASCAT loci chr${c}", path: "${loci_prefix}${c}.txt", kind: 'bed', maxLines: 5000]
+        }
+    }
 
     def check = ReferenceCheck.run(params.ref_fai, resources)
-    check.warnings.each { log.warn "Custom reference check: ${it}" }
-    if (check.errors) {
+    def problems = check.errors + check.warnings
+    if (problems) {
         error "ERROR: custom reference ${params.ref} is not compatible with the packaged resources for genome '${params.genome}':\n  - " +
-              check.errors.join('\n  - ') +
-              "\nProvide resources built for this reference through the matching --<resource> options, or use the packaged reference."
+              problems.join('\n  - ') +
+              "\nProvide resources built for this reference through the matching --<resource> options, " +
+              "leave the tool out of --tool, or use the packaged reference."
     }
-    log.info "Custom reference check: ${resources.count { it.path }} packaged resources checked against ${params.ref}, ${check.warnings.size()} warning(s)"
+    log.info "Custom reference check: ${resources.count { it.path }} packaged resources checked against ${params.ref}: all contig names and lengths match"
 }
 
 // Define which tools are available for the selected genome
@@ -320,6 +327,7 @@ Container      : ${workflow.container}
 Run as User    : ${workflow.userName}
 Launch Dir     : ${workflow.launchDir}
 Work Dir       : ${workflow.workDir}
+Output Dir     : ${params.outdir}
 Project Dir    : ${projectDir}
 ==============================================
 Analysis Parameters:
@@ -340,28 +348,28 @@ ${available_tools.join(', ')}
 ==============================================
 """
 
-params.bam_dir="$projectDir/RESULTS/BAM"
-params.report_dir="$projectDir/RESULTS/REPORT"
+params.bam_dir="${params.outdir}/BAM"
+params.report_dir="${params.outdir}/REPORT"
 params.manta_bed="${params.database_path}/GRCh38_ref/manta.bed.gz"
-params.mkdup_temp_dir="$projectDir/mkdup_tmp"
-params.FASTQC_dir="$projectDir/RESULTS/FASTQC"
-params.mkdup_dir="$projectDir/RESULTS/MKDUP"
-params.recal_dir="$projectDir/RESULTS/RECALIBRATE"
+params.mkdup_temp_dir="${launchDir}/mkdup_tmp"
+params.FASTQC_dir="${params.outdir}/FASTQC"
+params.mkdup_dir="${params.outdir}/MKDUP"
+params.recal_dir="${params.outdir}/RECALIBRATE"
 params.SAGE_jar="${params.database_path}/SAGE/sage_v4.2.jar"
-params.SAGE_dir="$projectDir/RESULTS/SAGE"
-params.strelka_dir="$projectDir/RESULTS/STRELKA"
-params.muse_dir="$projectDir/RESULTS/MuSE"
-params.MUTECT2_dir="$projectDir/RESULTS/Mutect2"
-params.mosdepth_dir="$projectDir/RESULTS/mosdepth"
-params.conpair_dir="$projectDir/RESULTS/Conpair"
-params.cnvkit_dir="$projectDir/RESULTS/CNVkit"
-params.Delly_dir="$projectDir/RESULTS/Delly"
-params.ascat_dir="$projectDir/RESULTS/ASCAT"
+params.SAGE_dir="${params.outdir}/SAGE"
+params.strelka_dir="${params.outdir}/STRELKA"
+params.muse_dir="${params.outdir}/MuSE"
+params.MUTECT2_dir="${params.outdir}/Mutect2"
+params.mosdepth_dir="${params.outdir}/mosdepth"
+params.conpair_dir="${params.outdir}/Conpair"
+params.cnvkit_dir="${params.outdir}/CNVkit"
+params.Delly_dir="${params.outdir}/Delly"
+params.ascat_dir="${params.outdir}/ASCAT"
 params.conpair="${params.database_path}/Conpair-0.2"
-params.manta_dir="$projectDir/RESULTS/MANTA"
-params.post_dir="$projectDir/RESULTS/POST"
-params.intervals_dir="$projectDir/RESULTS/custom_intervals"
-params.VAF_dir="$projectDir/RESULTS/POST/VAF"
+params.manta_dir="${params.outdir}/MANTA"
+params.post_dir="${params.outdir}/POST"
+params.intervals_dir="${params.outdir}/custom_intervals"
+params.VAF_dir="${params.outdir}/POST/VAF"
 
 params.bwamem2_env = "$projectDir/yml/bwamem2.yml"
 params.mkdup_env = "$projectDir/yml/picard.yml"
