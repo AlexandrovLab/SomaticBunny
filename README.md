@@ -20,6 +20,7 @@
 - [Output](#output)
 - [Tool Versions](#tool-versions)
 - [Benchmark](#benchmark)
+- [License](#license)
 
 ## Overview
 
@@ -32,7 +33,7 @@ The SomaticBunny pipeline integrates multiple variant calling tools to improve d
 This pipeline is designed to work with paired tumor-normal whole-genome or whole-exome sequencing data.
 
 <p align="center">
-  <img src="https://github.com/AlexandrovLab/SomaticBunny/blob/main/workflow_logo/SomaticBunny.png" alt="SomaticBunny Pipeline Workflow"/>
+  <img src="workflow_logo/SomaticBunny.png" alt="SomaticBunny Pipeline Workflow"/>
 </p>
 
 
@@ -394,4 +395,10 @@ excluded; depth is `REF + ALT`. The raw alleleCounter outputs
 
 ## Benchmark
 
-Code to reproduce the benchmark against nf-core/sarek is in [`benchmark/`](benchmark).
+Code to reproduce the benchmark against nf-core/sarek is in [`Benchmark/`](Benchmark).
+
+## License
+
+SomaticBunny is released under the BSD 2-Clause License (see [`LICENSE.txt`](LICENSE.txt)).
+The tools it runs (GATK, Strelka2, SAGE, MuSE, Manta, Delly, ASCAT, CNVkit, Conpair, ...) are
+installed by Conda and keep their own licenses.

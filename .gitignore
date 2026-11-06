@@ -1,0 +1,26 @@
+# Nextflow run state
+.nextflow/
+.nextflow.log*
+.nextflow.pid
+work/
+
+# Pipeline outputs and logs (defaults under the launch directory)
+RESULTS/
+pipeline.log
+mkdup_tmp/
+report.html
+timeline.html
+trace.txt
+dag.*
+
+# Conda environments created next to the pipeline
+conda/
+.conda/
+
+# Editor and system files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+__pycache__/
