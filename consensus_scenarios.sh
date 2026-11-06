@@ -3,6 +3,7 @@
 #
 # Usage:
 #   consensus_scenarios.sh [-s SCENARIOS] [-t TLOD] [-e SOMATIC_EVS] [-p] \
+#       [-c CONTIGS] [-b CALLABLE_BED] \
 #       SAMPLE MUTECT2_VCF MUSE_VCF STRELKA_SNV STRELKA_INDEL SAGE_VCF \
 #       TUMOR_BAM DATABASE_PATH REF_FASTA
 #
@@ -12,6 +13,14 @@
 #   -e  Minimum Strelka2 SomaticEVS for scenario 6 (default 13)
 #   -p  Scenario 6 drops variants that Mutect2 flagged panel_of_normals.
 #       Default: off (PON sites are kept; the flag stays visible in caller_filters)
+#   -c  Contigs allowed into the consensus: a comma list (chr1,chr2,...) or a file
+#       with one contig name per line. Every name must exist in REF_FASTA.fai.
+#   -b  Callable-region BED (0-based, half-open). Only variants whose POS lies in
+#       a region enter the consensus. Every BED contig must exist in REF_FASTA.fai.
+#       With -c as well, only BED regions on the -c contigs are used.
+#       Default (neither -c nor -b): the human primary chromosomes chr1-22, chrX,
+#       chrY (or 1-22, X, Y), which must all be present in REF_FASTA.fai; any
+#       other reference must be given -c or -b explicitly.
 #
 # Scenarios (callers: mt=Mutect2, sa=SAGE, st=Strelka2, ms=MuSE; MuSE is SNV-only,
 # so indels have 3 callers):
@@ -26,8 +35,20 @@
 #       still passes if >= 2 PASS callers remain.
 #
 # All scenarios: inputs are normalized with bcftools norm (left-align, split
-# multiallelics), MNVs are split into SNVs, each caller votes at most once per
-# variant (CHROM/POS/REF/ALT), and only primary chromosomes (chr1-22, X, Y, with or without the chr prefix) are kept.
+# multiallelics) and only variants inside the allowed contigs / callable regions
+# (-c / -b) enter the consensus; everything else (viral, EBV, decoy, alt, chrM ...)
+# is listed in special_mutations/<SAMPLE>_outside_callable_regions.tsv.
+# MNVs are decomposed into SNVs so that SNV-only callers can support them; each
+# derived SNV is flagged MNV_DERIVED, keeps the caller's FILTER, and drops the
+# caller's event-level INFO and QUAL (TLOD, SomaticEVS ... were computed for the
+# whole MNV), so it is score-neutral in scenario 6. The original MNV records are
+# kept in special_mutations/<SAMPLE>_<caller>.mnv.vcf.
+# Each caller votes at most once per variant (CHROM/POS/REF/ALT). If one caller
+# has several records for the same variant, the kept record is chosen by a fixed
+# order: PASS first, then a directly called record over an MNV-derived one, then
+# the higher caller score (Mutect2 TLOD, Strelka2 SomaticEVS, SAGE/MuSE QUAL),
+# then the lexically smallest FILTER/INFO/QUAL text, so the result never depends
+# on input order. The number of records per caller is kept in caller_records.
 # Outputs, per scenario N:
 #   scenarioN/<SAMPLE>_snv.vcf     retained SNVs (valid sites-only VCF)
 #   scenarioN/<SAMPLE>_indel.vcf   retained indels
@@ -38,9 +59,10 @@
 #   intermediate/                  normalized and split per-caller VCFs
 
 set -euo pipefail
+export LC_ALL=C   # byte-order string comparison and sorting, so results never depend on the locale
 
 usage() {
-    sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '2,59p' "$0" | sed 's/^# \{0,1\}//' >&2
     exit 1
 }
 
@@ -51,12 +73,16 @@ SCENARIOS=6
 TLOD=10
 SEVS=13
 PON_VETO=0
-while getopts ":s:t:e:ph" opt; do
+CONTIGS_ARG=""
+CALLABLE_BED=""
+while getopts ":s:t:e:c:b:ph" opt; do
     case $opt in
         s) SCENARIOS=$OPTARG ;;
         t) TLOD=$OPTARG ;;
         e) SEVS=$OPTARG ;;
         p) PON_VETO=1 ;;
+        c) CONTIGS_ARG=$OPTARG ;;
+        b) CALLABLE_BED=$OPTARG ;;
         h|*) usage ;;
     esac
 done
@@ -104,6 +130,80 @@ INT_DIR=$WORK_DIR/intermediate
 SPECIAL_DIR=$WORK_DIR/special_mutations
 mkdir -p "$INT_DIR" "$SPECIAL_DIR"
 
+##############################################
+## Allowed contigs / callable regions (-c/-b) ##
+##############################################
+# Everything is checked against the reference index; any mismatch is fatal.
+FAI=${REF_FASTA}.fai
+[[ -r "$FAI" ]] || { echo "ERROR: reference index not found: $FAI (needed to validate the allowed contigs)" >&2; exit 1; }
+ALLOWED_CONTIGS=$INT_DIR/allowed_contigs.txt
+REGIONS=$INT_DIR/callable_regions.bed
+
+if [[ -n "$CONTIGS_ARG" ]]; then
+    if [[ -f "$CONTIGS_ARG" ]]; then
+        awk '{ sub(/#.*/, ""); gsub(/[ \t\r]/, "") } NF' "$CONTIGS_ARG" > "$ALLOWED_CONTIGS"
+        REGION_SOURCE="contig list $(readlink -f "$CONTIGS_ARG")"
+    else
+        tr ',' '\n' <<< "$CONTIGS_ARG" | awk 'NF' > "$ALLOWED_CONTIGS"
+        REGION_SOURCE="contigs $CONTIGS_ARG"
+    fi
+    [[ -s "$ALLOWED_CONTIGS" ]] || { echo "ERROR: -c gave no contig names" >&2; exit 1; }
+elif [[ -z "$CALLABLE_BED" ]]; then
+    # Default: the human primary chromosomes, using the exact names in the reference.
+    for prefix in chr ""; do
+        printf "${prefix}%s\n" $(seq 1 22) X Y > "$ALLOWED_CONTIGS"
+        if [[ $(awk -F'\t' 'FILENAME == ARGV[1] { want[$1] = 1; next } ($1 in want) { n++ } END { print n + 0 }' \
+                "$ALLOWED_CONTIGS" "$FAI") -eq 24 ]]; then
+            REGION_SOURCE="human primary chromosomes ${prefix}1-22, ${prefix}X, ${prefix}Y (default)"
+            break
+        fi
+        : > "$ALLOWED_CONTIGS"
+    done
+    [[ -s "$ALLOWED_CONTIGS" ]] || {
+        echo "ERROR: $FAI does not contain the human primary chromosomes (chr1-22, chrX, chrY or 1-22, X, Y)." >&2
+        echo "       Give the contigs to analyse with -c, or a callable-region BED with -b." >&2
+        exit 1; }
+fi
+
+if [[ -s "$ALLOWED_CONTIGS" ]]; then
+    missing=$(awk -F'\t' 'FILENAME == ARGV[1] { have[$1] = 1; next } !($1 in have)' "$FAI" "$ALLOWED_CONTIGS" | sort -u | paste -sd, -)
+    [[ -z "$missing" ]] || { echo "ERROR: allowed contig(s) not in $FAI: $missing" >&2; exit 1; }
+fi
+
+if [[ -n "$CALLABLE_BED" ]]; then
+    [[ -r "$CALLABLE_BED" ]] || { echo "ERROR: callable BED not found or unreadable: $CALLABLE_BED" >&2; exit 1; }
+    # Validate: 3+ columns, integer coordinates, start < end, end <= contig length, contig in the reference.
+    awk -F'\t' -v OFS='\t' -v keep="$ALLOWED_CONTIGS" '
+        BEGIN { while ((getline line < keep) > 0) { use[line] = 1; nuse++ } }
+        FILENAME == ARGV[1] { len[$1] = $2; next }
+        /^(#|track|browser)/ || NF == 0 { next }
+        {
+            if (NF < 3 || $2 !~ /^[0-9]+$/ || $3 !~ /^[0-9]+$/ || $2 + 0 >= $3 + 0) {
+                printf "ERROR: malformed BED line %d: %s\n", FNR, $0 > "/dev/stderr"; bad = 1; exit 1 }
+            if (!($1 in len)) { printf "ERROR: BED contig not in the reference index: %s\n", $1 > "/dev/stderr"; bad = 1; exit 1 }
+            if ($3 + 0 > len[$1] + 0) { printf "ERROR: BED region beyond the end of %s (%s > %s)\n", $1, $3, len[$1] > "/dev/stderr"; bad = 1; exit 1 }
+            if (nuse && !($1 in use)) next
+            print $1, $2, $3
+        }
+        END { if (bad) exit 1 }
+    ' "$FAI" "$CALLABLE_BED" > "$REGIONS.unmerged"
+    REGION_SOURCE="${REGION_SOURCE:+$REGION_SOURCE, }callable BED $(readlink -f "$CALLABLE_BED")"
+else
+    awk -F'\t' -v OFS='\t' 'FILENAME == ARGV[1] { len[$1] = $2; next } { print $1, 0, len[$1] }' "$FAI" "$ALLOWED_CONTIGS" > "$REGIONS.unmerged"
+fi
+# Sort and merge overlapping/adjacent regions.
+sort -k1,1 -k2,2n "$REGIONS.unmerged" | awk -F'\t' -v OFS='\t' '
+    $1 != c || $2 > e { if (c != "") print c, s, e; c = $1; s = $2; e = $3; next }
+    $3 > e { e = $3 }
+    END { if (c != "") print c, s, e }
+' > "$REGIONS"
+rm -f "$REGIONS.unmerged"
+[[ -s "$REGIONS" ]] || { echo "ERROR: no callable regions left after applying -c / -b" >&2; exit 1; }
+cut -f1 "$REGIONS" | awk '!seen[$0]++' > "$ALLOWED_CONTIGS"
+echo "Consensus restricted to: $REGION_SOURCE"
+echo "  $(wc -l < "$ALLOWED_CONTIGS") contig(s), $(wc -l < "$REGIONS") region(s), $(awk -F'\t' '{ n += $3 - $2 } END { printf "%.0f", n }' "$REGIONS") bp"
+: > "$INT_DIR/outside_regions.tsv"
+
 ######################
 ## Helper functions ##
 ######################
@@ -114,62 +214,108 @@ normalize() {
 }
 
 # Split a VCF into SNV and indel files. Multiallelic records go to $4.
-# Equal-length multi-base substitutions (MNVs) are split into single-base SNVs,
-# skipping positions where REF and ALT are the same base.
+# Equal-length multi-base substitutions (MNVs) are copied unchanged to $5 and
+# decomposed into single-base SNVs (positions where REF == ALT are skipped).
+# A derived SNV keeps the caller's FILTER, but its QUAL and INFO are replaced by
+# MNV_DERIVED;MNV_EVENT=<POS>:<REF>><ALT>: the caller computed those scores for
+# the whole MNV, not for the single base, so they must not be reused per SNV.
 split_variants() {
-    local in=$1 snv_out=$2 indel_out=$3 multi_out=$4
-    : > "$snv_out"; : > "$indel_out"; : > "$multi_out"
-    awk -F'\t' -v OFS='\t' -v snv="$snv_out" -v indel="$indel_out" -v multi="$multi_out" '
-        /^#/                      { print > snv; print > indel; next }
+    local in=$1 snv_out=$2 indel_out=$3 multi_out=$4 mnv_out=$5
+    : > "$snv_out"; : > "$indel_out"; : > "$multi_out"; : > "$mnv_out"
+    awk -F'\t' -v OFS='\t' -v snv="$snv_out" -v indel="$indel_out" -v multi="$multi_out" -v mnv="$mnv_out" '
+        /^#CHROM/ {
+            print "##INFO=<ID=MNV_DERIVED,Number=0,Type=Flag,Description=\"SNV decomposed from an MNV call; the caller'"'"'s event-level QUAL and INFO were removed\">" > snv
+            print "##INFO=<ID=MNV_EVENT,Number=1,Type=String,Description=\"Original MNV as POS:REF>ALT\">" > snv
+        }
+        /^#/                      { print > snv; print > indel; print > mnv; next }
         $5 ~ /,/                  { print > multi; next }
         length($4) != length($5)  { print > indel; next }
         length($4) == 1           { print > snv; next }
         {
+            print > mnv
             ref = $4; alt = $5; pos = $2
+            event = pos ":" ref ">" alt
             for (i = 1; i <= length(ref); i++) {
                 r = substr(ref, i, 1); a = substr(alt, i, 1)
                 if (r == a) continue
-                $2 = pos + i - 1; $4 = r; $5 = a
+                $2 = pos + i - 1; $4 = r; $5 = a; $6 = "."
+                $8 = "MNV_DERIVED;MNV_EVENT=" event
                 print > snv
             }
         }
     ' "$in"
 }
 
-# Print one caller's records in long format: CHROM POS REF ALT TAG FILTER INFO.
+# Print one caller's records in long format: CHROM POS REF ALT TAG FILTER INFO QUAL.
+# Only records whose POS lies inside the callable regions are printed; the others
+# are counted per contig in $INT_DIR/outside_regions.tsv.
 # A FILTER of "." (filters not applied) is recorded as "MISSING" so it is never
 # mistaken for "caller absent" or PASS.
 emit_long() {
-    local tag=$1 file=$2
-    awk -F'\t' -v OFS='\t' -v tag="$tag" '
-        !/^#/ && $5 != "." && $1 ~ /^(chr)?([0-9]+|X|Y)$/ {
-            print $1, $2, $4, $5, tag, ($7 == "." ? "MISSING" : $7), $8
+    local tag=$1 file=$2 vtype=$3
+    awk -F'\t' -v OFS='\t' -v tag="$tag" -v vtype="$vtype" -v outside="$INT_DIR/outside_regions.tsv" '
+        # Regions are sorted and merged; binary search for the last start < POS.
+        function inside(c, pos,    lo, hi, mid) {
+            if (!(c in NR_C)) return 0
+            lo = 1; hi = NR_C[c]
+            while (lo < hi) { mid = int((lo + hi + 1) / 2); if (RS_[c, mid] < pos) lo = mid; else hi = mid - 1 }
+            return (RS_[c, lo] < pos && pos <= RE_[c, lo])
         }
-    ' "$file"
+        FILENAME == ARGV[1] { n = ++NR_C[$1]; RS_[$1, n] = $2 + 0; RE_[$1, n] = $3 + 0; next }
+        /^#/ || $5 == "." { next }
+        !inside($1, $2 + 0) { out[$1]++; next }
+        { print $1, $2, $4, $5, tag, ($7 == "." ? "MISSING" : $7), $8, $6 }
+        END { for (c in out) print tag, vtype, c, out[c] >> outside }
+    ' "$REGIONS" "$file"
 }
 
 # Build the per-variant table from long-format records on stdin.
 # Columns: 1 CHROM 2 POS 3 ID 4 REF 5 ALT 6 DECISION
 #          7-10  FILTER for mt sa st ms ("." = caller did not report it)
 #          11-14 INFO   for mt sa st ms
-# If one caller has several records for the same variant (e.g. an MNV split plus
-# a separate SNV), it still counts once; a PASS record is preferred.
+#          15    CALLER_RECORDS: callers with more than one record, e.g. mt:2 ("." if none)
+# One caller counts once per variant. When it has several records, one is kept by
+# a fixed order that does not depend on input order (see better() below).
 aggregate() {
     awk -F'\t' -v OFS='\t' '
-        BEGIN { ntag = split("mt sa st ms", T, " ") }
+        BEGIN { ntag = split("mt sa st ms", T, " "); NOSCORE = -1e300 }
+        # Caller confidence: Mutect2 TLOD, Strelka2 SomaticEVS, otherwise QUAL.
+        function score(tag, info, qual,    key, n, i, kv, p) {
+            key = (tag == "mt" ? "TLOD" : (tag == "st" ? "SomaticEVS" : ""))
+            if (key != "") {
+                n = split(info, kv, ";")
+                for (i = 1; i <= n; i++) { split(kv[i], p, "="); if (p[1] == key && p[2] != "") return p[2] + 0 }
+                return NOSCORE
+            }
+            return (qual ~ /^[-+]?[0-9]*[.]?[0-9]+([eE][-+]?[0-9]+)?$/ ? qual + 0 : NOSCORE)
+        }
+        function derived(info) { return (info ~ /(^|;)MNV_DERIVED(;|$)/) }
+        # 1 if record A should be kept over record B:
+        # PASS first, then directly called over MNV-derived, then higher score,
+        # then the lexically smaller FILTER/INFO/QUAL text (a total order).
+        function better(fa, ia, qa, sa, fb, ib, qb, sb) {
+            if ((fa == "PASS") != (fb == "PASS")) return (fa == "PASS")
+            if (derived(ia) != derived(ib)) return !derived(ia)
+            if (sa != sb) return (sa > sb)
+            return ((fa "\t" ia "\t" qa) < (fb "\t" ib "\t" qb))
+        }
         {
             k = $1 SUBSEP $2 SUBSEP $3 SUBSEP $4
             if (!(k in seen)) { seen[k] = 1; keys[++nk] = k }
             c = k SUBSEP $5
-            if (!(c in F) || (F[c] != "PASS" && $6 == "PASS")) { F[c] = $6; I[c] = $7 }
+            NREC[c]++
+            sc = score($5, $7, $8)
+            if (!(c in F) || better($6, $7, $8, sc, F[c], I[c], Q[c], SC[c])) { F[c] = $6; I[c] = $7; Q[c] = $8; SC[c] = sc }
         }
         END {
             for (n = 1; n <= nk; n++) {
                 split(keys[n], f, SUBSEP)
                 line = f[1] OFS f[2] OFS "." OFS f[3] OFS f[4] OFS "."
+                dup = ""
                 for (j = 1; j <= ntag; j++) { c = keys[n] SUBSEP T[j]; line = line OFS ((c in F) ? F[c] : ".") }
-                for (j = 1; j <= ntag; j++) { c = keys[n] SUBSEP T[j]; line = line OFS ((c in I) ? I[c] : ".") }
-                print line
+                for (j = 1; j <= ntag; j++) { c = keys[n] SUBSEP T[j]; line = line OFS ((c in I) ? I[c] : ".")
+                                              if (NREC[c] > 1) dup = dup (dup == "" ? "" : ",") T[j] ":" NREC[c] }
+                print line, (dup == "" ? "." : dup)
             }
         }
     ' | sort -t$'\t' -k1,1V -k2,2n -k4,4 -k5,5
@@ -237,6 +383,9 @@ apply_bias_filter() {
 }
 
 # Scenario 6, step 2: TLOD / SomaticEVS thresholds with rescue, then (with -p) PON veto.
+# MNV-derived SNV records carry no TLOD/SomaticEVS (those were computed for the
+# whole MNV), so a caller supporting a variant only through a decomposed MNV is
+# neither checked nor demoted here.
 # Only INFO from PASS callers is checked. A PASS caller below a threshold is
 # demoted (its FILTER column becomes lowTLOD / lowSomaticEVS). If >= 2 PASS
 # callers remain the variant keeps its status; otherwise the flags are added
@@ -293,11 +442,11 @@ write_outputs() {
     local sc=$1 table=$2 tsv=$3 vcf=$4
     shift 4
     {
-        printf '#CHROM\tPOS\tID\tREF\tALT\tSCENARIO%s_DECISION\tMUTECT2_FILTER\tSAGE_FILTER\tSTRELKA_FILTER\tMUSE_FILTER\tMUTECT2_INFO\tSAGE_INFO\tSTRELKA_INFO\tMUSE_INFO\n' "$sc"
+        printf '#CHROM\tPOS\tID\tREF\tALT\tSCENARIO%s_DECISION\tMUTECT2_FILTER\tSAGE_FILTER\tSTRELKA_FILTER\tMUSE_FILTER\tMUTECT2_INFO\tSAGE_INFO\tSTRELKA_INFO\tMUSE_INFO\tCALLER_RECORDS\n' "$sc"
         cat "$table"
     } > "$tsv"
 
-    awk -F'\t' -v OFS='\t' -v sc="$sc" -v pon="$PON_VETO" -v ref="$(readlink -f "$REF_FASTA")" -v contigs="$INT_DIR/${S}_mutect.vcf" '
+    awk -F'\t' -v OFS='\t' -v sc="$sc" -v pon="$PON_VETO" -v ref="$(readlink -f "$REF_FASTA")" -v fai="$FAI" -v allowed="$ALLOWED_CONTIGS" -v regions="$REGION_SOURCE" '
         BEGIN {
             split("mt sa st ms", T, " ")
             split("Mutect2 SAGE Strelka2 MuSE", NAME, " ")
@@ -320,7 +469,7 @@ write_outputs() {
         }
         # Table rows: keep retained variants and build their INFO.
         $6 == "PASS" {
-            cl = ""; pc = ""; cf = ""; extra = ""; n = 0; p = 0
+            cl = ""; pc = ""; cf = ""; extra = ""; md = ""; n = 0; p = 0
             for (j = 1; j <= 4; j++) {
                 f = $(6 + j)
                 if (f == ".") continue
@@ -328,6 +477,7 @@ write_outputs() {
                 g = f; gsub(";", "|", g); cf = cf (cf == "" ? "" : ",") T[j] ":" g
                 if (f == "PASS") { p++; pc = pc (pc == "" ? "" : ",") T[j] }
                 info = $(10 + j)
+                if (info ~ /(^|;)MNV_DERIVED(;|$)/) md = md (md == "" ? "" : ",") T[j]
                 if (info == ".") continue
                 m = split(info, kv, ";")
                 for (i = 1; i <= m; i++) {
@@ -345,7 +495,10 @@ write_outputs() {
             }
             out = "callers=" cl ";ncallers=" n ";npass=" p
             if (p > 0) out = out ";pass_callers=" pc
-            out = out ";caller_filters=" cf extra
+            out = out ";caller_filters=" cf
+            if (md != "") out = out ";MNV_DERIVED;mnv_derived_callers=" md
+            if ($15 != "" && $15 != ".") out = out ";caller_records=" $15
+            out = out extra
             filt = (p >= 2 ? "PASS" : (p == 1 ? "OnePassCaller" : "NoPassCaller"))
             rec[++nr] = $1 OFS $2 OFS "." OFS $4 OFS $5 OFS "." OFS filt OFS out
         }
@@ -353,7 +506,10 @@ write_outputs() {
             print "##fileformat=VCFv4.2"
             print "##source=consensus_scenarios.sh scenario " sc
             print "##reference=file://" ref
-            while ((getline line < contigs) > 0) { if (line ~ /^##contig=/) print line; else if (line !~ /^##/) break }
+            print "##consensus_regions=" regions
+            # ##contig lines for the allowed contigs only, with lengths from the reference index.
+            while ((getline line < allowed) > 0) use[line] = 1
+            while ((getline line < fai) > 0) { split(line, fl, "\t"); if (fl[1] in use) print "##contig=<ID=" fl[1] ",length=" fl[2] ">" }
             print "##FILTER=<ID=PASS,Description=\"Called PASS by >= 2 callers" (sc == 6 ? "; also passed scenario 6 bias filter and TLOD/SomaticEVS checks" (pon == 1 ? " and the Mutect2 panel-of-normals veto" : "") : "") "\">"
             print "##FILTER=<ID=OnePassCaller,Description=\"Called PASS by exactly 1 caller (see caller_filters)\">"
             print "##FILTER=<ID=NoPassCaller,Description=\"Not called PASS by any caller (see caller_filters)\">"
@@ -362,6 +518,9 @@ write_outputs() {
             print "##INFO=<ID=pass_callers,Number=.,Type=String,Description=\"Callers with FILTER=PASS (scenario 6: after threshold demotion)\">"
             print "##INFO=<ID=npass,Number=1,Type=Integer,Description=\"Number of distinct PASS callers\">"
             print "##INFO=<ID=caller_filters,Number=.,Type=String,Description=\"Per-caller FILTER as caller:filter; multiple filters joined with |\">"
+            print "##INFO=<ID=MNV_DERIVED,Number=0,Type=Flag,Description=\"At least one caller supports this SNV only through a decomposed MNV call\">"
+            print "##INFO=<ID=mnv_derived_callers,Number=.,Type=String,Description=\"Callers whose record is an SNV decomposed from their MNV call (event-level scores removed)\">"
+            print "##INFO=<ID=caller_records,Number=.,Type=String,Description=\"Callers with more than one record for this variant, as caller:count; the kept record follows PASS > direct call > higher score > lexical order\">"
             for (i = 1; i <= nd; i++) print decl[order[i]]
             for (i = 1; i <= nu; i++) print undecl[uorder[i]]
             print "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"
@@ -401,7 +560,8 @@ awk -F'\t' -v OFS='\t' -v swap="$swap" '
     { print }
 ' "$f" > "$INT_DIR/${S}_mutect.swapped.vcf"
 split_variants "$INT_DIR/${S}_mutect.swapped.vcf" \
-    "$INT_DIR/${S}_mutect_snv.vcf" "$INT_DIR/${S}_mutect_indel.vcf" "$SPECIAL_DIR/${S}_mutect.multiMutation.txt"
+    "$INT_DIR/${S}_mutect_snv.vcf" "$INT_DIR/${S}_mutect_indel.vcf" "$SPECIAL_DIR/${S}_mutect.multiMutation.txt" \
+    "$SPECIAL_DIR/${S}_mutect.mnv.vcf"
 
 ####################
 ## Fix MuSE files ##
@@ -428,7 +588,8 @@ mv "$f.tmp" "$f"
 ####################
 echo "Fixing SAGE files..."
 split_variants "$INT_DIR/${S}_sage.vcf" \
-    "$INT_DIR/${S}_sage_snv.vcf" "$INT_DIR/${S}_sage_indel.vcf" "$SPECIAL_DIR/${S}_sage.multiMutation.txt"
+    "$INT_DIR/${S}_sage_snv.vcf" "$INT_DIR/${S}_sage_indel.vcf" "$SPECIAL_DIR/${S}_sage.multiMutation.txt" \
+    "$SPECIAL_DIR/${S}_sage.mnv.vcf"
 
 ######################################
 ## Per-caller summary (informational) ##
@@ -445,19 +606,27 @@ done
 #############################
 echo "Building per-variant tables..."
 {
-    emit_long mt "$INT_DIR/${S}_mutect_snv.vcf"
-    emit_long sa "$INT_DIR/${S}_sage_snv.vcf"
-    emit_long st "$INT_DIR/${S}_strelka_snv.vcf"
-    emit_long ms "$INT_DIR/${S}_muse_snv.vcf"
+    emit_long mt "$INT_DIR/${S}_mutect_snv.vcf" snv
+    emit_long sa "$INT_DIR/${S}_sage_snv.vcf" snv
+    emit_long st "$INT_DIR/${S}_strelka_snv.vcf" snv
+    emit_long ms "$INT_DIR/${S}_muse_snv.vcf" snv
 } | aggregate > "$INT_DIR/${S}_snv_table.tsv"
 
 {
-    emit_long mt "$INT_DIR/${S}_mutect_indel.vcf"
-    emit_long sa "$INT_DIR/${S}_sage_indel.vcf"
-    emit_long st "$INT_DIR/${S}_strelka_indel.vcf"
+    emit_long mt "$INT_DIR/${S}_mutect_indel.vcf" indel
+    emit_long sa "$INT_DIR/${S}_sage_indel.vcf" indel
+    emit_long st "$INT_DIR/${S}_strelka_indel.vcf" indel
 } | aggregate > "$INT_DIR/${S}_indel_table.tsv"
 
 echo "  Distinct SNVs: $(wc -l < "$INT_DIR/${S}_snv_table.tsv"), distinct indels: $(wc -l < "$INT_DIR/${S}_indel_table.tsv")"
+
+# Records outside the callable regions never enter the consensus; list them per caller and contig.
+{
+    printf 'caller\tvariant_type\tcontig\trecords\n'
+    sort -t$'\t' -k3,3V -k1,1 -k2,2 "$INT_DIR/outside_regions.tsv"
+} > "$SPECIAL_DIR/${S}_outside_callable_regions.tsv"
+n_out=$(awk -F'\t' '{ n += $4 } END { print n + 0 }' "$INT_DIR/outside_regions.tsv")
+echo "  Records outside the callable regions (excluded): $n_out, on $(cut -f3 "$INT_DIR/outside_regions.tsv" | sort -u | wc -l) contig(s); see special_mutations/${S}_outside_callable_regions.tsv"
 
 ###################
 ## Run scenarios ##
