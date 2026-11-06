@@ -159,12 +159,13 @@ The SomaticBunny pipeline workflow is divided into multiple steps that can be ru
 | `variant_calling` | This will start from executing variant calling tools | recalibrated bam and bai |
 
 ##### Available reference genomes
-| Genomes | 
-|---------|
-| GRCh38  | 
-| GRCh37  | 
-| mm39  | 
-| RN7  | 
+| Genome | Status |
+|--------|--------|
+| GRCh38 | supported |
+| GRCh37 | supported |
+| mm39   | supported |
+| RN7    | experimental: no Mutect2 panel of normals, never run end to end. Refused at startup unless `--allow_unvalidated_genome true` is given; Mutect2 then runs without `-pon`. |
+
 
 > [!NOTE]
 > **`--type genome` vs `--type exome`.** The SNV/INDEL callers run on the same regions for both
