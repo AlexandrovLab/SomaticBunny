@@ -321,6 +321,14 @@ Receive completion notification:
 nextflow run main.nf -profile tscc_slurm,conda --type genome --genome GRCh38 --first_step mapping --tool ascat,manta -N your_email@example.com
 ```
 
+#### Optical duplicate distance
+
+`--mkdup_optical_pixel_distance` sets Picard MarkDuplicates `OPTICAL_DUPLICATE_PIXEL_DISTANCE`.
+Default `100` (Picard's default, right for unpatterned flow cells such as HiSeq 2000/2500, and the
+setting used for the benchmark); use `2500` for patterned flow cells (HiSeq X, HiSeq 4000, NovaSeq).
+The value affects only the duplicate metrics (optical duplicate count and estimated library size),
+not which reads are flagged as duplicates, so variant calls are unchanged.
+
 ## Output
 
 All results and reports are stored under `--outdir` (default: `RESULTS` in the directory you launch the pipeline from) with the following structure:

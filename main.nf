@@ -13,6 +13,7 @@ params.first_step = null
 params.genome = ""
 params.tool = ""
 params.cleanup = false 
+params.mkdup_optical_pixel_distance = 100   // Picard MarkDuplicates OPTICAL_DUPLICATE_PIXEL_DISTANCE; 2500 for patterned flow cells. Duplicate metrics only.
 
 // Initialize the log file with a header
 new File(params.log_file).text = """
