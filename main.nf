@@ -519,7 +519,8 @@ def validatePairing(sheet) {
     def rows = sampleFile.splitCsv(header: true)
     def problems = []
     rows.groupBy { [it.patient?.trim(), it.sample?.trim(), it.status?.trim()] }.each { k, v ->
-        if (v.size() > 1) problems << "patient ${k[0]}, sample ${k[1]}, status ${k[2]}: listed ${v.size()} times"
+        if (v.size() > 1) problems << "patient ${k[0]}, sample ${k[1]}, status ${k[2]}: listed ${v.size()} times. " +
+            "One FASTQ pair (or one BAM) per sample: concatenate the lanes of a multi-lane library into one pair first (README, 'One FASTQ pair per sample')"
     }
     rows.groupBy { it.patient?.trim() }.each { patient, prows ->
         def status  = prows.collect { it.status?.trim() }
