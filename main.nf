@@ -177,6 +177,14 @@ if (!params.genomes.containsKey(params.genome)) {
     error "Invalid genome: ${params.genome}. Available options are: ${params.genomes.keySet().join(', ')}"
 }
 
+// Genomes with no validated end-to-end run. RN7 has no Mutect2 panel of normals and has never been
+// run through the pipeline: refuse unless the user opts in explicitly.
+params.allow_unvalidated_genome = false
+if (params.genome == 'RN7' && !params.allow_unvalidated_genome) {
+    error "ERROR: genome 'RN7' is not validated: no Mutect2 panel of normals exists and no RN7 sample has been run " +
+          "through the pipeline. Re-run with --allow_unvalidated_genome true to proceed; Mutect2 will run without -pon."
+}
+
 // Check if user inputs custom ref or not
 params.custom_ref = (params.ref && params.ref != params.genomes[params.genome].ref)
 
@@ -229,7 +237,12 @@ params.database_dir = "${params.database_path}/Databases"
 params.genome_database_dir = "${params.database_dir}/${params.genomes[params.genome].database_subdir}"
 
 // Genome-specific file paths for Mutect2
-params.mutect2_pon = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon}"
+params.mutect2_pon = params.genomes[params.genome].mutect2_pon ? "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon}" : null
+if (params.mutect2_pon && !file(params.mutect2_pon).exists())
+    error "ERROR: Mutect2 panel of normals not found: ${params.mutect2_pon}"
+if (!params.mutect2_pon)
+    log.warn "Genome ${params.genome} has no Mutect2 panel of normals: Mutect2 runs without -pon (lower specificity; not validated for RN7)"
+
 params.mutect2_interval_dir = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_interval_dir}"
 params.mutect2_germline = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
 

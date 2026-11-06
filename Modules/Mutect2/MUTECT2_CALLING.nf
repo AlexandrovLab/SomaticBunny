@@ -21,10 +21,10 @@ process MUTECT2_CALLING {
     tuple val(map), path("*vcf"), path("*.idx"), path("*.stats"), path("*f1r2.tar.gz"), emit: mutect_call
 
     script:
+    def pon_arg = params.mutect2_pon ? "-pon ${params.mutect2_pon}" : ""
     """
     ${params.gatk} Mutect2 \\
-        -R ${params.ref} \\
-        -pon ${params.mutect2_pon} \\
+         -R ${params.ref} ${pon_arg} \\
         --germline-resource ${params.mutect2_germline} \\
         --native-pair-hmm-threads ${task.cpus} \\
         --input ${map.normal} \\
