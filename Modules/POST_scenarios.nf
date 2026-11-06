@@ -5,6 +5,14 @@ params.tlod        = 10
 params.somatic_evs = 13
 params.pon_veto    = false   // true: scenario 6 drops Mutect2 panel_of_normals sites
 
+// Regions allowed into the somatic consensus (audit points 1 and 6).
+// consensus_contigs: comma list or a file with one contig per line. callable_bed: BED of
+// callable regions (e.g. the WES targets). With neither, human references use chr1-22, X, Y
+// (or 1-22, X, Y); mm39 and RN7 use the primary chromosomes listed below. Everything else
+// (viral/EBV, decoy, alt, unplaced, chrM) is kept out of the consensus.
+params.consensus_contigs = null
+params.callable_bed      = null
+
 /*
  * Runs all six consensus scenarios in one task with consensus_scenarios.sh.
  *
@@ -76,6 +84,15 @@ process POST_SCENARIOS {
     path("scenario*/${patient_sample}_*_annotated.tsv.gz"), emit: annotated
 
     script:
+    def primary = [
+        mm39: ((1..19).collect { "chr${it}" } + ['chrX', 'chrY']).join(','),
+        RN7 : ((1..20).collect { "chr${it}" } + ['chrX', 'chrY']).join(',')
+    ]
+    def contigs = params.consensus_contigs ?: primary[params.genome]
+    def region_args = [
+        contigs             ? "-c ${contigs}"             : '',
+        params.callable_bed ? "-b ${params.callable_bed}" : ''
+    ].findAll().join(' ')
     """
     set -euo pipefail
 
@@ -94,6 +111,7 @@ process POST_SCENARIOS {
 
     bash ${projectDir}/consensus_scenarios.sh \\
         -s all \\
+        ${region_args} \\
         -t ${params.tlod} \\
         -e ${params.somatic_evs} \\
         ${params.pon_veto ? '-p' : ''} \\
