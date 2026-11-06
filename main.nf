@@ -42,10 +42,10 @@ params.genomes = [
         recal_knownsite2: "${params.database_path}/Databases/GRCh38/Homo_sapiens_assembly38.known_indels.vcf.gz",
         recal_interval_wes: "${params.database_path}/Databases/GRCh38/whole_exome_illumina_coding_v1.Homo_sapiens_assembly38_canonical.targets.interval_list",
         sage: [
-            sage_ref_dir: "${params.database_path}/SAGE/v5_34/ref/38",
-            sage_hotspots: "${params.database_path}/SAGE/v5_34/ref/38/variants/KnownHotspots.somatic.38.vcf.gz",
-            sage_panel_bed: "${params.database_path}/SAGE/v5_34/ref/38/variants/ActionableCodingPanel.38.bed.gz",
-            sage_high_confidence_bed: "${params.database_path}/SAGE/v5_34/ref/38/variants/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz",
+            sage_ref_dir: "${params.database_path}/SAGE/hmf_pipeline_resources.38_v2.3.0--2",
+            sage_hotspots: "${params.database_path}/SAGE/hmf_pipeline_resources.38_v2.3.0--2/dna/variants/KnownHotspots.somatic.38.vcf.gz",
+            sage_panel_bed: "${params.database_path}/SAGE/hmf_pipeline_resources.38_v2.3.0--2/dna/variants/ActionableCodingPanel.38.bed.gz",
+            sage_high_confidence_bed: "${params.database_path}/SAGE/hmf_pipeline_resources.38_v2.3.0--2/dna/variants/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz",
             sage_ref_genome_version: "38" 
         ],
         ASCAT: [
@@ -77,10 +77,10 @@ params.genomes = [
         recal_knownsite2: "${params.database_path}/Databases/GRCh37/Homo_sapiens_assembly19.known_indels.vcf.gz",
         recal_interval_wes: "${params.database_path}/Databases/GRCh37/intervals_Broad.human.exome.b37.interval_list",
         sage: [
-            sage_ref_dir: "${params.database_path}/SAGE/v5_34/ref/37",
-            sage_hotspots: "${params.database_path}/SAGE/v5_34/ref/37/dna/variants/KnownHotspots.somatic.37.vcf.gz",
-            sage_panel_bed: "${params.database_path}/SAGE/v5_34/ref/37/dna/variants/ActionableCodingPanel.37.bed.gz",
-            sage_high_confidence_bed: "${params.database_path}/SAGE/v5_34/ref/37/dna/variants/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz",
+            sage_ref_dir: "${params.database_path}/SAGE/hmf_pipeline_resources.37_v2.3.0--2",
+            sage_hotspots: "${params.database_path}/SAGE/hmf_pipeline_resources.37_v2.3.0--2/dna/variants/KnownHotspots.somatic.37.vcf.gz",
+            sage_panel_bed: "${params.database_path}/SAGE/hmf_pipeline_resources.37_v2.3.0--2/dna/variants/ActionableCodingPanel.37.bed.gz",
+            sage_high_confidence_bed: "${params.database_path}/SAGE/hmf_pipeline_resources.37_v2.3.0--2/dna/variants/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz",
             sage_ref_genome_version: "37" 
         ],
         ASCAT: [
