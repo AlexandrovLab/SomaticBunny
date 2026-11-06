@@ -102,18 +102,16 @@ This pipeline is designed to work with paired tumor-normal whole-genome or whole
 
 ## Configuration
 
-For memory management, modify the following parameters if needed:
+Everything the pipeline writes goes under the directory you launch it from, never under the pipeline code:
 
-- Set `$params.mkdup_temp_dir` in `main.nf` to your ideal location (Default: `$projectDir/mkdup_tmp`)
-- Set `$workDir` in `nextflow.config` to your ideal location (Default: `./work`)
+| What | Default | Change with |
+|------|---------|-------------|
+| Results | `<launch dir>/RESULTS` | `--outdir /path/to/results` |
+| Run log (`pipeline.log`) | `<launch dir>/pipeline.log` | `--log_file /path/to/pipeline.log` |
+| Nextflow work directory | `<launch dir>/work` | `-work-dir /path` (one dash, Nextflow option) or `workDir` in `nextflow.config` |
+| MarkDuplicates temporary files | `<launch dir>/mkdup_tmp` | `--mkdup_temp_dir /path` |
 
-```nextflow
-// In main.nf
-params.mkdup_temp_dir = "/path/to/ideal/mkdup_tmp/folder/"
-
-// In nextflow.config
-workDir = "/path/to/ideal/intermediate/work/folder/"
-```
+The work directory and the MarkDuplicates temporary directory take the most space during a run; put them on a large scratch file system if your launch directory is on a small one.
 
 ## Usage
 
@@ -168,11 +166,24 @@ The SomaticBunny pipeline workflow is divided into multiple steps that can be ru
 
 
 > [!NOTE]
-> **`--type genome` vs `--type exome`.** The SNV/INDEL callers run on the same regions for both
-> data types: the callable-regions BED (`--bed`, by default the primary chromosomes of the
-> selected genome). `--type exome` does not restrict calling to exome targets. It only switches
-> Strelka and Manta to `--exome` mode, MuSE to `-E`, base quality score recalibration to the
-> exome interval list, and mosdepth and ASCAT to their exome resources.
+> **`--type genome` vs `--type exome`.** The SNV/INDEL callers are never restricted to exome
+> targets, for either data type. Each caller runs on its own call space (Mutect2: the scattered
+> interval lists, chr1-22, X, Y, M; Strelka2: `--callRegions` with `--bed`, chr1-22, X, Y; SAGE:
+> its built-in chr1-22, X, Y; MuSE: the whole reference). The consensus step
+> (`consensus_scenarios.sh`) then applies one region set to all four callers identically: by
+> default the primary chromosomes chr1-22, X, Y, or the regions given with `--consensus_contigs`
+> / `--callable_bed`. Variants outside that set never enter any scenario; they are counted in the
+> POST_SCENARIOS task log and listed in `special_mutations/<sample>_outside_callable_regions.tsv`.
+> `--type exome` only switches Strelka2 and Manta to `--exome` mode (depth filters off), MuSE to
+> `-E`, base quality score recalibration to the exome interval list, and mosdepth, CNVkit and
+> ASCAT to their exome resources. To restrict a WES consensus to the capture targets, pass the
+> kit's BED as `--callable_bed`: it is applied after calling, so every caller is filtered the
+> same way.
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--consensus_contigs` | Contigs allowed into the consensus: comma list or a file with one name per line | primary chromosomes of the genome |
+| `--callable_bed` | BED of callable regions applied to all callers at the consensus step (e.g. WES capture targets) | none |
 
 ##### Available Tools
 
@@ -244,7 +255,7 @@ When starting the pipeline from BAM files (`--first_step markdup`, `recalibratio
 | `--ref` | Reference FASTA file | `/path/to/hg38_genome.fa` |
 | `--ref_fai` | FASTA index file | `/path/to/hg38_genome.fa.fai` |
 | `--ref_dict` | Sequence dictionary | `/path/to/hg38_genome.dict` |
-| `--bed` | Callable regions BED file (bgzipped) | `/path/to/callable_regions.bed.gz` |
+| `--bed` | BED of the chromosomes to call, whole contigs (bgzipped). Used by Strelka2 `--callRegions`; not an exome target BED, see the `--type` note | `/path/to/hg38_chr.bed.gz` |
 | `--bed_tbi` | Tabix index for the BED file | `/path/to/callable_regions.bed.gz.tbi` |
 
 All five files must be provided together. The pipeline will exit with an error if any are missing.
@@ -269,9 +280,15 @@ nextflow run main.nf \
 When a custom reference is provided, the pipeline will automatically generate the scattered interval lists required by GATK tools (Mutect2, BaseRecalibrator, etc.) from your reference. When starting from `mapping`, these parameters are optional and will fall back to the pipeline's built-in defaults for the selected `--genome`.
 
 > [!IMPORTANT]
-> **Your custom reference genome must use the `chr` prefix for contig names** (e.g., `chr1`, `chr2`, ..., `chrX`, `chrY`). The pipeline's built-in database files (dbSNP, gnomAD, Panel of Normals, known indels, etc.) use `chr`-prefixed contig names. A reference without the `chr` prefix (e.g., `1`, `2`, ..., `X`, `Y`) will cause tools such as Mutect2, MuSE, Strelka, SAGE, and BQSR to fail due to contig name mismatches.
->
-> Different GRCh38 builds that include additional or fewer contigs (e.g., alt contigs, decoys, HLA) are supported as long as the standard chromosomes use the `chr` prefix.
+> **A custom reference must match the packaged resources of the selected `--genome`.** At startup the
+> pipeline compares the contig names and lengths of every packaged resource the run will use (Mutect2
+> germline and panel of normals, MuSE dbSNP, BQSR known sites, SAGE and Conpair files, exome BEDs,
+> Delly exclude list, ASCAT loci) with `--ref_fai`; `--ref_dict` must list exactly the reference
+> contigs. Any mismatch stops the run before a job is submitted. Either supply matching resources
+> through the corresponding `--<resource>` options (for example `--mutect2_germline`,
+> `--SAGE_panel_bed`, `--ascat_loci_prefix`) or leave the tool out of `--tool`. The packaged
+> resources use `chr`-prefixed contig names; GRCh38 builds that differ only in alt, decoy or HLA
+> contigs pass.
 
 ### Advanced Options
 
@@ -306,7 +323,7 @@ nextflow run main.nf -profile tscc_slurm,conda --type genome --genome GRCh38 --f
 
 ## Output
 
-All results and reports are stored in the **RESULTS** folder with the following structure:
+All results and reports are stored under `--outdir` (default: `RESULTS` in the directory you launch the pipeline from) with the following structure:
 
 ```
 RESULTS/

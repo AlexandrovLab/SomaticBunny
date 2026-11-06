@@ -139,10 +139,9 @@ class ReferenceCheck {
      * resources: list of maps
      *   [label:, path:, kind: 'dict'|'vcf'|'interval_list'|'bed', severity: 'error'|'warn', allowUnknown: bool, maxLines: long]
      *
-     * severity says what the consuming tool does on a contig mismatch:
-     *   'error' (default) - the tool aborts (GATK validates sequence dictionaries and -L intervals against the reference)
-     *   'warn'            - the tool runs but silently ignores the unmatched regions or mis-annotates (SAGE / mosdepth /
-     *                       Strelka / Manta BED lookups, MuSE dbSNP annotation, Delly exclude list)
+     * severity: 'error' (default) or 'warn'. main.nf treats both as fatal: the tools that do not abort on a
+     *           contig mismatch (SAGE, mosdepth, Strelka, Manta, MuSE, Delly, ASCAT) are the ones that silently alter
+     *           the calls. The field only decides which list of the result a finding lands in.
      * A missing or unreadable file is always an error because every tool opens its resource file.
      *
      * Returns [errors: [...], warnings: [...]]; both empty means compatible.  Empty paths are skipped.
