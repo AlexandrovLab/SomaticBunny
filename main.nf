@@ -519,12 +519,21 @@ def validatePairing(sheet) {
     if (!['patient', 'sample', 'status'].every { it in header }) return      // reported by the per-step column check
     def rows = sampleFile.splitCsv(header: true)
     def problems = []
+    // patient and sample become file names, read-group fields and shell arguments: letters, digits, '.', '_' and '-' only, starting with a letter or digit (a leading '-' could be read as an option). Values are checked untrimmed so that stray spaces are rejected rather than carried into names.
+    def ID_OK = ~/^[A-Za-z0-9][A-Za-z0-9._-]*$/
+    rows.eachWithIndex { r, i ->
+        ['patient', 'sample'].each { col ->
+            def v = r[col]
+            if (!v || !(v ==~ ID_OK))
+                problems << "row ${i + 2}: ${col} '${v}' is not a valid identifier (letters, digits, '.', '_', '-' only, starting with a letter or digit)"
+        }
+    }
     rows.groupBy { [it.patient?.trim(), it.sample?.trim(), it.status?.trim()] }.each { k, v ->
         if (v.size() > 1) problems << "patient ${k[0]}, sample ${k[1]}, status ${k[2]}: listed ${v.size()} times. " +
             "One FASTQ pair (or one BAM) per sample: concatenate the lanes of a multi-lane library into one pair first (README, 'One FASTQ pair per sample')"
     }
     rows.groupBy { it.patient?.trim() }.each { patient, prows ->
-        def status  = prows.collect { it.status?.trim() }
+        def status  = prows.collect { it.status }
         def unknown = status.findAll { !(it in ['tumor', 'normal']) }.unique()
         if (unknown)                  problems << "patient ${patient}: status must be 'tumor' or 'normal' (got: ${unknown.join(', ')})"
         def nNormal = status.count('normal'), nTumor = status.count('tumor')
@@ -532,7 +541,7 @@ def validatePairing(sheet) {
         if (nTumor == 0)              problems << "patient ${patient}: no tumor sample"
     }
     if (problems) {
-        error "ERROR: tumor/normal pairing of sample sheet ${sheet} is ambiguous:\n  - " + problems.join('\n  - ') +
+        error "ERROR: sample sheet ${sheet} is not valid:\n  - " + problems.join('\n  - ') +
               "\nEach patient needs exactly one row with status 'normal' and one or more with status 'tumor'."
     }
     log.info "Sample sheet ${sheet}: ${rows.count { it.status?.trim() == 'tumor' }} tumor/normal pair(s) across ${rows*.patient.unique().size()} patient(s)"
