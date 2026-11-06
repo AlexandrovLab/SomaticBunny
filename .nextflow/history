@@ -1,1 +1,0 @@
-2026-11-05 21:17:35	-	voluminous_ardinghelli	-	d5d84fdeb104a3cbcde2a9934e2a7615	b57ba3d3-80c0-40b3-ba26-a9da66a63f44	nextflow run main.nf --database_path /tscc/projects/ps-lalexandrov/shared/EVC_nextflow --genome RN7 --type genome --first_step mapping --sample /dev/null
