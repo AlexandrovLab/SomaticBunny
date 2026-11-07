@@ -45,6 +45,21 @@ if (params.genome in ['mm39', 'RN7'] && params.first_step == 'recalibration') {
           "Start from 'markdup' (raw BAMs) or 'variant_calling' (duplicate-marked BAMs)."
 }
 
+// Database manifest: every file in checksums/database_files.sha256 must be present.
+params.verify_database = 'exists'
+if (!(params.verify_database in ['exists', 'hash', 'none']))
+    error "ERROR: --verify_database must be exists, hash or none (got: ${params.verify_database})"
+if (params.verify_database != 'none') {
+    def cmd = ['bash', "${projectDir}/bin/verify_database.sh", params.database_path.toString()] + (params.verify_database == 'hash' ? ['--hash'] : [])
+    def proc = cmd.execute()
+    def out = new StringBuilder(), err = new StringBuilder()
+    proc.waitForProcessOutput(out, err)
+    if (proc.exitValue() != 0)
+        error "ERROR: database ${params.database_path} does not match checksums/database_files.sha256:\n${out}${err}" +
+              "Re-install the missing files, or pass --verify_database none to skip the check."
+    log.info out.toString().trim()
+}
+
 params.genomes = [
     'GRCh38': [
         ref: "${params.database_path}/GRCh38_ref/GRCh38.d1.vd1.fa",
@@ -318,10 +333,16 @@ def writeToLog(logFile, message) {
 }
 
 // Generate comprehensive configuration log
+// Commit of the running code: Nextflow fills workflow.commitId when the pipeline is pulled from GitHub; for a local checkout ask git.
+def pipelineCommit = workflow.commitId ?: {
+    try { def p = ['git', '-C', "${projectDir}", 'rev-parse', '--short=12', 'HEAD'].execute(); p.waitFor(); p.exitValue() == 0 ? p.text.trim() : 'unknown' }
+    catch (Exception e) { 'unknown' } }()
+
 def configInfo = """
 Pipeline Configuration:
 ==============================================
 Run ID         : ${workflow.runName}
+Pipeline       : ${workflow.manifest.name} ${workflow.manifest.version} (commit ${pipelineCommit}${workflow.revision ? ", revision ${workflow.revision}" : ''})
 Command Line   : ${workflow.commandLine}
 Profile        : ${workflow.profile}
 Container      : ${workflow.container}
@@ -466,6 +487,7 @@ include { FilterMutectCalls } from './Modules/Mutect2/FilterMutectCalls'
 
 include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
+include { BQSR_INTERVALS } from './Modules/BQSR_INTERVALS'
 include { POST_SCENARIOS } from './Modules/POST_scenarios.nf'
 include { ALLELECOUNTER } from './Modules/ALLELECOUNTER.nf'
 
@@ -565,7 +587,8 @@ workflow {
     )
     interval_dir_ch = GENERATE_INTERVALS.out.interval_dir
     } else {
-        interval_dir_ch = Channel.value(file(params.mutect2_interval_dir))
+        BQSR_INTERVALS(file(params.mutect2_interval_dir), file(params.ref_dict))
+        interval_dir_ch = BQSR_INTERVALS.out.interval_dir
     }
     
     // Sanity check for ascat input format

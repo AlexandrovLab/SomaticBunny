@@ -244,6 +244,19 @@ nextflow run main.nf -profile slurm,conda -c my_cluster.config --max_cpus 32 --m
 
 SomaticBunny installs its tools with Conda (`-profile conda`, or `-profile mamba` for faster environment creation). Container engines such as Docker and Singularity are not supported.
 
+### Database
+
+`--database_path` points at the SomaticBunny database: references and indexes, caller resources, and
+the third-party programs the pipeline runs outside Conda (GATK 4.6.2.0, SAGE 4.2 with the HMF
+resources, Conpair 0.2, the DKFZ bias filter). `checksums/components.tsv` lists every component with
+its version, source and license, and `checksums/database_files.sha256` holds the SHA256 of every file.
+At startup the pipeline checks that every manifest file is present; after installing or updating the
+database, verify the content once with
+
+    bash bin/verify_database.sh /path/to/SomaticBunny_database --hash
+
+`--verify_database hash` does the same at startup; `--verify_database none` skips the check.
+
 ### Custom Reference Genome
 
 When starting the pipeline from BAM files (`--first_step markdup`, `recalibration`, or `variant_calling`), you **must** provide your own reference genome files. This is because BAM files are already aligned to a specific reference, and the pipeline needs the matching reference for downstream analysis.

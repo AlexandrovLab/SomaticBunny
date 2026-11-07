@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use SomaticBunny, please cite it as below."
+title: "SomaticBunny: an ensemble somatic variant calling pipeline for tumor-normal sequencing"
+type: software
+version: 4.0.0
+date-released: 2026-11-06
+license: BSD-2-Clause
+repository-code: "https://github.com/AlexandrovLab/SomaticBunny"
+authors:
+  - family-names: Yang
+    given-names: Ting
+    affiliation: "University of California San Diego"
+  - family-names: Wu
+    given-names: George
+    affiliation: "University of California San Diego"
+  - family-names: Alexandrov
+    given-names: Ludmil B.
+    affiliation: "University of California San Diego"
