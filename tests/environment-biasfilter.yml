@@ -1,0 +1,14 @@
+# Python 2.7 environment for the DKFZ bias filter (scenario 6). The public DKFZBiasFilter commit pinned in
+# checksums/components.tsv is Python 2 code (pysam .qqual, map() indexing); the tests run it with this
+# interpreter, passed to consensus_scenarios.sh through its PYTHON variable (tests: SB_BIASFILTER_PYTHON).
+#   conda env create -f tests/environment-biasfilter.yml
+#   SB_BIASFILTER_PYTHON=$(conda run -n somaticbunny-biasfilter which python) pytest -v tests
+name: somaticbunny-biasfilter
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=2.7
+  - pysam
+  - scipy
+  - matplotlib

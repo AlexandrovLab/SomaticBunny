@@ -24,3 +24,6 @@ conda/
 *.swp
 *~
 __pycache__/
+verify_hash.log
+tests/_deps/
+.pytest_cache/
