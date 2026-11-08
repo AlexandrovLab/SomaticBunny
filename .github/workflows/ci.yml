@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: shell, python and YAML syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml pytest
+      - name: bash -n on every shell script
+        run: |
+          set -e
+          for f in consensus_scenarios.sh bin/*.sh $(find Benchmark -name '*.sh'); do bash -n "$f" && echo "ok $f"; done
+      - name: python syntax
+        run: python -m py_compile VAF.py bin/*.py tests/*.py
+      - name: YAML validity (conda environments and workflows)
+        run: python -c "import glob,yaml; [yaml.safe_load(open(f)) for f in glob.glob('yml/*.yml')+glob.glob('.github/workflows/*.yml')+glob.glob('tests/*.yml')]; print('yaml ok')"
+      - name: static invariants (PON handling, output paths, consensus defaults)
+        run: pytest -q tests/test_static.py
+
+  tests:
+    name: consensus, VCF structure, VAF, Nextflow preview
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: tests/environment.yml
+          cache-environment: true
+      - name: Python 2.7 environment for the DKFZ bias filter (scenario 6)
+        run: micromamba create -y -q -n somaticbunny-biasfilter -f tests/environment-biasfilter.yml
+      - name: DKFZ bias filter at the commit pinned in checksums/components.tsv
+        run: |
+          git clone -q https://github.com/DKFZ-ODCF/DKFZBiasFilter tests/_deps/DKFZBiasFilter
+          git -C tests/_deps/DKFZBiasFilter checkout -q a486939a82a5256d2b34e19885941234a7287e15
+      - name: pytest (scenario 6 must run, not skip)
+        run: |
+          set -o pipefail
+          export SB_BIASFILTER_PYTHON="$(micromamba run -n somaticbunny-biasfilter which python)"
+          pytest -v tests -rs | tee pytest.log
+          ! grep -q "SKIPPED.*bias filter does not run" pytest.log
