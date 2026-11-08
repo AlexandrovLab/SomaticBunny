@@ -4,7 +4,7 @@ All notable changes to SomaticBunny are recorded here. The format follows Keep a
 
 ## [Unreleased]
 
-## [4.0.0] - 2026-11-06
+## [1.0.0] - 2026-11-06
 
 Release corresponding to the manuscript. Changes made in response to the external code audit:
 

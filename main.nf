@@ -1,7 +1,7 @@
 // Author: Ting Yang, George Wu
 // Lab: The Alexandrov Lab @ UCSD
 // Date: 2026.9
-// Version: 4.0
+// Version: 1.0.0
 
 nextflow.enable.dsl=2
 
