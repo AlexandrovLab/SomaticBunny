@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use SomaticBunny, please cite it as below."
 title: "SomaticBunny: an ensemble somatic variant calling pipeline for tumor-normal sequencing"
 type: software
-version: 4.0.0
+version: 1.0.0
 date-released: 2026-11-06
 license: BSD-2-Clause
 repository-code: "https://github.com/AlexandrovLab/SomaticBunny"
