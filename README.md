@@ -417,10 +417,10 @@ excluded; depth is `REF + ALT`. The raw alleleCounter outputs
 | Category | Tool | Version |
 |----------|------|---------|
 | QC | FastQC | v0.12.1 |
+| | Conpair | v0.2 (legacy QC, version frozen; see note) |
 | Data Processing | Picard | v3.4.0 |
 | | samtools | v1.24 |
 | | bwa-mem2 | v2.3 |
-| | Conpair | v0.2 |
 | | GATK4 | v4.6.2.0 |
 | | mosdepth | v0.3.14 |
 | SNV/INDEL Callers | Strelka2 | v2.9.10 |
@@ -431,6 +431,14 @@ excluded; depth is `REF + ALT`. The raw alleleCounter outputs
 | | Manta | v1.6.0 |
 | Copy Number Variants | CNVkit | v0.9.13 |
 | | ASCAT | v3.2.0 |
+
+> [!NOTE]
+> **Conpair 0.2 is kept intentionally as legacy QC.** It reports tumor-normal concordance and
+> cross-contamination per pair (`RESULTS/Conpair/<patient>_<sample>_info.txt`); nothing downstream
+> reads its output, so the variant calls do not depend on it. It runs for GRCh38 and GRCh37 only
+> (its marker sets are human), in its own pinned environment (`yml/conpair.yml`: Python 2.7.15,
+> GATK 3.8, OpenJDK 8, pysam 0.15.4). Replacing it with a maintained concordance tool would be a
+> separately validated change.
 
 ## Benchmark
 
