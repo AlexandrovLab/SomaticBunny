@@ -137,11 +137,22 @@ export TMPDIR=/path/to/restricted/folder/
 export NXF_OPTS="-Djava.io.tmpdir=${TMPDIR} -Xms4g -Xmx16g"
 ```
 
-4. Run the pipeline, choosing where jobs run with `-profile` (see [Choosing Where Jobs Run](#choosing-where-jobs-run)). This example runs on TSCC:
+4. Run the pipeline. This example runs a GRCh38 whole-genome tumor/normal pair from FASTQ on TSCC, with Manta and ASCAT in addition to the four SNV/INDEL callers:
 
 ```bash
-nextflow run main.nf -profile tscc_slurm,conda --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] --first_step [mapping|markdup|recalibration|variant_calling] --tool [ascat,manta,...] --database_path [/path/to/SomaticBunny_database] --ref [/path/to/ref/] --ref_fai [/path/to/ref_fai] --ref_dict [/path/to/ref_dict] --bed [/path/to/bed] --bed_tbi [/path/to/bed_tbi] -profile [conda, ...]
+nextflow run main.nf -profile tscc_slurm,conda \
+    --type genome --genome GRCh38 --first_step mapping \
+    --sample sample.csv \
+    --database_path /path/to/SomaticBunny_database \
+    --tool manta,ascat
 ```
+
+`--type` is `genome` or `exome`; `--genome` is one of `GRCh38`, `GRCh37`, `mm39`, `RN7`; `--first_step` is
+`mapping`, `markdup`, `recalibration` or `variant_calling` (tables below); `--tool` is optional and takes any
+of `ascat`, `manta`, `delly`, `cnvkit`. The packaged reference of the genome is used unless a custom one is
+given (see [Custom Reference Genome](#custom-reference-genome)). `-profile` chooses where jobs run (see
+[Choosing Where Jobs Run](#choosing-where-jobs-run)): `slurm,conda` on another SLURM cluster, `conda` alone
+to run locally.
 
 #### Pipeline Steps and Tools
 
