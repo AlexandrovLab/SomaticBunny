@@ -207,6 +207,22 @@ if (!params.genomes.containsKey(params.genome)) {
     error "Invalid genome: ${params.genome}. Available options are: ${params.genomes.keySet().join(', ')}"
 }
 
+// Validate --tool once: a comma-separated list of the optional tools below, exact names, each supported by the
+// selected genome (the SNV/INDEL callers always run and are not selected here). isToolSelected() is the only
+// accessor used downstream, so an unknown or unsupported name can never reach a process.
+def SELECTABLE_TOOLS = ['ascat', 'manta', 'delly', 'cnvkit']
+def requested_tools = params.tool ? params.tool.toString().split(',')*.trim().findAll { it } : []
+def unknown_tools = requested_tools.findAll { !(it in SELECTABLE_TOOLS) }
+if (unknown_tools) {
+    error "ERROR: unknown tool(s) in --tool: ${unknown_tools.join(', ')}. Available: ${SELECTABLE_TOOLS.join(', ')}"
+}
+def unsupported_tools = requested_tools.findAll { !(it in params.genomes[params.genome].tools) }
+if (unsupported_tools) {
+    error "ERROR: tool(s) not supported for genome ${params.genome}: ${unsupported_tools.join(', ')}. " +
+          "Supported for ${params.genome}: ${SELECTABLE_TOOLS.findAll { it in params.genomes[params.genome].tools }.join(', ')}"
+}
+
+
 // Genomes with no validated end-to-end run. RN7 has no Mutect2 panel of normals and has never been
 // run through the pipeline: refuse unless the user opts in explicitly.
 params.allow_unvalidated_genome = false
@@ -280,7 +296,7 @@ params.vaf_script = params.vaf_script ?: "${projectDir}/VAF.py"
 // Custom reference: every packaged resource this run will use must share the reference's contig names and lengths (the criterion GATK applies to sequence dictionaries). Any mismatch stops the run before a task is submitted, whatever the consuming tool would do on its own: GATK aborts, but SAGE, mosdepth, MuSE, Strelka, Manta, Delly and ASCAT silently ignore unmatched regions or mis-annotate, which alters the calls.
 if (params.custom_ref) {
     def human = params.genome in ['GRCh38', 'GRCh37']
-    def tools = params.tool ? params.tool.toString().split(',')*.trim() : []
+    def tools = requested_tools
     def resources = [
         [label: '--ref_dict',       path: params.ref_dict,         kind: 'dict'],
         [label: '--bed',            path: params.bed,              kind: 'bed'],
@@ -372,7 +388,6 @@ ${available_tools.join(', ')}
 
 params.bam_dir="${params.outdir}/BAM"
 params.report_dir="${params.outdir}/REPORT"
-params.manta_bed="${params.database_path}/GRCh38_ref/manta.bed.gz"
 params.mkdup_temp_dir="${launchDir}/mkdup_tmp"
 params.FASTQC_dir="${params.outdir}/FASTQC"
 params.mkdup_dir="${params.outdir}/MKDUP"
@@ -602,7 +617,7 @@ workflow {
     }
     
     // Sanity check for ascat input format
-    if (params.tool.toString().contains('ascat')) {
+    if (isToolSelected('ascat')) {
         def sampleFile = file(params.sample)
         def hasSexColumn = false
         
@@ -625,7 +640,7 @@ workflow {
     if (params.first_step in ['mapping']) {
         // Sanity check for sample sheet
         def requiredColumns = ['patient', 'sample', 'status', 'fastq_1', 'fastq_2']
-        if (params.tool && isToolSelected('ascat')) {
+        if (isToolSelected('ascat')) {
             requiredColumns.add('sex')
         }
         
@@ -689,7 +704,7 @@ workflow {
         if (params.first_step == "markdup"){
             // Sanity check for sample sheet
             def requiredColumns = ['patient', 'sample', 'status', 'bam', 'bai']
-            if (params.tool && isToolSelected('ascat')) {
+            if (isToolSelected('ascat')) {
                 requiredColumns.add('sex')
             }
             
@@ -711,7 +726,7 @@ workflow {
                 exit 1
             }
 
-            if (params.tool && params.tool.contains('ascat')) {
+            if (isToolSelected('ascat')) {
                 Channel.fromPath(params.sample)
                 | splitCsv(header:true)
                 | map { row ->
@@ -782,7 +797,7 @@ workflow {
         if (params.first_step == "recalibration" && params.genome in ['GRCh38', 'GRCh37']){
             // Sanity check for sample sheet
             def requiredColumns = ['patient', 'sample', 'status', 'bam', 'bai']
-            if (params.tool && isToolSelected('ascat')) {
+            if (isToolSelected('ascat')) {
                 requiredColumns.add('sex')
             }
             
@@ -804,7 +819,7 @@ workflow {
                 exit 1
             }
 
-            if (params.tool && params.tool.contains('ascat')) {
+            if (isToolSelected('ascat')) {
                 Channel.fromPath(params.sample)
                 | splitCsv(header:true)
                 | map {row ->
@@ -941,7 +956,7 @@ workflow {
         if (params.first_step == "variant_calling"){
             // Sanity check for sample sheet
             def requiredColumns = ['patient', 'sample', 'status', 'bam', 'bai']
-            if (params.tool && isToolSelected('ascat')) {
+            if (isToolSelected('ascat')) {
                 requiredColumns.add('sex')
             }
             
@@ -963,7 +978,7 @@ workflow {
                 exit 1
             }
 
-            if (params.tool && params.tool.contains('ascat')) {
+            if (isToolSelected('ascat')) {
                 Channel.fromPath(params.sample)
                 | splitCsv(header:true)  
                 | map {row ->
@@ -1077,7 +1092,7 @@ workflow {
 
             // TOOL-SPECIFIC BLOCKS - MOVED INSIDE variant_calling STEP
             // ASCAT
-            if (params.tool && params.tool.contains('ascat')) {
+            if (isToolSelected('ascat')) {
                 chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
                 if (params.type == "exome") {
                     ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
@@ -1096,13 +1111,13 @@ workflow {
             }
 
             // CNVkit
-            if (params.tool && params.tool.contains('cnvkit')) {
+            if (isToolSelected('cnvkit')) {
                 CNVkit_buildcnn(normal_bams).set { CNVkit_buildcnn_out }
                 CNVkit(RECALIBRATE_out_MAP_CN, CNVkit_buildcnn_out.CNVkit_ref_cnn).set { CNVkit_out }
             }
 
             // Delly
-            if (params.tool && params.tool.contains('delly')) {
+            if (isToolSelected('delly')) {
                 if (params.type == 'exome') {
                     log.error "ERROR: Delly is not recommended for exome data. Please use a different SV caller (manta) for exome data"
                     exit 1  
@@ -1127,7 +1142,7 @@ workflow {
             }
 
             // Manta
-            if (params.tool && params.tool.contains('manta')) {
+            if (isToolSelected('manta')) {
                 MANTA(RECALIBRATE_out_MAP_CN)
             }
 
@@ -1223,7 +1238,7 @@ workflow {
 
             // TOOL-SPECIFIC BLOCKS - ALSO FOR NON variant_calling START STEPS
 	    // ASCAT
-	    if (params.tool && params.tool.contains('ascat')) {
+	    if (isToolSelected('ascat')) {
 	        chromosomes = Channel.of( *(1..22).collect { it.toString() } + ['X'] )
 	        if (params.type == "exome") {
 	            ASCAT_allelecount(RECALIBRATE_out_MAP_CN, chromosomes)
@@ -1242,14 +1257,14 @@ workflow {
             }
 	
 	    // CNVkit
-	    if (params.tool && params.tool.contains('cnvkit')) {
+	    if (isToolSelected('cnvkit')) {
 	        CNVkit_buildcnn(normal_bams).set { CNVkit_buildcnn_out }
 	        CNVkit(RECALIBRATE_out_MAP_CN, CNVkit_buildcnn_out.CNVkit_ref_cnn).set { CNVkit_out }
 	    }
 	
 	    // Delly
-	    if (params.tool && params.tool.contains('delly')) {
-	        if (params.type == 'exome' && params.tool.toString().contains('delly')) {
+	    if (isToolSelected('delly')) {
+	        if (params.type == 'exome') {
 	            log.error "ERROR: Delly is not recommended for exome data. Please use a different SV caller (manta) for exome data"
 	            exit 1  
 	        } else {
@@ -1273,7 +1288,7 @@ workflow {
 	    }
 	
 	    // Manta
-	    if (params.tool && params.tool.contains('manta')) {
+	    if (isToolSelected('manta')) {
 	        MANTA(RECALIBRATE_out_MAP_CN)
 	    }
         }
