@@ -27,7 +27,7 @@ jobs:
         run: pytest -q tests/test_static.py
 
   tests:
-    name: consensus, VCF structure, VAF, Nextflow preview
+    name: consensus, VCF structure, VAF, Nextflow preview (current tool versions)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,3 +50,35 @@ jobs:
           export SB_BIASFILTER_PYTHON="$(micromamba run -n somaticbunny-biasfilter which python)"
           pytest -v tests -rs | tee pytest.log
           ! grep -q "SKIPPED.*bias filter does not run" pytest.log
+
+  production-envs:
+    name: consensus, VCF structure and VAF tests in the production environments (yml/POST.yml, yml/alleleCounter.yml)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: tests/environment.yml
+          cache-environment: true
+      - name: production environments, created from the pipeline's own environment files
+        run: |
+          micromamba create -y -q -n POST -f yml/POST.yml
+          micromamba create -y -q -n alleleCounter -f yml/alleleCounter.yml
+          micromamba list -n POST | grep -E "^ *(python|bcftools|pysam|dkfz-bias-filter) "
+          micromamba list -n alleleCounter | grep -E "^ *(python|pysam|cancerit-allelecount) "
+      - name: DKFZ bias filter at the commit pinned in checksums/components.tsv
+        run: |
+          git clone -q https://github.com/DKFZ-ODCF/DKFZBiasFilter tests/_deps/DKFZBiasFilter
+          git -C tests/_deps/DKFZBiasFilter checkout -q a486939a82a5256d2b34e19885941234a7287e15
+      - name: pytest with the production tools (nothing may skip)
+        run: |
+          set -o pipefail
+          export SB_TOOLS_BIN="$MAMBA_ROOT_PREFIX/envs/POST/bin:$MAMBA_ROOT_PREFIX/envs/alleleCounter/bin"
+          export SB_BIASFILTER_PYTHON="$MAMBA_ROOT_PREFIX/envs/POST/bin/python"
+          export SB_VAF_PYTHON="$MAMBA_ROOT_PREFIX/envs/alleleCounter/bin/python3"
+          export SB_PRODUCTION_ENVS=1
+          pytest -v tests/test_consensus.py tests/test_vcf_structure.py tests/test_vaf.py tests/test_production_envs.py -rs | tee pytest.log
+          ! grep -q "SKIPPED" pytest.log

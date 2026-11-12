@@ -364,6 +364,7 @@ RESULTS/
 │   └── VAF                                           allele counts and VAFs for the scenario 4-6 consensus calls
 ├── RECALIBRATE (optional)
 ├── REPORT
+├── pipeline_info/params_<timestamp>.json   resolved parameters of the run
 ├── SAGE
 └── STRELKA
 ```

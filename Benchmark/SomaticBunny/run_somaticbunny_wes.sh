@@ -2,9 +2,7 @@
 #######################################################################
 # SomaticBunny benchmark: SomaticBunny on WES
 #
-# NOTE: verify the exome-mode options against the actual benchmark
-# session (--type exome and the WES_BED paths in paths.env are
-# assumed from the WGS command; adjust if the WES run differed).
+# Exact command of the v1.0.0 WES benchmark run; run records go to pipeline_info/wes/ afterwards
 #######################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -34,7 +32,7 @@ mkdir -p "$TMPDIR" 2>/dev/null || { echo "ERROR: cannot create TMPDIR=${TMPDIR} 
 missing=0
 for f in "${SOMATICBUNNY_DIR}/main.nf" \
          "$REF" "$REF_FAI" "$REF_DICT" \
-         "$WES_BED" "$WES_BED_TBI"; do
+         "$BED" "$BED_TBI" "$WES_CALLABLE_BED"; do
     [[ -f "$f" ]] || { echo "ERROR: file not found: $f" >&2; missing=1; }
 done
 [[ -d "$DATABASE_PATH" ]] || { echo "ERROR: database path not found: $DATABASE_PATH" >&2; missing=1; }
@@ -50,8 +48,9 @@ nextflow run "${SOMATICBUNNY_DIR}/main.nf" -profile tscc_slurm \
     --ref "$REF" \
     --ref_fai "$REF_FAI" \
     --ref_dict "$REF_DICT" \
-    --bed "$WES_BED" \
-    --bed_tbi "$WES_BED_TBI" \
-    --tool ascat,manta,delly,cnvkit \
-    -with-report \
+    --bed "$BED" \
+    --bed_tbi "$BED_TBI" \
+    --callable_bed "$WES_CALLABLE_BED" \
+    --tool ascat,manta,cnvkit \
+    -with-report -with-trace -with-timeline \
     "$@"

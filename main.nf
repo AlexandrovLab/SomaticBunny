@@ -533,6 +533,16 @@ Error report  : ${workflow.errorReport ?: 'None'}
 """
     writeToLog(params.log_file, completionStatus)
     log.info completionStatus
+
+    // Resolved parameters of this run, for provenance (one file per run, next to the results).
+    try {
+        def pf = file("${params.outdir}/pipeline_info/params_${new java.util.Date().format('yyyy-MM-dd_HH-mm-ss')}.json")
+        pf.parent.mkdirs()
+        pf.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(params))
+        log.info "Parameters written to ${pf}"
+    } catch (Exception e) {
+        log.warn "Could not write the parameter file: ${e.message}"
+    }
 }
 
 // Helper function to check if a specific tool is selected

@@ -49,5 +49,5 @@ nextflow run "${SOMATICBUNNY_DIR}/main.nf" -profile tscc_slurm \
     --bed "$BED" \
     --bed_tbi "$BED_TBI" \
     --tool ascat,manta,delly,cnvkit \
-    -with-report \
+    -with-report -with-trace -with-timeline \
     "$@"
