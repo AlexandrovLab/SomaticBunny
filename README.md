@@ -185,6 +185,13 @@ The SomaticBunny pipeline workflow is divided into multiple steps that can be ru
 | `--consensus_contigs` | Contigs allowed into the consensus: comma list or a file with one name per line | primary chromosomes of the genome |
 | `--callable_bed` | BED of callable regions applied to all callers at the consensus step (e.g. WES capture targets) | none |
 
+> [!NOTE]
+> **SAGE runs outside the Hartwig workflow.** SAGE 4.2 (HMF resources 2.3.0--2) is run on the same
+> BAMs as the other callers (bwa-mem2, Picard MarkDuplicates, GATK BQSR), not on REDUX output. With no
+> sample-specific jitter/MSI model it runs with `-skip_msi_jitter`, i.e. default jitter parameters, so
+> microsatellite indel filtering is not calibrated to the sample. SAGE is one of the four consensus
+> callers only. Jar and resource hashes: `checksums/database_files.sha256` and the top of every SAGE log.
+
 ##### Available Tools
 
 Use the `--tool` parameter to specify which variant callers to run. You can select multiple tools by separating them with commas.
@@ -407,7 +414,7 @@ excluded; depth is `REF + ALT`. The raw alleleCounter outputs
 | | mosdepth | v0.3.14 |
 | SNV/INDEL Callers | Strelka2 | v2.9.10 |
 | | Mutect2 | v4.6.2.0 |
-| | SAGE | v4.2 with HMF pipeline resources 2.3.0--2 (no REDUX, -skip_msi_jitter) |
+| | SAGE | v4.2 with HMF pipeline resources 2.3.0--2 (SomaticBunny BAMs, no REDUX, -skip_msi_jitter) |
 | | MuSE2 | v2.1.2 |
 | Structural Variants | Delly | v2.6.0 |
 | | Manta | v1.6.0 |
