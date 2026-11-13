@@ -21,6 +21,8 @@ def nf(tmp_path_factory):
     db = root / "db"
     (db / "Databases" / "GRCh38").mkdir(parents=True)
     (db / "Databases" / "GRCh38" / "MuTect2.PON.5210.vcf.gz").write_bytes(b"")   # existence is checked at startup
+    (db / "Databases" / "mm39").mkdir(parents=True)
+    (db / "Databases" / "mm39" / "PoN.mm39.vcf.gz").write_bytes(b"")
     for r in ("R1", "R2"):
         with gzip.open(root / f"{r}.fastq.gz", "wt") as fh:
             fh.write("")
@@ -53,6 +55,7 @@ def test_grch38_preview_compiles_and_uses_the_panel_of_normals(nf):
     assert p.returncode == 0, out
     assert "Pipeline       : AlexandrovLab/SomaticBunny" in out
     assert "has no Mutect2 panel of normals" not in out
+    assert "SomaticBunny consensus (GRCh38): consensus_scenarios.sh" in out
 
 
 def test_rn7_is_refused_without_opt_in(nf):
@@ -81,3 +84,28 @@ def test_outputs_go_to_the_launch_directory(nf):
     assert f"Output Dir     : {launch}/RESULTS" in out
     assert (launch / "pipeline.log").exists()
     assert not os.path.exists(os.path.join(REPO, "pipeline.log")) or os.path.getmtime(os.path.join(REPO, "pipeline.log")) < os.path.getmtime(launch / "pipeline.log")
+
+
+def test_mm39_preview_announces_the_nonhuman_consensus(nf):
+    # Audit point 10: a mm39 run must say at startup which consensus it produces.
+    p, out = preview(nf, "--type", "genome", "--genome", "mm39", "--first_step", "mapping")
+    assert p.returncode == 0, out
+    assert "SomaticBunny consensus (mm39): consensus_scenarios_nonhuman.sh" in out
+    assert "SNVs need 2 of 3 callers, indels 2 of 2" in out
+
+
+def test_rn7_preview_announces_the_nonhuman_consensus(nf):
+    p, out = preview(nf, "--type", "genome", "--genome", "RN7", "--first_step", "mapping", "--allow_unvalidated_genome", "true")
+    assert p.returncode == 0, out
+    assert "SomaticBunny consensus (RN7): consensus_scenarios_nonhuman.sh" in out
+
+
+def test_consensus_is_wired_for_every_genome():
+    # The POST block must not be limited to human genomes, and each branch must call its own module.
+    src = open(os.path.join(REPO, "main.nf")).read()
+    post = src[src.index("// POST - filtering and consensus calling"):]
+    head = post[:post.index("{")]
+    assert "GRCh38" not in head and "GRCh37" not in head
+    assert "POST_SCENARIOS(postInput)" in post and "POST_SCENARIOS_NONHUMAN(postInput)" in post
+    nonhuman = open(os.path.join(REPO, "Modules", "POST_scenarios_nonhuman.nf")).read()
+    assert "consensus_scenarios_nonhuman.sh" in nonhuman and "sage_vcf" not in nonhuman
