@@ -215,6 +215,15 @@ if (params.genome == 'RN7' && !params.allow_unvalidated_genome) {
           "through the pipeline. Re-run with --allow_unvalidated_genome true to proceed; Mutect2 will run without -pon."
 }
 
+// Tell the user at startup which SomaticBunny consensus this run will produce.
+if (params.genome in ['GRCh38', 'GRCh37']) {
+    log.info "SomaticBunny consensus (${params.genome}): consensus_scenarios.sh, callers Mutect2, SAGE, Strelka2, MuSE; " +
+             "SNVs need 2 of 4 callers, indels 2 of 3 (MuSE is SNV-only)."
+} else {
+    log.info "SomaticBunny consensus (${params.genome}): consensus_scenarios_nonhuman.sh, callers Mutect2, Strelka2, MuSE " +
+             "(SAGE is not run for ${params.genome}); SNVs need 2 of 3 callers, indels 2 of 2 (Mutect2 and Strelka2)."
+}
+
 // Check if user inputs custom ref or not
 params.custom_ref = (params.ref && params.ref != params.genomes[params.genome].ref)
 
@@ -489,6 +498,7 @@ include { RENAME_BAM_HEADER } from './Modules/RENAME_BAM_HEADER'
 include { GENERATE_INTERVALS } from './Modules/GENERATE_INTERVALS'
 include { BQSR_INTERVALS } from './Modules/BQSR_INTERVALS'
 include { POST_SCENARIOS } from './Modules/POST_scenarios.nf'
+include { POST_SCENARIOS_NONHUMAN } from './Modules/POST_scenarios_nonhuman.nf'
 include { ALLELECOUNTER } from './Modules/ALLELECOUNTER.nf'
 
 include { SAVE_CSV_FASTQC } from './Modules/SAVE_CSV/SAVE_CSV_FASTQC'
@@ -1270,8 +1280,10 @@ workflow {
     }
 
 // POST - filtering and consensus calling
-    if (params.first_step in ['mapping', 'markdup', 'recalibration', 'variant_calling'] && 
-        params.genome in ['GRCh38', 'GRCh37']) {
+    // Human: consensus of Mutect2, SAGE, Strelka2 and MuSE (POST_SCENARIOS).
+    // mm39/RN7: no SAGE, consensus of Mutect2, Strelka2 and MuSE (POST_SCENARIOS_NONHUMAN).
+    if (params.first_step in ['mapping', 'markdup', 'recalibration', 'variant_calling']) {
+        def human_consensus = params.genome in ['GRCh38', 'GRCh37']
         
         // Use the outputs that are guaranteed to exist from variant calling steps
         mutect2Channel = FilterMutectCalls.out.Mutect2_out
@@ -1289,10 +1301,6 @@ workflow {
                 ["${map.patient}_${map.tumor_meta.sample}", [map, snv, indel]]
             }
         
-        sageChannel = SAGE.out.SAGE_out
-            .map { map, vcf ->
-                ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
-            }
         
         // Recreate recalChannel from the available data
         // Choose the source based on first_step
@@ -1309,16 +1317,35 @@ workflow {
             ["${tumor[1].patient}_${tumor[1].sample}", [tumor[1], tumor[2], tumor[3]]]
         }
         
-        postInput = mutect2Channel
-            .join(museChannel)
-            .join(strelkaChannel)
-            .join(sageChannel)
-            .join(recalChannel)
-            .map { patient_sample, mutect2_vcf, muse_vcf, strelka_vcf, sage_vcf, recal_bam ->
-                [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1], recal_bam[2]]
-            }
-		
-        POST_SCENARIOS(postInput)
+        if (human_consensus) {
+            sageChannel = SAGE.out.SAGE_out
+                .map { map, vcf ->
+                    ["${map.patient}_${map.tumor_meta.sample}", [map, vcf]]
+                }
+
+            postInput = mutect2Channel
+                .join(museChannel)
+                .join(strelkaChannel)
+                .join(sageChannel)
+                .join(recalChannel)
+                .map { patient_sample, mutect2_vcf, muse_vcf, strelka_vcf, sage_vcf, recal_bam ->
+                    [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], sage_vcf[1], recal_bam[1], recal_bam[2]]
+                }
+
+            POST_SCENARIOS(postInput)
+            post_out = POST_SCENARIOS.out
+        } else {
+            postInput = mutect2Channel
+                .join(museChannel)
+                .join(strelkaChannel)
+                .join(recalChannel)
+                .map { patient_sample, mutect2_vcf, muse_vcf, strelka_vcf, recal_bam ->
+                    [patient_sample, mutect2_vcf[1], muse_vcf[1], strelka_vcf[1], strelka_vcf[2], recal_bam[1], recal_bam[2]]
+                }
+
+            POST_SCENARIOS_NONHUMAN(postInput)
+            post_out = POST_SCENARIOS_NONHUMAN.out
+        }
         
         // AlleleCounter for VAF calculation
         def vaf_source = (params.first_step == "variant_calling") ? 
@@ -1340,7 +1367,7 @@ workflow {
             }
             .set { recal_map_keyed }
 
-        POST_SCENARIOS.out.final_vcf_s4
+        post_out.final_vcf_s4
             .join(recal_map_keyed)
             .map { patient_sample, vcf_file, recal_map -> 
                 [
@@ -1355,7 +1382,7 @@ workflow {
             .set { allelecounter_input_4 }
 
 
-        POST_SCENARIOS.out.final_vcf_s5
+        post_out.final_vcf_s5
             .join(recal_map_keyed)
             .map { patient_sample, vcf_file, recal_map -> 
                 [
@@ -1369,7 +1396,7 @@ workflow {
             }
             .set { allelecounter_input_5 }
 
-        POST_SCENARIOS.out.final_vcf_s6
+        post_out.final_vcf_s6
             .join(recal_map_keyed)
             .map { patient_sample, vcf_file, recal_map -> 
                 [
