@@ -41,7 +41,7 @@ done
 command -v nextflow >/dev/null 2>&1 || { echo "ERROR: nextflow not on PATH" >&2; exit 1; }
 nextflow -version 2>&1 | grep -i "version" | head -n1 > nextflow_version.txt || true
 
-nextflow run "${SOMATICBUNNY_DIR}/main.nf" -profile tscc_slurm \
+nextflow run "${SOMATICBUNNY_DIR}/main.nf" -profile tscc_slurm,conda \
     --type exome --first_step mapping --genome GRCh38 \
     --publish recal_bam \
     --database_path "$DATABASE_PATH" \

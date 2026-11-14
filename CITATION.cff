@@ -3,7 +3,7 @@ message: "If you use SomaticBunny, please cite it as below."
 title: "SomaticBunny: an ensemble somatic variant calling pipeline for tumor-normal sequencing"
 type: software
 version: 1.0.0
-date-released: 2026-11-06
+date-released: 2026-11-13
 license: BSD-2-Clause
 repository-code: "https://github.com/AlexandrovLab/SomaticBunny"
 authors:
