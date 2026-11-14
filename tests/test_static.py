@@ -14,10 +14,17 @@ from conftest import REPO
 
 
 def _files(*patterns):
+    # Nextflow work directories, .nextflow caches and test dependencies are excluded by their path
+    # relative to the repository: the absolute path may itself contain "/work/" (GitHub's runner
+    # checks out under /home/runner/work/), which used to drop every file and skip these tests.
     out = []
     for p in patterns:
         out += glob.glob(os.path.join(REPO, p), recursive=True)
-    return sorted(f for f in out if "/work/" not in f and "/.nextflow" not in f and "/_deps/" not in f)
+    def keep(f):
+        rel = os.path.relpath(f, REPO)
+        return not (rel == "work" or rel.startswith("work/") or "/work/" in rel
+                    or rel.startswith(".nextflow") or "/_deps/" in rel)
+    return sorted(f for f in out if keep(f))
 
 
 @pytest.mark.parametrize("path", _files("*.sh", "bin/*.sh"))
