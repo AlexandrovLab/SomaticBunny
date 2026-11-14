@@ -6,9 +6,15 @@ Synthetic inputs are generated once per session by make_fixtures.py into a tempo
 consensus_scenarios.sh is run on them in a few configurations and the outputs are parsed here.
 
 Environment variables (all optional):
-  SB_REPO       repository root (default: parent of this directory)
-  SB_DKFZ_DIR   a checkout of DKFZBiasFilter (default: $SB_DB/DKFZBiasFilter, then tests/_deps/DKFZBiasFilter)
-  SB_DB         a SomaticBunny database directory; only DKFZBiasFilter is taken from it
+  SB_REPO               repository root (default: parent of this directory)
+  SB_DKFZ_DIR           a checkout of DKFZBiasFilter (default: $SB_DB/DKFZBiasFilter, then tests/_deps/DKFZBiasFilter)
+  SB_DB                 a SomaticBunny database directory; only DKFZBiasFilter is taken from it
+  SB_TOOLS_BIN          colon-separated bin directories put in front of PATH for every pipeline tool the
+                        tests launch (bcftools, alleleCounter, ...): the production yml/POST.yml and
+                        yml/alleleCounter.yml environments in the CI job "production-envs" (tests/README.md)
+  SB_BIASFILTER_PYTHON  interpreter for the DKFZ bias filter (production: the Python 2.7 of yml/POST.yml)
+  SB_VAF_PYTHON         interpreter for VAF.py (production: the python3 of yml/alleleCounter.yml)
+  SB_PRODUCTION_ENVS=1  also assert that these tools are the versions pinned in yml/ (test_production_envs.py)
 """
 import os
 import py_compile
@@ -25,10 +31,21 @@ import make_fixtures as mf   # noqa: E402
 REPO = os.environ.get("SB_REPO") or os.path.dirname(HERE)
 CONSENSUS = os.path.join(REPO, "consensus_scenarios.sh")
 VAF_PY = os.path.join(REPO, "VAF.py")
+TOOLS_BIN = os.environ.get("SB_TOOLS_BIN", "")
+VAF_PYTHON = os.environ.get("SB_VAF_PYTHON", sys.executable)
+
+
+def tool_path():
+    return f"{TOOLS_BIN}:{os.environ.get('PATH', '')}" if TOOLS_BIN else os.environ.get("PATH", "")
+
+
+def tool_env(**extra):
+    """Environment for every subprocess that runs a pipeline tool: SB_TOOLS_BIN first on PATH, C locale."""
+    return dict(os.environ, PATH=tool_path(), LC_ALL="C", **extra)
 
 
 def tool(name):
-    return shutil.which(name)
+    return shutil.which(name, path=tool_path())
 
 
 def pytest_configure(config):
@@ -88,7 +105,7 @@ def mini_db(fixtures, tmp_path_factory):
         fh.write("chr1\t100\t.\tT\tA\t.\tPASS\t.\t.\n")
     p = subprocess.run([python, os.path.join(dst, "scripts", "biasFilter.py"), os.path.join(probe, "in.vcf"),
                         fixtures["tumor_bam"], fixtures["ref"], os.path.join(probe, "out.vcf"),
-                        f"--tempFolder={probe}/tmp", "--mapq=1", "--baseq=1"], capture_output=True, text=True)
+                        f"--tempFolder={probe}/tmp", "--mapq=1", "--baseq=1"], capture_output=True, text=True, env=tool_env())
     if p.returncode != 0:
         tail = (p.stderr.strip().splitlines() or ["no output"])[-1]
         return dict(dir=db, s6=False, python=python,
@@ -164,7 +181,7 @@ def run_consensus(fixtures, mini_db, workdir, scenarios="all", extra=(), muse=No
            os.path.join(v, f"{mf.SAMPLE}.strelka_indel.vcf.gz"),
            os.path.join(v, f"{mf.SAMPLE}.sage.vcf.gz"),
            fixtures["tumor_bam"], mini_db["dir"], fixtures["ref"]]
-    env = dict(os.environ, PYTHON=mini_db.get("python", sys.executable), LC_ALL="C")
+    env = tool_env(PYTHON=mini_db.get("python", sys.executable))
     p = subprocess.run(cmd, cwd=workdir, env=env, capture_output=True, text=True)
     if expect_fail:
         return p

@@ -8,6 +8,9 @@ import os
 
 import pytest
 
+import make_fixtures as mf
+from conftest import run_consensus
+
 C1 = "chr1"
 
 # Variant keys (chrom, pos, ref, alt) after normalisation, by case name.
@@ -148,6 +151,27 @@ def test_callable_bed_restricts_every_caller_to_the_targets(run_targets):
     assert run_targets.keys(1, "indel") == {K["del_equivalent"], K["ins_2pass"]}
     rows = [l.split("\t") for l in open(run_targets.special("outside_callable_regions.tsv")) if l.startswith(("mt", "st"))]
     assert any(r[2] == "chr2" for r in rows)
+
+
+@pytest.fixture(scope="module")
+def run_boundary(fixtures, mini_db, tmp_path_factory):
+    root = str(tmp_path_factory.mktemp("boundary"))
+    vcf_dir, bed = mf.boundary(os.path.join(root, "vcf"), fixtures["seqs"])
+    return run_consensus(dict(fixtures, vcf=vcf_dir), mini_db, os.path.join(root, "run"), "1,5", extra=["-b", bed])
+
+
+def test_callable_bed_edges_are_zero_based_half_open(run_boundary):
+    # BED chr1 2000 2100 -> 1-based 2001..2100 callable. Shifting either edge by one base in the
+    # implementation admits 2000 or drops 2100, and this assertion fails.
+    b = mf.BOUNDARY
+    for sc in (1, 5):
+        inside = {p for (_, p) in pos_set(run_boundary, sc, "snv")}
+        assert inside == {b["first"], b["last"]}, f"scenario {sc}: {sorted(inside)}"
+    # an indel is placed by its POS: anchored on the last callable base it is in, although the inserted bases follow it
+    assert {p for (_, p) in pos_set(run_boundary, 1, "indel")} == {b["last"]}
+    # the two excluded SNVs are reported per caller, not silently dropped
+    rows = [l.rstrip("\n").split("\t") for l in open(run_boundary.special("outside_callable_regions.tsv"))]
+    assert {(r[0], r[1], r[2], r[3]) for r in rows[1:]} == {("mt", "snv", C1, "2"), ("st", "snv", C1, "2")}, rows
 
 
 # ---------------------------------------------------------------- scenario 6: thresholds, rescue, PON

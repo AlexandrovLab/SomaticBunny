@@ -76,6 +76,16 @@ def test_invalid_first_step_and_bad_sample_ids_are_refused(nf):
     p, out = preview(nf, "--type", "genome", "--genome", "GRCh38", "--first_step", "mapping", "--sample", nf["bad"])
     assert p.returncode != 0 and "is not a valid identifier" in out
 
+def test_unknown_and_unsupported_tools_are_refused_at_startup(nf):
+    # --tool is validated once, by exact name, before any task: a typo, a partial match and a human-only
+    # tool on a mouse genome all stop the run with a message naming the offending tool.
+    for bad in ("mutec2", "ascatXYZ", "manta,ascatXYZ"):
+        p, out = preview(nf, "--type", "genome", "--genome", "GRCh38", "--first_step", "mapping", "--tool", bad)
+        assert p.returncode != 0 and "unknown tool(s) in --tool" in out and bad.split(",")[-1] in out, out
+    p, out = preview(nf, "--type", "genome", "--genome", "mm39", "--first_step", "mapping", "--tool", "ascat")
+    assert p.returncode != 0 and "not supported for genome mm39: ascat" in out, out
+
+
 
 def test_outputs_go_to_the_launch_directory(nf):
     launch = nf["root"] / "elsewhere"
