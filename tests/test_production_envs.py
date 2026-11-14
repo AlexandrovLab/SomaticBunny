@@ -16,6 +16,9 @@ from conftest import REPO, TOOLS_BIN, VAF_PYTHON, tool, tool_env
 pytestmark = pytest.mark.skipif(not os.environ.get("SB_PRODUCTION_ENVS"),
                                 reason="SB_PRODUCTION_ENVS not set: tool versions not asserted")
 
+# Python 2 prints `python --version` on stderr, so the version is asked for explicitly.
+PY_VERSION = "import sys; print('%d.%d.%d' % sys.version_info[:3])"
+
 
 def pins(yml):
     yaml = pytest.importorskip("yaml")
@@ -24,9 +27,17 @@ def pins(yml):
     return dict(d.split("=", 1) for d in deps if isinstance(d, str) and "=" in d)
 
 
+def matches(version, pin):
+    """'3.12.7' matches the pins '3', '3.12' and '3.12.7'."""
+    return version == pin or version.startswith(pin + ".")
+
+
 def run(cmd):
+    """stdout of a command. stderr is deliberately kept out of the answer: interpreters and tools write
+    warnings there (a free-threaded Python re-enabling the GIL to import pysam, for instance)."""
     p = subprocess.run(cmd, capture_output=True, text=True, env=tool_env())
-    return (p.stdout + p.stderr).strip()
+    assert p.returncode == 0, p.stderr
+    return p.stdout.strip()
 
 
 def installed(package):
@@ -47,14 +58,19 @@ def test_bcftools_is_the_post_environment_version():
 def test_bias_filter_runs_under_the_post_environment_python(mini_db):
     assert mini_db["s6"], mini_db["reason"]
     want = pins("POST.yml")
-    version = run([mini_db["python"], "--version"]).split()[1]
-    assert version.startswith(want["python"] + "."), version
+    version = run([mini_db["python"], "-c", PY_VERSION])
+    assert matches(version, want["python"]), version
     assert run([mini_db["python"], "-c", "import pysam; print(pysam.__version__)"]) == want["pysam"]
 
 
 def test_vaf_runs_under_the_allelecounter_environment_python():
-    want = pins("alleleCounter.yml")["pysam"]
-    assert run([VAF_PYTHON, "-c", "import pysam; print(pysam.__version__)"]) == want
+    want = pins("alleleCounter.yml")
+    # Without a python pin the solver is free to pick any interpreter (micromamba 2.10 picks a
+    # free-threaded Python 3.14), so the environment file must say which Python the VAF step uses.
+    assert "python" in want, "yml/alleleCounter.yml does not pin python"
+    version = run([VAF_PYTHON, "-c", PY_VERSION])
+    assert matches(version, want["python"]), version
+    assert run([VAF_PYTHON, "-c", "import pysam; print(pysam.__version__)"]) == want["pysam"]
 
 
 def test_snv_counts_come_from_the_real_allelecounter():

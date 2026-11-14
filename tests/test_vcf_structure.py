@@ -11,8 +11,6 @@ import subprocess
 
 import pytest
 
-from conftest import tool, tool_env
-
 MERGE = r"""
 set -euo pipefail
 snv="$1"; indel="$2"; final="$3"
@@ -27,7 +25,7 @@ snv="$1"; indel="$2"; final="$3"
 def merged(run, sc, tmp_path):
     final = str(tmp_path / f"scenario{sc}_final.vcf")
     subprocess.run(["bash", "-c", MERGE, "merge", run.path(sc, "snv"), run.path(sc, "indel"), final],
-                   check=True, env=tool_env())
+                   check=True, env=dict(os.environ, LC_ALL="C"))
     return final
 
 
@@ -63,11 +61,11 @@ def test_final_vcf_has_all_records_and_is_sorted(run_default, tmp_path):
 
 
 def test_bcftools_accepts_the_final_vcf(run_default, tmp_path):
-    if not tool("bcftools"):
+    if not os.environ.get("PATH") or subprocess.run(["which", "bcftools"], capture_output=True).returncode:
         pytest.skip("bcftools not on PATH")
     for sc in scenario_list(run_default):
         final = merged(run_default, sc, tmp_path)
-        p = subprocess.run([tool("bcftools"), "view", "-H", final], capture_output=True, text=True, env=tool_env())
+        p = subprocess.run(["bcftools", "view", "-H", final], capture_output=True, text=True)
         assert p.returncode == 0, p.stderr
         assert "undefined tag" not in p.stderr.lower() and "not defined in the header" not in p.stderr
 

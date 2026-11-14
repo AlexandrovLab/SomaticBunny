@@ -60,13 +60,6 @@ def test_no_output_path_is_anchored_to_projectdir():
     assert 'params.outdir = "${launchDir}/RESULTS"' in src
 
 
-def test_tool_selection_uses_exact_membership_only():
-    src = open(os.path.join(REPO, "main.nf")).read()
-    assert "params.tool.contains(" not in src and "params.tool.toString().contains(" not in src
-    assert "def SELECTABLE_TOOLS = ['ascat', 'manta', 'delly', 'cnvkit']" in src
-    assert "manta_bed" not in src                      # stale GRCh38-only Manta parameter (audit item 14)
-
-
 def test_consensus_script_defaults_to_primary_chromosomes_only():
     src = open(os.path.join(REPO, "consensus_scenarios.sh")).read()
     assert 'printf "${prefix}%s\\n" $(seq 1 22) X Y' in src

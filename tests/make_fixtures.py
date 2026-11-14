@@ -8,7 +8,6 @@ Everything is generated from a seeded random reference, so no binary fixture is 
   vcf/<sample>.<caller>.vcf[.gz] one VCF per caller in that caller's own layout (sample order, INFO keys)
   bam/tumor.bam, bam/normal.bam reads with known REF/ALT counts at every variant site
   targets.bed                   a "capture kit" covering chr1:1-1500 only
-  boundary/                     one BED interval with SNVs one base either side of each edge (see BOUNDARY)
   bseq_header                   header line prepended by consensus_scenarios.sh before the bias filter
 
 The CASES table below is the single source of truth: tests import it to derive their expectations.
@@ -158,7 +157,7 @@ def n_alts(alt):
     return alt.count(",") + 1
 
 
-def mutect2_vcf(path, records=None):
+def mutect2_vcf(path):
     hdr = ["##tumor_sample=TUMOR", "##normal_sample=NORMAL",
            "##FILTER=<ID=PASS,Description=\"All filters passed\">",
            "##FILTER=<ID=germline,Description=\"Evidence indicates the site is germline\">",
@@ -171,7 +170,7 @@ def mutect2_vcf(path, records=None):
            "##FORMAT=<ID=AF,Number=A,Type=Float,Description=\"Allele fractions\">",
            "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read depth\">"]
     rows = []
-    for contig, pos, ref, alt, filt, score in (records if records is not None else records_for("mt")):
+    for contig, pos, ref, alt, filt, score in records_for("mt"):
         k = n_alts(alt)
         tlod = ",".join(f"{s:.2f}" for s in (score if isinstance(score, tuple) else (score,)))
         ad_t = "28," + ",".join(["12"] * k)
@@ -184,7 +183,7 @@ def mutect2_vcf(path, records=None):
     write_vcf(path, hdr, ["TUMOR", "NORMAL"], rows, gz=False)     # tumor first: exercises the column swap
 
 
-def muse_vcf(path, records=None):
+def muse_vcf(path):
     hdr = ["##FILTER=<ID=PASS,Description=\"Accept as a confident somatic mutation\">",
            "##FILTER=<ID=Tier2,Description=\"Less confident somatic mutation\">",
            "##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description=\"Somatic mutation\">",
@@ -193,14 +192,14 @@ def muse_vcf(path, records=None):
            "##FORMAT=<ID=AD,Number=R,Type=Integer,Description=\"Allelic depths\">",
            "##FORMAT=<ID=SS,Number=1,Type=Integer,Description=\"Somatic status\">"]
     rows = []
-    for contig, pos, ref, alt, filt, score in (records if records is not None else records_for("ms")):
+    for contig, pos, ref, alt, filt, score in records_for("ms"):
         alt1 = alt.split(",")[0]                    # MuSE reports one ALT
         rows.append((contig, pos, "rs999", ref, alt1, ".", filt, "SOMATIC", "GT:DP:AD:SS",
                      "0/1:40:28,12:2", "0/0:30:30,0:0"))
     write_vcf(path, hdr, ["TUMOR", "NORMAL"], rows, gz=False)     # MuSE writes the tumor first
 
 
-def strelka_snv_vcf(path, records=None):
+def strelka_snv_vcf(path):
     hdr = ["##FILTER=<ID=PASS,Description=\"All filters passed\">",
            "##FILTER=<ID=LowEVS,Description=\"Somatic Empirical Variant Score (SomaticEVS) is below threshold\">",
            "##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description=\"Somatic mutation\">",
@@ -209,7 +208,7 @@ def strelka_snv_vcf(path, records=None):
            "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read depth\">",
            "##FORMAT=<ID=AU,Number=2,Type=Integer,Description=\"Number of 'A' alleles (tier1,tier2)\">"]
     rows = []
-    for contig, pos, ref, alt, filt, score in (records if records is not None else records_for("st")):
+    for contig, pos, ref, alt, filt, score in records_for("st"):
         if len(ref) != len(alt) or len(ref) != 1:
             continue
         rows.append((contig, pos, ".", ref, alt, ".", filt, f"SOMATIC;QSS=60;SomaticEVS={score:.2f}", "DP:AU",
@@ -217,7 +216,7 @@ def strelka_snv_vcf(path, records=None):
     write_vcf(path, hdr, ["NORMAL", "TUMOR"], rows, gz=True)
 
 
-def strelka_indel_vcf(path, records=None):
+def strelka_indel_vcf(path):
     hdr = ["##FILTER=<ID=PASS,Description=\"All filters passed\">",
            "##FILTER=<ID=LowEVS,Description=\"Somatic Empirical Variant Score (SomaticEVS) is below threshold\">",
            "##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description=\"Somatic mutation\">",
@@ -226,7 +225,7 @@ def strelka_indel_vcf(path, records=None):
            "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read depth\">",
            "##FORMAT=<ID=TAR,Number=2,Type=Integer,Description=\"Reads strongly supporting alternate allele\">"]
     rows = []
-    for contig, pos, ref, alt, filt, score in (records if records is not None else records_for("st")):
+    for contig, pos, ref, alt, filt, score in records_for("st"):
         if len(ref) == len(alt):
             continue
         rows.append((contig, pos, ".", ref, alt, ".", filt, f"SOMATIC;QSI=55;SomaticEVS={score:.2f}", "DP:TAR",
@@ -234,7 +233,7 @@ def strelka_indel_vcf(path, records=None):
     write_vcf(path, hdr, ["NORMAL", "TUMOR"], rows, gz=True)
 
 
-def sage_vcf(path, records=None):
+def sage_vcf(path):
     hdr = ["##FILTER=<ID=PASS,Description=\"All filters passed\">",
            "##FILTER=<ID=minTumorQual,Description=\"Insufficient tumor quality\">",
            "##INFO=<ID=TIER,Number=1,Type=String,Description=\"Tier: [HOTSPOT, PANEL, HIGH_CONFIDENCE, LOW_CONFIDENCE]\">",
@@ -243,42 +242,10 @@ def sage_vcf(path, records=None):
            "##FORMAT=<ID=AD,Number=R,Type=Integer,Description=\"Allelic depths\">",
            "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Read depth\">"]
     rows = []
-    for contig, pos, ref, alt, filt, score in (records if records is not None else records_for("sa")):
+    for contig, pos, ref, alt, filt, score in records_for("sa"):
         rows.append((contig, pos, ".", ref, alt, "150", filt, "TIER=HIGH_CONFIDENCE", "GT:AD:DP",
                      "0/0:30,0:30", "0/1:28,12:40"))
     write_vcf(path, hdr, ["NORMAL", "TUMOR"], rows, gz=True)
-
-
-# ------------------------------------------------------------------ callable-BED boundary fixture
-# BED is 0-based half-open and VCF POS is 1-based: the interval chr1 2000 2100 makes the 1-based bases
-# 2001..2100 callable. The four SNVs sit one base either side of each edge; the insertion is anchored on
-# the last callable base (membership is decided by POS, the inserted bases lie beyond the interval).
-BOUNDARY = dict(bed=("chr1", 2000, 2100), before=2000, first=2001, last=2100, after=2101)
-
-
-def boundary(out_dir, seqs):
-    """Write the boundary fixture into out_dir: Mutect2 and Strelka2 call every site (PASS), MuSE and SAGE
-    are header-only. Returns (vcf_dir, bed_path); file names follow the main fixture so run_consensus()
-    can be pointed at vcf_dir."""
-    os.makedirs(out_dir, exist_ok=True)
-    seq = seqs["chr1"]
-    sites = []
-    for pos in (BOUNDARY[k] for k in ("before", "first", "last", "after")):
-        ref = seq[pos - 1]
-        sites.append(("chr1", pos, ref, alt_of(ref)))
-    anchor = seq[BOUNDARY["last"] - 1]
-    sites.append(("chr1", BOUNDARY["last"], anchor, anchor + alt_of(anchor) * 2))   # last inserted base != anchor: no left shift
-    mt = [(c, p, r, a, "PASS", 30.0) for c, p, r, a in sites]
-    st = [(c, p, r, a, "PASS", 20.0) for c, p, r, a in sites]
-    mutect2_vcf(os.path.join(out_dir, f"{SAMPLE}.mutect2.vcf"), mt)
-    muse_vcf(os.path.join(out_dir, f"{SAMPLE}.muse.vcf"), [])
-    strelka_snv_vcf(os.path.join(out_dir, f"{SAMPLE}.strelka_snv.vcf.gz"), st)
-    strelka_indel_vcf(os.path.join(out_dir, f"{SAMPLE}.strelka_indel.vcf.gz"), st)
-    sage_vcf(os.path.join(out_dir, f"{SAMPLE}.sage.vcf.gz"), [])
-    bed = os.path.join(out_dir, "boundary.bed")
-    with open(bed, "w") as fh:
-        fh.write("%s\t%d\t%d\n" % BOUNDARY["bed"])
-    return out_dir, bed
 
 
 # ------------------------------------------------------------------ BAMs
