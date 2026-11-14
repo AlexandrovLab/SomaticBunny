@@ -16,7 +16,9 @@ process CalculateContamination {
     tuple val(map), path("*segments.table"), emit: MUTECT2_segments_table
 
     script:
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
-    ${params.gatk} CalculateContamination -I ${map.tumor} -matched ${map.normal} -O ${map.patient}_${map.tumor_meta.sample}_contamination.table --tumor-segmentation ${map.patient}_${map.tumor_meta.sample}_segments.table
+    ${params.gatk} CalculateContamination --java-options "-Xmx${xmx}M ${gc}" -I ${map.tumor} -matched ${map.normal} -O ${map.patient}_${map.tumor_meta.sample}_contamination.table --tumor-segmentation ${map.patient}_${map.tumor_meta.sample}_segments.table
     """
 }

@@ -14,6 +14,8 @@ process GENERATE_INTERVALS {
     path "interval_list", emit: interval_dir
 
     script:
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
     # Build chromosome list from .fai
     if grep -q "^chr" ${ref_fai}; then
@@ -27,7 +29,7 @@ process GENERATE_INTERVALS {
     # Whole-contig lists for ApplyBQSR: every contig of the dictionary in exactly one list (bin/make_contig_groups.py)
     python3 ${projectDir}/bin/make_contig_groups.py ${ref_dict} 20 interval_list/bqsr
 
-    ${params.gatk} SplitIntervals \
+    ${params.gatk} SplitIntervals --java-options "-Xmx${xmx}M ${gc}" \
         -R ${ref} \
         -L main_chromosomes.list \
         --scatter-count 20 \

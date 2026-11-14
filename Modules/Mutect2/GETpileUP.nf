@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 process GETpileUP {
     scratch true
     conda "${params.gatk_env}"
-    label 'process_medium'
+    label 'GETpileUP'
     publishDir("${params.MUTECT2_dir}", mode: 'copy')
     errorStrategy 'retry'
     maxRetries 3
@@ -18,9 +18,8 @@ process GETpileUP {
 
     script:
     def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
-    ${params.gatk} GetPileupSummaries --java-options "-Xmx${xmx}M" -I ${bam} -V ${params.mutect2_germline} -L ${interval_dir}/${chunk}-scattered.interval_list -O ${meta.patient}_${meta.sample}_getpileupsummaries_${meta.status}_${chunk}.table
+    ${params.gatk} GetPileupSummaries --java-options "-Xmx${xmx}M ${gc}" -I ${bam} -V ${params.mutect2_germline} -L ${interval_dir}/${chunk}-scattered.interval_list -O ${meta.patient}_${meta.sample}_getpileupsummaries_${meta.status}_${chunk}.table
     """
 }
-
-

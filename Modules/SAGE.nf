@@ -19,10 +19,11 @@ process SAGE {
 
     script:
     def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
     set -o pipefail
     sha256sum ${params.SAGE_jar} | tee ${map.patient}_${map.tumor_meta.sample}.sage.log
-    java -Xmx${xmx}M -cp ${params.SAGE_jar} com.hartwig.hmftools.sage.SageApplication \
+    java -Xmx${xmx}M ${gc} -cp ${params.SAGE_jar} com.hartwig.hmftools.sage.SageApplication \
         -threads ${task.cpus} \
         -reference ${map.patient}_${map.normal_meta.sample}_normal \
         -reference_bam ${map.normal} \

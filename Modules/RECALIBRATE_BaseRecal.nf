@@ -16,8 +16,10 @@ process RECALIBRATE_BaseRecal {
     tuple val(patient), val(meta), path(bam), path("*table"), path(bai), emit: MergeReport_input
 
     script:
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
-    ${params.gatk} BaseRecalibrator \
+    ${params.gatk} BaseRecalibrator --java-options "-Xmx${xmx}M ${gc}" \
     -I ${bam} \
     -R ${params.ref} \
     --known-sites ${params.recal_knownsite1} \

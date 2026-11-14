@@ -14,6 +14,8 @@ params.genome = ""
 params.tool = ""
 params.cleanup = false 
 params.mkdup_optical_pixel_distance = 100   // Picard MarkDuplicates OPTICAL_DUPLICATE_PIXEL_DISTANCE; 2500 for patterned flow cells. Duplicate metrics only.
+params.mkdup_temp_dir = null                // MarkDuplicates spill files: null = the task directory (node-local scratch under SLURM); set a path for nodes with small local disks
+params.callable_bed = null                  // BED restricting the consensus (Modules/POST_scenarios.nf); declared here for the startup checks below
 
 // Initialize the log file with a header
 new File(params.log_file).text = """
@@ -31,6 +33,9 @@ if (!params.database_path) {
 if (!(params.type in ['genome', 'exome'])) {
     error "ERROR: --type must be 'genome' or 'exome' (got: ${params.type == null ? 'not set' : "'${params.type}'"}).\n" +
           "Usage: nextflow run main.nf --type [genome|exome] --genome [GRCh38|GRCh37|mm39|RN7] ..."
+}
+if (params.callable_bed && !file(params.callable_bed).exists()) {
+    error "ERROR: --callable_bed not found: ${params.callable_bed}"
 }
 
 // --first_step: allowed values, and the genome x first_step combinations that are implemented.
@@ -157,14 +162,21 @@ params.genomes = [
     ]
 ]
 
+// Custom reference files as given on the command line (null when absent). Read through containsKey:
+// a plain read of an absent parameter triggers Nextflow's "undefined parameter" warning, and a
+// pre-declared default could not be replaced later (a second assignment to a parameter is ignored).
+def given = { String name -> params.containsKey(name) ? params[name] : null }
+def user_ref = given('ref'), user_ref_fai = given('ref_fai'), user_ref_dict = given('ref_dict')
+def user_bed = given('bed'), user_bed_tbi = given('bed_tbi')
+
 // Custom ref/bed is REQUIRED when starting from markdup, recalibration, or variant_calling
 if (params.first_step in ['markdup', 'recalibration', 'variant_calling']) {
     def missing = []
-    if (!params.ref)      missing << '--ref'
-    if (!params.ref_fai)  missing << '--ref_fai'
-    if (!params.ref_dict) missing << '--ref_dict'
-    if (!params.bed)      missing << '--bed'
-    if (!params.bed_tbi)  missing << '--bed_tbi'
+    if (!user_ref)      missing << '--ref'
+    if (!user_ref_fai)  missing << '--ref_fai'
+    if (!user_ref_dict) missing << '--ref_dict'
+    if (!user_bed)      missing << '--bed'
+    if (!user_bed_tbi)  missing << '--bed_tbi'
     if (missing) {
         error "When --first_step is '${params.first_step}', you must provide all custom reference files: " +
               "--ref, --ref_fai, --ref_dict, --bed, --bed_tbi. Missing: ${missing.join(', ')}"
@@ -172,13 +184,13 @@ if (params.first_step in ['markdup', 'recalibration', 'variant_calling']) {
 }
 
 // If any custom ref/bed provided, validate they come as a complete set
-if (params.ref || params.bed || params.bed_tbi || params.ref_fai || params.ref_dict) {
+if (user_ref || user_bed || user_bed_tbi || user_ref_fai || user_ref_dict) {
     def missing = []
-    if (!params.ref)      missing << '--ref'
-    if (!params.ref_fai)  missing << '--ref_fai'
-    if (!params.ref_dict) missing << '--ref_dict'
-    if (!params.bed)      missing << '--bed'
-    if (!params.bed_tbi)  missing << '--bed_tbi'
+    if (!user_ref)      missing << '--ref'
+    if (!user_ref_fai)  missing << '--ref_fai'
+    if (!user_ref_dict) missing << '--ref_dict'
+    if (!user_bed)      missing << '--bed'
+    if (!user_bed_tbi)  missing << '--bed_tbi'
     if (missing) {
         error "When providing custom reference files, all five must be specified: " +
               "--ref, --ref_fai, --ref_dict, --bed, --bed_tbi. Missing: ${missing.join(', ')}"
@@ -241,7 +253,7 @@ if (params.genome in ['GRCh38', 'GRCh37']) {
 }
 
 // Check if user inputs custom ref or not
-params.custom_ref = (params.ref && params.ref != params.genomes[params.genome].ref)
+params.custom_ref = (user_ref && user_ref != params.genomes[params.genome].ref)
 
 if (params.custom_ref) {
     log.warn """
@@ -253,54 +265,55 @@ if (params.custom_ref) {
     """
 }
 
-// Set genome-specific parameters
-params.ref = params.ref ?: params.genomes[params.genome].ref
-params.ref_fai = params.ref_fai ?: "${params.ref}.fai"
-params.ref_dict = params.ref_dict ?: params.ref.replaceAll(/\.fa(sta)?$/, '.dict')
-params.bed = params.bed ?: params.genomes[params.genome].bed
-params.bed_tbi = params.bed_tbi ?: "${params.bed}.tbi"
-params.conpair_marker = params.conpair_marker ?: params.genomes[params.genome].conpair_marker
-params.conpair_marker_txt = params.conpair_marker_txt ?: params.genomes[params.genome].conpair_marker_txt
-params.mosdepth_bed = params.mosdepth_bed ?: params.genomes[params.genome].mosdepth_bed
-params.muse_vcf = params.muse_vcf ?: params.genomes[params.genome].muse_vcf
-params.recal_knownsite1 = params.recal_knownsite1 ?: params.genomes[params.genome].recal_knownsite1
-params.recal_knownsite2 = params.recal_knownsite2 ?: params.genomes[params.genome].recal_knownsite2
-params.recal_interval_wes = params.recal_interval_wes ?: params.genomes[params.genome].recal_interval_wes
-params.delly_excl = params.delly_excl ?: params.genomes[params.genome].delly_excl
+// Set genome-specific parameters. Each is assigned once, to the packaged default; a value given on the
+// command line (--ref, --mutect2_pon, --conpair_marker, ...) is kept by Nextflow and overrides it.
+params.ref = user_ref ?: params.genomes[params.genome].ref
+params.ref_fai = user_ref_fai ?: "${params.ref}.fai"
+params.ref_dict = user_ref_dict ?: params.ref.replaceAll(/\.fa(sta)?$/, '.dict')
+params.bed = user_bed ?: params.genomes[params.genome].bed
+params.bed_tbi = user_bed_tbi ?: "${params.bed}.tbi"
+params.conpair_marker = params.genomes[params.genome].conpair_marker
+params.conpair_marker_txt = params.genomes[params.genome].conpair_marker_txt
+params.mosdepth_bed = params.genomes[params.genome].mosdepth_bed
+params.muse_vcf = params.genomes[params.genome].muse_vcf
+params.recal_knownsite1 = params.genomes[params.genome].recal_knownsite1
+params.recal_knownsite2 = params.genomes[params.genome].recal_knownsite2
+params.recal_interval_wes = params.genomes[params.genome].recal_interval_wes
+params.delly_excl = params.genomes[params.genome].delly_excl
 
 // Set SAGE-specific parameters
-params.SAGE_ref_dir = params.SAGE_ref_dir ?: (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_ref_dir : null)
-params.SAGE_hotspots = params.SAGE_hotspots ?: (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_hotspots : null)
-params.SAGE_panel_bed = params.SAGE_panel_bed ?: (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_panel_bed : null)
-params.SAGE_high_confidence_bed = params.SAGE_high_confidence_bed ?: (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_high_confidence_bed : null)
-params.SAGE_ref_genome_version = params.SAGE_ref_genome_version ?: (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_ref_genome_version : null)
+params.SAGE_ref_dir = (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_ref_dir : null)
+params.SAGE_hotspots = (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_hotspots : null)
+params.SAGE_panel_bed = (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_panel_bed : null)
+params.SAGE_high_confidence_bed = (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_high_confidence_bed : null)
+params.SAGE_ref_genome_version = (params.genomes[params.genome].containsKey('sage') ? params.genomes[params.genome].sage.sage_ref_genome_version : null)
 
 // Set ASCAT-specific parameters
-params.ascat_ref_genome_version = params.ascat_ref_genome_version ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_ref_genome_version : null)
-params.ascat_allele_prefix = params.ascat_allele_prefix ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_allele_prefix : null)
-params.ascat_loci_prefix = params.ascat_loci_prefix ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_loci_prefix : null)
-params.ascat_GCcontentfile = params.ascat_GCcontentfile ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_GCcontentfile : null)
-params.ascat_replictimingfile = params.ascat_replictimingfile ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_replictimingfile : null)
+params.ascat_ref_genome_version = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_ref_genome_version : null)
+params.ascat_allele_prefix = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_allele_prefix : null)
+params.ascat_loci_prefix = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_loci_prefix : null)
+params.ascat_GCcontentfile = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_GCcontentfile : null)
+params.ascat_replictimingfile = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_replictimingfile : null)
 
-params.ascat_allele_prefix_wes = params.ascat_allele_prefix_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_allele_prefix_wes : null)
-params.ascat_loci_prefix_wes = params.ascat_loci_prefix_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_loci_prefix_wes : null)
-params.ascat_GCcontentfile_wes = params.ascat_GCcontentfile_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_GCcontentfile_wes : null)
-params.ascat_replictimingfile_wes = params.ascat_replictimingfile_wes ?: (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_replictimingfile_wes : null)
+params.ascat_allele_prefix_wes = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_allele_prefix_wes : null)
+params.ascat_loci_prefix_wes = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_loci_prefix_wes : null)
+params.ascat_GCcontentfile_wes = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_GCcontentfile_wes : null)
+params.ascat_replictimingfile_wes = (params.genomes[params.genome].containsKey('ASCAT') ? params.genomes[params.genome].ASCAT.ascat_replictimingfile_wes : null)
 
 
 params.database_dir = "${params.database_path}/Databases"
 params.genome_database_dir = "${params.database_dir}/${params.genomes[params.genome].database_subdir}"
 
 // Genome-specific file paths for Mutect2
-params.mutect2_pon = params.mutect2_pon ?: (params.genomes[params.genome].mutect2_pon ? "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon}" : null)
+params.mutect2_pon = (params.genomes[params.genome].mutect2_pon ? "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_pon}" : null)
 if (params.mutect2_pon && !file(params.mutect2_pon).exists())
     error "ERROR: Mutect2 panel of normals not found: ${params.mutect2_pon}"
 if (!params.mutect2_pon)
     log.warn "Genome ${params.genome} has no Mutect2 panel of normals: Mutect2 runs without -pon (lower specificity; not validated for RN7)"
 params.mutect2_interval_dir = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_interval_dir}"
-params.mutect2_germline = params.mutect2_germline ?: "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
+params.mutect2_germline = "${params.genome_database_dir}/${params.genomes[params.genome].mutect2_germline}"
 
-params.vaf_script = params.vaf_script ?: "${projectDir}/VAF.py"
+params.vaf_script = "${projectDir}/VAF.py"
 
 // Custom reference: every packaged resource this run will use must share the reference's contig names and lengths (the criterion GATK applies to sequence dictionaries). Any mismatch stops the run before a task is submitted, whatever the consuming tool would do on its own: GATK aborts, but SAGE, mosdepth, MuSE, Strelka, Manta, Delly and ASCAT silently ignore unmatched regions or mis-annotate, which alters the calls.
 if (params.custom_ref) {
@@ -397,7 +410,6 @@ ${available_tools.join(', ')}
 
 params.bam_dir="${params.outdir}/BAM"
 params.report_dir="${params.outdir}/REPORT"
-params.mkdup_temp_dir="${launchDir}/mkdup_tmp"
 params.FASTQC_dir="${params.outdir}/FASTQC"
 params.mkdup_dir="${params.outdir}/MKDUP"
 params.recal_dir="${params.outdir}/RECALIBRATE"
@@ -450,7 +462,7 @@ WARNING: --cleanup is ENABLED
 Intermediate files will be permanently deleted during the run:
   - BWA_MEM work directories and raw BAMs
   - MKDUP BAMs and work directories
-  - Recalibration chunk/merged BAMs and work directories
+  - Recalibration chunk BAMs and work directories
 
 You will NOT be able to use -resume to reuse these steps.
 Only final outputs in RESULTS/ will be kept.
@@ -458,6 +470,14 @@ Only final outputs in RESULTS/ will be kept.
 """
     log.warn cleanupWarning
     writeToLog(params.log_file, cleanupWarning)
+}
+
+// --type exome without --callable_bed keeps off-target calls in the consensus (README, "--type").
+if (params.type == 'exome' && !params.callable_bed) {
+    def wesWarning = "WARNING: --type exome without --callable_bed: the consensus is not restricted to the capture targets, " +
+                     "so off-target WES calls are retained. Pass the kit's target BED as --callable_bed to restrict every caller to the targets."
+    log.warn wesWarning
+    writeToLog(params.log_file, wesWarning)
 }
 
 include { FASTQC } from './Modules/FASTQC'
@@ -471,7 +491,6 @@ include { RECALIBRATE_MergeReport } from './Modules/RECALIBRATE_MergeReport.nf'
 include { RECALIBRATE_BQSR } from './Modules/RECALIBRATE_BQSR.nf'
 include { RECALIBRATE_BQSR_exome } from './Modules/RECALIBRATE_BQSR_exome.nf'
 include { RECALIBRATE_MergeBam } from './Modules/RECALIBRATE_MergeBam.nf'
-include { RECALIBRATE_SortBam } from './Modules/RECALIBRATE_SortBam.nf'
 include { CHECK_BAM_RECAL } from './Modules/CHECK_BAM_RECAL'
 include { COMBINE_REPORTS_RECAL } from './Modules/COMBINE_REPORTS_RECAL'
 include { MKDUP } from './Modules/MKDUP'
@@ -865,7 +884,7 @@ workflow {
             } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal(sample_sheet, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
 
-                RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
+                RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1], size: 20).set { BaseRecal_out_pair }
                 BaseRecal_out_pair.map{
                     [patient:it[0], status:it[1].status, meta:it[1], bam:it[2][0], table:it[3], bai:it[4][0]]
                 }.set{ BaseRecal_out_MAP }
@@ -874,19 +893,15 @@ workflow {
 
                 RECALIBRATE_BQSR(RECALIBRATE_MergeReport_out.BQSR_input, chunk, interval_dir_ch).set { RECALIBRATE_BQSR_out }
 
-                RECALIBRATE_BQSR_out.MergeBam_input.groupTuple(by:[0,1]).set { BaseRecal_BQSR_out_pair }
-                BaseRecal_BQSR_out_pair.map{
-                    [patient:it[0], meta:it[1], bam:it[2]]
-                }.set{BaseRecal_BQSR_out_MAP}
-
-                RECALIBRATE_MergeBam(BaseRecal_BQSR_out_MAP).set{ RECALIBRATE_MergeBam_out }
-
-                RECALIBRATE_MergeBam_out.MergeBam_input
-                    .map { patient, meta, merged -> [[patient, meta.sample, meta.status], patient, meta, merged] }
+                // The 20 ApplyBQSR chunks of a sample with its MarkDuplicates BAM (read-count check).
+                // size: 20 releases a sample as soon as its own chunks are done instead of waiting for all samples.
+                RECALIBRATE_BQSR_out.MergeBam_input
+                    .groupTuple(by: [0, 1], size: 20)
+                    .map { patient, meta, chunks -> [[patient, meta.sample, meta.status], patient, meta, chunks] }
                     .join( RECALIBRATE_MergeReport_out.BQSR_input.map { patient, meta, bam, table, bai -> [[patient, meta.sample, meta.status], bam, bai] }, failOnMismatch: true )
-                    .map { key, patient, meta, merged, mkdup_bam, mkdup_bai -> [patient, meta, merged, mkdup_bam, mkdup_bai] }
-                    .set { SortBam_input }
-                RECALIBRATE_SortBam(SortBam_input).set{ RECALIBRATE_out }
+                    .map { key, patient, meta, chunks, mkdup_bam, mkdup_bai -> tuple(patient, meta, chunks, mkdup_bam, mkdup_bai) }
+                    .set { MergeBam_input }
+                RECALIBRATE_MergeBam(MergeBam_input).set{ RECALIBRATE_out }
 
                 if (params.cleanup) {
                     CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
@@ -899,7 +914,7 @@ workflow {
             } else if (params.type == "genome" && params.genome in ['GRCh38', 'GRCh37']) {
                 RECALIBRATE_BaseRecal(MKDUP_good, chunk, interval_dir_ch).set{ RECALIBRATE_BaseRecal_out }
 
-                RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1]).set { BaseRecal_out_pair }
+                RECALIBRATE_BaseRecal_out.MergeReport_input.groupTuple(by:[0,1], size: 20).set { BaseRecal_out_pair }
                 BaseRecal_out_pair.map{
                     [patient:it[0], status:it[1].status, meta:it[1], bam:it[2][0], table:it[3], bai:it[4][0]]
                 }.set{ BaseRecal_out_MAP }
@@ -908,19 +923,15 @@ workflow {
 
                 RECALIBRATE_BQSR(RECALIBRATE_MergeReport_out.BQSR_input, chunk, interval_dir_ch).set { RECALIBRATE_BQSR_out }
 
-                RECALIBRATE_BQSR_out.MergeBam_input.groupTuple(by:[0,1]).set { BaseRecal_BQSR_out_pair }
-                BaseRecal_BQSR_out_pair.map{
-                    [patient:it[0], meta:it[1], bam:it[2]]
-                }.set{BaseRecal_BQSR_out_MAP}
-
-                RECALIBRATE_MergeBam(BaseRecal_BQSR_out_MAP).set{ RECALIBRATE_MergeBam_out }
-
-                RECALIBRATE_MergeBam_out.MergeBam_input
-                    .map { patient, meta, merged -> [[patient, meta.sample, meta.status], patient, meta, merged] }
+                // The 20 ApplyBQSR chunks of a sample with its MarkDuplicates BAM (read-count check).
+                // size: 20 releases a sample as soon as its own chunks are done instead of waiting for all samples.
+                RECALIBRATE_BQSR_out.MergeBam_input
+                    .groupTuple(by: [0, 1], size: 20)
+                    .map { patient, meta, chunks -> [[patient, meta.sample, meta.status], patient, meta, chunks] }
                     .join( RECALIBRATE_MergeReport_out.BQSR_input.map { patient, meta, bam, table, bai -> [[patient, meta.sample, meta.status], bam, bai] }, failOnMismatch: true )
-                    .map { key, patient, meta, merged, mkdup_bam, mkdup_bai -> [patient, meta, merged, mkdup_bam, mkdup_bai] }
-                    .set { SortBam_input }
-                RECALIBRATE_SortBam(SortBam_input).set{ RECALIBRATE_out }
+                    .map { key, patient, meta, chunks, mkdup_bam, mkdup_bai -> tuple(patient, meta, chunks, mkdup_bam, mkdup_bai) }
+                    .set { MergeBam_input }
+                RECALIBRATE_MergeBam(MergeBam_input).set{ RECALIBRATE_out }
 
                 if (params.cleanup) {
                     CLEANUP_MKDUP_RECAL(RECALIBRATE_out.cleanup_trigger)
@@ -1043,14 +1054,14 @@ workflow {
             }
 
             MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
-            MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
-            MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
-            MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
+            MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0, size: 20).set { LearnReadOrientationModel_input_pair }
+            MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0, size: 20).set { MergeMutectStats_input_pair }
+            MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0, size: 20).set { MergeVcfs_input_pair }
             LearnReadOrientationModel(LearnReadOrientationModel_input_pair).set { LearnReadOrientationModel_out }
             MergeMutectStats(MergeMutectStats_input_pair).set { MergeMutectStats_out }
             MergeVcfs(MergeVcfs_input_pair).set { MergeVcfs_out }
 
-            GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1],sort: {it[1]}).set { GETpileUP_out_pair }
+            GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1], size: 20, sort: {it[1]}).set { GETpileUP_out_pair }
             GETpileUP_out_pair.map{
             [patient:it[0], meta:it[1], mix:it[2]]
             }.set{ GETpileUP_out_pair_MAP }
@@ -1188,14 +1199,14 @@ workflow {
 
             GETpileUP(RECAL_good, chunk, interval_dir_ch).set { GETpileUP_out }
             MUTECT2_CALLING(RECALIBRATE_out_MAP, chunk, interval_dir_ch).set { MUTECT2_CALLING_out }
-            MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0).set { LearnReadOrientationModel_input_pair }
-            MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0).set { MergeMutectStats_input_pair }
-            MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0).set { MergeVcfs_input_pair }
+            MUTECT2_CALLING_out.LearnReadOrientationModel_input.groupTuple(by:0, size: 20).set { LearnReadOrientationModel_input_pair }
+            MUTECT2_CALLING_out.MergeMutectStats_input.groupTuple(by:0, size: 20).set { MergeMutectStats_input_pair }
+            MUTECT2_CALLING_out.MergeVcfs_input.groupTuple(by:0, size: 20).set { MergeVcfs_input_pair }
             LearnReadOrientationModel(LearnReadOrientationModel_input_pair).set { LearnReadOrientationModel_out }
             MergeMutectStats(MergeMutectStats_input_pair).set { MergeMutectStats_out }
             MergeVcfs(MergeVcfs_input_pair).set { MergeVcfs_out }
 
-            GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1],sort: {it[1]}).set { GETpileUP_out_pair }
+            GETpileUP_out.GETpileUP_Merge_input.map{patient, meta, table, chunk -> [patient, meta, [table, chunk]]}.groupTuple(by:[0,1], size: 20, sort: {it[1]}).set { GETpileUP_out_pair }
             GETpileUP_out_pair.map{
             [patient:it[0], meta:it[1], mix:it[2]]
             }.set{ GETpileUP_out_pair_MAP }
