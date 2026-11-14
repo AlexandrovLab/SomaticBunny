@@ -4,8 +4,8 @@ channels:
   - bioconda
 dependencies:
   - python=2.7
-  - dkfz-bias-filter=1.2.3a
   - pysam=0.15.3
   - numpy=1.16.5
   - scipy=1.2.1
   - bcftools=1.9
+  - matplotlib-base=2.2.5
