@@ -65,10 +65,15 @@ jobs:
           cache-environment: true
       - name: production environments, created from the pipeline's own environment files
         run: |
+          micromamba --version
           micromamba create -y -q -n POST -f yml/POST.yml
           micromamba create -y -q -n alleleCounter -f yml/alleleCounter.yml
-          micromamba list -n POST | grep -E "^ *(python|bcftools|pysam|dkfz-bias-filter) "
-          micromamba list -n alleleCounter | grep -E "^ *(python|pysam|cancerit-allelecount) "
+          echo "::group::packages in POST";          micromamba list -n POST;          echo "::endgroup::"
+          echo "::group::packages in alleleCounter"; micromamba list -n alleleCounter; echo "::endgroup::"
+      - name: the two interpreters import what the consensus and VAF steps import
+        run: |
+          "$MAMBA_ROOT_PREFIX/envs/POST/bin/python" -c "import sys, pysam, scipy, matplotlib; print('POST: python', sys.version.split()[0], 'pysam', pysam.__version__, 'matplotlib', matplotlib.__version__)"
+          "$MAMBA_ROOT_PREFIX/envs/alleleCounter/bin/python3" -c "import sys, pysam; print('alleleCounter: python', sys.version.split()[0], 'pysam', pysam.__version__)"
       - name: DKFZ bias filter at the commit pinned in checksums/components.tsv
         run: |
           git clone -q https://github.com/DKFZ-ODCF/DKFZBiasFilter tests/_deps/DKFZBiasFilter
