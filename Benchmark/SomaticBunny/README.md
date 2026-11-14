@@ -20,7 +20,7 @@ Main options: `--first_step mapping --genome GRCh38 --publish recal_bam`, with t
 
 ## Configuration
 
-SomaticBunny is run directly from its own repository (`nextflow run main.nf`), so no pipeline configuration is copied here: the `tscc_slurm` profile (SLURM executor and resources) is part of SomaticBunny's own `nextflow.config`.
+SomaticBunny is run directly from its own repository (nextflow run main.nf), so no pipeline configuration is copied here: the tscc_slurm and conda profiles (SLURM executor and resources; Conda environments with a one-hour creation timeout) are part of SomaticBunny's own nextflow.config.
 
 The Nextflow head job is launched from an interactive SLURM session:
 
@@ -42,4 +42,4 @@ All reference files come from the shared SomaticBunny database directory (`--dat
 
 ## Provenance
 
-`pipeline_info/<run>/` holds, for each completed benchmark run, the run's `.nextflow/history` line (`command.txt`, the exact command line), the execution report, trace and timeline (`-with-report -with-trace -with-timeline`), and `nextflow_version.txt` (written by the run scripts). A run that has not been performed has no directory.
+pipeline_info/<run>/ holds, for each completed benchmark run: the exact command line (the run's .nextflow/history line, command.txt); the execution report, trace and timeline (-with-report -with-trace -with-timeline); the resolved parameters (params_<timestamp>.json, copied from RESULTS/pipeline_info/); nextflow_version.txt (written by the run scripts); the tool versions of every Conda environment the run created (conda list --explicit of each environment under work/conda/, tool_versions.txt); the database hash check (bin/verify_database.sh <database> --hash, database_check.txt); the cleanup policy (--cleanup not used, work/ kept until the disk measurement); and the disk measurement (du -sh of work/, RESULTS/ and mkdup_tmp/ at completion, disk_usage.txt). A run that has not been performed has no directory.
