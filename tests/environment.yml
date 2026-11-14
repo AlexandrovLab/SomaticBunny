@@ -1,0 +1,22 @@
+# Conda environment for the SomaticBunny regression tests (tests/) and CI.
+#   conda env create -f tests/environment.yml && conda activate somaticbunny-tests
+#   pytest -v tests
+# scipy and matplotlib are imported by the DKFZ bias filter (scenario 6); nextflow for the preview tests.
+name: somaticbunny-tests
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pytest
+  - pyyaml
+  - pysam
+  - scipy
+  - matplotlib-base
+  - bcftools>=1.17
+  - samtools>=1.17
+  - htslib
+  - gawk
+  - cancerit-allelecount
+  - nextflow=25.10.2
+  - openjdk>=17
