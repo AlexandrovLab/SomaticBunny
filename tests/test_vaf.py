@@ -3,25 +3,25 @@ Exact VAF values from VAF.py on the synthetic BAMs.
 
 The tumor BAM carries a known number of ALT and REF reads at every site (make_fixtures.CASES), all
 with MAPQ 60 and base quality 40, so the expected counts are the fixture numbers themselves.
-SNV counts go through alleleCounter when it is on PATH (or SB_TOOLS_BIN); otherwise the same per-base counts
-are produced with pysam in alleleCounter's output layout, which still exercises VAF.py's join, validation and
-arithmetic. VAF.py runs under SB_VAF_PYTHON (default: the test interpreter).
+SNV counts go through alleleCounter when it is on PATH; otherwise the same per-base counts are produced
+with pysam in alleleCounter's output layout, which still exercises VAF.py's join, validation and arithmetic.
 """
 import os
+import shutil
 import subprocess
+import sys
 
 import pytest
 
 import make_fixtures as mf
-from conftest import VAF_PY, VAF_PYTHON, tool, tool_env
+from conftest import VAF_PY
 
 
 def count_file(bam_path, loci, out, ref):
     """alleleCounter-compatible counts: MAPQ >= 35, base quality >= 20, no dup/secondary/supplementary/qcfail."""
     pysam = pytest.importorskip("pysam")
-    if tool("alleleCounter"):
-        subprocess.run([tool("alleleCounter"), "-r", ref, "-l", loci, "-b", bam_path, "-o", out, "-m", "20", "-q", "35"],
-                       check=True, env=tool_env())
+    if shutil.which("alleleCounter"):
+        subprocess.run(["alleleCounter", "-r", ref, "-l", loci, "-b", bam_path, "-o", out, "-m", "20", "-q", "35"], check=True)
         return
     bam = pysam.AlignmentFile(bam_path)
     with open(out, "w") as fh:
@@ -51,16 +51,16 @@ def vaf_table(run_default, fixtures, tmp_path_factory):
     with open(final, "w") as out:                      # the SNV + indel merge as POST_SCENARIOS does it
         subprocess.run(["bash", "-c", r"""awk '/^##/ && !seen[$0]++' "$1" "$2"; awk '/^#CHROM/ {print; exit}' "$1"; awk '!/^#/' "$1" "$2" | sort -t$'\t' -k1,1V -k2,2n -k4,4 -k5,5""",
                         "m", run_default.path(sc, "snv"), run_default.path(sc, "indel")], stdout=out, check=True,
-                       env=tool_env())
+                       env=dict(os.environ, LC_ALL="C"))
     loci = os.path.join(d, "loci.tsv")
-    subprocess.run([VAF_PYTHON, VAF_PY, "loci", "--vcf", final, "--out", loci], check=True, env=tool_env())
+    subprocess.run([sys.executable, VAF_PY, "loci", "--vcf", final, "--out", loci], check=True)
     t_counts, n_counts = os.path.join(d, "tumor.counts"), os.path.join(d, "normal.counts")
     count_file(fixtures["tumor_bam"], loci, t_counts, fixtures["ref"])
     count_file(fixtures["normal_bam"], loci, n_counts, fixtures["ref"])
     table = os.path.join(d, "vaf.tsv")
-    subprocess.run([VAF_PYTHON, VAF_PY, "table", "--vcf", final, "--tumor-counts", t_counts, "--normal-counts", n_counts,
+    subprocess.run([sys.executable, VAF_PY, "table", "--vcf", final, "--tumor-counts", t_counts, "--normal-counts", n_counts,
                     "--tumor-bam", fixtures["tumor_bam"], "--normal-bam", fixtures["normal_bam"], "--ref", fixtures["ref"],
-                    "--sample", f"{mf.SAMPLE}_scenario_{sc}", "--out", table], check=True, env=tool_env())
+                    "--sample", f"{mf.SAMPLE}_scenario_{sc}", "--out", table], check=True)
     with open(table) as fh:
         header = fh.readline().rstrip("\n").split("\t")
         rows = {(r["CHROM"], int(r["POS"]), r["REF"], r["ALT"]): r
@@ -109,7 +109,7 @@ def test_mnv_derived_snvs_are_counted_as_plain_snvs(vaf_table):
 
 def test_loci_file_is_unique_and_sorted(run_default, tmp_path):
     loci = str(tmp_path / "loci.tsv")
-    subprocess.run([VAF_PYTHON, VAF_PY, "loci", "--vcf", run_default.path(5, "snv"), "--out", loci], check=True, env=tool_env())
+    subprocess.run([sys.executable, VAF_PY, "loci", "--vcf", run_default.path(5, "snv"), "--out", loci], check=True)
     rows = [l.split() for l in open(loci)]
     assert len(rows) == len({tuple(r) for r in rows})
     assert all(not l.startswith("#") for l in open(loci))
