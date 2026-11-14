@@ -180,12 +180,18 @@ The SomaticBunny pipeline workflow is divided into multiple steps that can be ru
 > **`--type genome` vs `--type exome`.** The SNV/INDEL callers are never restricted to exome
 > targets, for either data type. Each caller runs on its own call space (Mutect2: the scattered
 > interval lists, chr1-22, X, Y, M; Strelka2: `--callRegions` with `--bed`, chr1-22, X, Y; SAGE:
-> its built-in chr1-22, X, Y; MuSE: the whole reference). 
-> The consensus step (`consensus_scenarios.sh` for GRCh38/GRCh37, `consensus_scenarios_nonhuman.sh`
-> for mm39/RN7) then applies one region set to all callers identically: by default the primary
-> chromosomes (human chr1-22, X, Y; mm39 chr1-19, X, Y; RN7 chr1-20, X, Y), or the regions given
-> with `--consensus_contigs` / `--callable_bed`. The run prints at startup which consensus and
-> caller set it will use.
+> its built-in chr1-22, X, Y; MuSE: the whole reference). The consensus step
+> (`consensus_scenarios.sh` for GRCh38/GRCh37, `consensus_scenarios_nonhuman.sh` for mm39/RN7)
+> then applies one region set to all callers identically: by default the primary chromosomes
+> (human chr1-22, X, Y; mm39 chr1-19, X, Y; RN7 chr1-20, X, Y), or the regions given with
+> `--consensus_contigs` / `--callable_bed`. The run prints at startup which consensus and caller
+> set it will use. Variants outside that set never enter any scenario; they are counted in the
+> POST_SCENARIOS task log and listed in `special_mutations/<sample>_outside_callable_regions.tsv`.
+> `--type exome` only switches Strelka2 and Manta to `--exome` mode (depth filters off), MuSE to
+> `-E`, base quality score recalibration to the exome interval list, and mosdepth, CNVkit and
+> ASCAT to their exome resources. To restrict a WES consensus to the capture targets, pass the
+> kit's BED as `--callable_bed`: it is applied after calling, so every caller is filtered the
+> same way.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
