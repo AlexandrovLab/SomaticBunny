@@ -17,7 +17,9 @@ process FASTQC {
     tuple val(meta), path("*.html"), emit: fastqc_out
 
     script:
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
+    export JAVA_TOOL_OPTIONS="${gc}"
     fastqc -t ${task.cpus} -o ./ ${fastq_1} ${fastq_2}
     """
 }

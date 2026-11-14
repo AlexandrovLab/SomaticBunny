@@ -109,9 +109,9 @@ Everything the pipeline writes goes under the directory you launch it from, neve
 | Results | `<launch dir>/RESULTS` | `--outdir /path/to/results` |
 | Run log (`pipeline.log`) | `<launch dir>/pipeline.log` | `--log_file /path/to/pipeline.log` |
 | Nextflow work directory | `<launch dir>/work` | `-work-dir /path` (one dash, Nextflow option) or `workDir` in `nextflow.config` |
-| MarkDuplicates temporary files | `<launch dir>/mkdup_tmp` | `--mkdup_temp_dir /path` |
+| MarkDuplicates temporary files | the task directory: with `scratch true` the node-local scratch space the scheduler gives the job (TSCC: `/scratch/$USER/job_$SLURM_JOB_ID`) | `--mkdup_temp_dir /path` (for nodes whose local disk is too small for the spill files) |
 
-The work directory and the MarkDuplicates temporary directory take the most space during a run; put them on a large scratch file system if your launch directory is on a small one.
+The work directory takes the most space during a run; put it on a large scratch file system if your launch directory is on a small one. Every task runs in node-local scratch (`scratch true`) and copies its outputs back to the work directory, so the local disk of a node must hold one task's inputs that are not symlinked, its outputs and its temporary files (for MarkDuplicates on a 90x genome, several hundred GB).
 
 ## Usage
 
@@ -180,18 +180,13 @@ The SomaticBunny pipeline workflow is divided into multiple steps that can be ru
 > **`--type genome` vs `--type exome`.** The SNV/INDEL callers are never restricted to exome
 > targets, for either data type. Each caller runs on its own call space (Mutect2: the scattered
 > interval lists, chr1-22, X, Y, M; Strelka2: `--callRegions` with `--bed`, chr1-22, X, Y; SAGE:
-> its built-in chr1-22, X, Y; MuSE: the whole reference). The consensus step
-> (`consensus_scenarios.sh` for GRCh38/GRCh37, `consensus_scenarios_nonhuman.sh` for mm39/RN7)
-> then applies one region set to all callers identically: by default the primary chromosomes
-> (human chr1-22, X, Y; mm39 chr1-19, X, Y; RN7 chr1-20, X, Y), or the regions given with
-> `--consensus_contigs` / `--callable_bed`. The run prints at startup which consensus and caller
-> set it will use. Variants outside that set never enter any scenario; they are counted in the
-> POST_SCENARIOS task log and listed in `special_mutations/<sample>_outside_callable_regions.tsv`.
-> `--type exome` only switches Strelka2 and Manta to `--exome` mode (depth filters off), MuSE to
-> `-E`, base quality score recalibration to the exome interval list, and mosdepth, CNVkit and
-> ASCAT to their exome resources. To restrict a WES consensus to the capture targets, pass the
-> kit's BED as `--callable_bed`: it is applied after calling, so every caller is filtered the
-> same way.
+> its built-in chr1-22, X, Y; MuSE: the whole reference). 
+> The consensus step (`consensus_scenarios.sh` for GRCh38/GRCh37, `consensus_scenarios_nonhuman.sh`
+> for mm39/RN7) then applies one region set to all callers identically: by default the primary
+> chromosomes (human chr1-22, X, Y; mm39 chr1-19, X, Y; RN7 chr1-20, X, Y), or the regions given
+> with `--consensus_contigs` / `--callable_bed`. The run prints at startup which consensus and
+> caller set it will use, and warns when `--type exome` is used without `--callable_bed`, because
+> the off-target calls then stay in the consensus.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
@@ -254,7 +249,7 @@ nextflow run main.nf -profile slurm,conda -c my_cluster.config --type genome ...
 
 `process.clusterOptions` is passed to every job as extra `sbatch` options, so anything `sbatch` accepts works, e.g. `'--partition=compute --account=mylab --qos=normal'`.
 
-If your nodes are smaller than the default requests (up to 16 CPUs and 250 GB for some steps), cap what any job can request:
+Resource requests per step are in `conf/base.config` (largest: 16 CPUs for bwa-mem2 and MuSE, 64 GB for bwa-mem2, MuSE and the CNV/SV tools). Memory and time double on each retry of a job killed for memory or time. If your nodes are smaller, cap what any job can request:
 
 ```bash
 nextflow run main.nf -profile slurm,conda -c my_cluster.config --max_cpus 32 --max_memory 192.GB --max_time 72.h ...
@@ -444,7 +439,7 @@ excluded; depth is `REF + ALT`. The raw alleleCounter outputs
 
 ## Benchmark
 
-Code to reproduce the benchmark against nf-core/sarek is in [`Benchmark/`](Benchmark).
+The benchmark against nf-core/sarek (protocols for both pipelines, run records, metric definitions and the figure/table code) is maintained in its own repository, [AlexandrovLab/SomaticBunnyPublication-benchmark](https://github.com/AlexandrovLab/SomaticBunnyPublication-benchmark).
 
 ## License
 

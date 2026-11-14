@@ -110,6 +110,27 @@ def test_rn7_preview_announces_the_nonhuman_consensus(nf):
     assert "SomaticBunny consensus (RN7): consensus_scenarios_nonhuman.sh" in out
 
 
+def test_exome_without_callable_bed_warns_at_startup(nf):
+    # Off-target WES calls stay in the consensus unless --callable_bed restricts it; the run says so.
+    p, out = preview(nf, "--type", "exome", "--genome", "GRCh38", "--first_step", "mapping")
+    assert p.returncode == 0, out
+    assert "--type exome without --callable_bed" in out and "off-target WES calls are retained" in out
+    bed = nf["root"] / "targets.bed"
+    bed.write_text("chr1\t100\t200\n")
+    p, out = preview(nf, "--type", "exome", "--genome", "GRCh38", "--first_step", "mapping", "--callable_bed", str(bed))
+    assert p.returncode == 0, out
+    assert "--type exome without --callable_bed" not in out
+    p, out = preview(nf, "--type", "exome", "--genome", "GRCh38", "--first_step", "mapping", "--callable_bed", str(nf["root"] / "missing.bed"))
+    assert p.returncode != 0 and "--callable_bed not found" in out
+
+
+def test_startup_reads_no_undefined_parameter(nf):
+    # Every override parameter is declared before it is read: no "Access to undefined parameter" warning.
+    p, out = preview(nf, "--type", "genome", "--genome", "GRCh38", "--first_step", "mapping")
+    assert p.returncode == 0, out
+    assert "Access to undefined parameter" not in out, [l for l in out.splitlines() if "undefined parameter" in l]
+
+
 def test_consensus_is_wired_for_every_genome():
     # The POST block must not be limited to human genomes, and each branch must call its own module.
     src = open(os.path.join(REPO, "main.nf")).read()

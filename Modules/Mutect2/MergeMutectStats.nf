@@ -15,7 +15,9 @@ process MergeMutectStats {
   tuple val(map), path("*.stats"), emit: MUTECT2_stats
 
   script:
-  def cmd = "${params.gatk} MergeMutectStats"
+  def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+  def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
+  def cmd = "${params.gatk} MergeMutectStats --java-options \"-Xmx${xmx}M ${gc}\""
 
   for( int i=0; i<20; i++ ) {
     cmd += " -stats "

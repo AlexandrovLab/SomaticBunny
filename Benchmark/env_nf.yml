@@ -1,9 +1,0 @@
-name: env_nf
-
-channels:
-  - conda-forge
-  - bioconda
-
-dependencies:
-  - nextflow=25.04.8
-  - openjdk=17.0.10

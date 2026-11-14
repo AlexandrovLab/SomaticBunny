@@ -1,35 +1,52 @@
+nextflow.enable.dsl=2
+
+/*
+ * Gathers the 20 ApplyBQSR chunk BAMs of one sample into its recalibrated BAM.
+ *
+ * Each chunk holds whole contigs (bqsr/<n>-contigs.interval_list; chunk 20 also the unmapped
+ * reads) and comes out of ApplyBQSR coordinate-sorted, so `samtools merge` produces the final
+ * coordinate-sorted BAM directly and no re-sort is needed. -c and -p keep the one @RG and @PG
+ * line the chunks share; without them samtools gives every chunk after the first a renamed copy.
+ *
+ * Also checks that the scatter/gather neither lost nor duplicated reads: per-contig record counts
+ * of the merged BAM must equal those of the MarkDuplicates BAM it was computed from.
+ */
 process RECALIBRATE_MergeBam {
     scratch true
-    label 'RECALIBRATE'
+    label 'RECALIBRATE_MergeBam'
     conda "${params.samtools_env}"
-    errorStrategy = 'retry'
-    maxRetries 3
-        
+    if (params.publish.tokenize(',').contains('recal_bam')) {
+        publishDir("${params.recal_dir}", mode: 'copy')
+    }
+
     input:
-    val(map)
+    tuple val(patient), val(meta), path(chunks), path(mkdup_bam), path(mkdup_bai)
 
     output:
-    tuple val(map.patient), val(map.meta), path("*_temp_merged.bam"), emit: MergeBam_input
+    tuple val(patient), val(meta), path("${meta.patient}_${meta.sample}_${meta.status}_recal.bam"), path("${meta.patient}_${meta.sample}_${meta.status}_recal.bam.bai"), emit: pair_recal
+    tuple val(meta), path("${meta.patient}_${meta.sample}_${meta.status}_recal.bam"), path("${meta.patient}_${meta.sample}_${meta.status}_recal.bam.bai"), emit: recal_out
+    val(meta), emit: cleanup_trigger
 
     script:
-    def temp_merged = "${map.patient}_${map.meta.sample}_${map.meta.status}_temp_merged.bam"
-    
+    def recal_bam = "${meta.patient}_${meta.sample}_${meta.status}_recal.bam"
+    def n_chunks  = chunks instanceof List ? chunks.size() : 1
+    if (n_chunks != 20) {
+        throw new IllegalStateException(
+            "RECALIBRATE_MergeBam expected 20 ApplyBQSR chunks for ${meta.patient}_${meta.sample}_${meta.status}, got ${n_chunks}")
+    }
     """
-    # Validate we have exactly 20 chunks
-    if [ ${map.bam.size()} -ne 20 ]; then
-        echo "ERROR: Expected 20 chunks, got ${map.bam.size()}"
+    samtools merge -@ ${task.cpus} -c -p -o ${recal_bam} ${chunks.join(' ')}
+    samtools index -@ ${task.cpus} ${recal_bam}
+
+    # Per-contig record counts (mapped + unmapped, '*' = unplaced unmapped) must match the
+    # MarkDuplicates BAM. Index only, instant.
+    samtools idxstats ${mkdup_bam} | awk -F'\\t' '{print \$1"\\t"\$3+\$4}' | sort > expected.counts
+    samtools idxstats ${recal_bam} | awk -F'\\t' '{print \$1"\\t"\$3+\$4}' | sort > observed.counts
+    if ! diff expected.counts observed.counts > counts.diff; then
+        echo "ERROR: read counts per contig differ between ${mkdup_bam} (<) and ${recal_bam} (>): reads were lost or duplicated in the ApplyBQSR scatter/gather"
+        cat counts.diff
         exit 1
     fi
-    
-    # Check all BAM files exist
-    for bam in ${map.bam.join(' ')}; do
-        if [ ! -f "\$bam" ]; then
-            echo "ERROR: BAM file \$bam does not exist"
-            exit 1
-        fi
-    done
-    
-    # Merge all 20 chunks (this removes duplicates from your current problematic merge)
-    samtools merge -o ${temp_merged} ${map.bam.join(' ')}
+    echo "read count check passed: \$(awk -F'\\t' '{s+=\$2} END{print s}' observed.counts) records in both BAMs"
     """
 }

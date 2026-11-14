@@ -15,7 +15,9 @@ process LearnReadOrientationModel {
   tuple val(map), path("*read-orientation-model.tar.gz"), emit: MUTECT2_read_orientation
 
   script:
-  def cmd = "${params.gatk} LearnReadOrientationModel"
+  def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+  def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
+  def cmd = "${params.gatk} LearnReadOrientationModel --java-options \"-Xmx${xmx}M ${gc}\""
 
   for( int i=0; i<20; i++ ) {
     cmd += " -I "

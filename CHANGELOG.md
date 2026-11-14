@@ -22,4 +22,9 @@ Release corresponding to the manuscript. Changes made in response to the externa
 - `yml/POST.yml`: unused `dkfz-bias-filter` removed, `matplotlib-base` pinned; `yml/alleleCounter.yml`: Python pinned. Stale `params.manta_bed` removed.
 - Conpair documented as legacy QC; SAGE preprocessing context (no REDUX, `-skip_msi_jitter`) documented.
 - BSD 2-Clause license, copyright The Regents of the University of California; `.gitignore`; release metadata (`CITATION.cff`, Nextflow manifest, commit in the run log).
-- Benchmark scripts replaced with the v1.0.0 protocol.
+- Resource requests right-sized from the peak memory and CPU use of complete runs: GetPileupSummaries 1 CPU / 8 GB (was 8 / 125 GB), BaseRecalibrator and ApplyBQSR 2 / 8 GB (was 4 / 60 GB), MarkDuplicates 2 / 48 GB (was 8 / 125 GB), bwa-mem2 64 GB (was 250 GB), MuSE 64 GB (was 250 GB), Strelka2 16 GB (was 125 GB), FastQC 2 CPUs / 8 GB (was 4 / 60 GB), Conpair 2 / 8 GB, mosdepth 4 / 8 GB, CNVkit reference 8 CPUs / 32 GB; memory and time grow with the retry attempt for every step.
+- Recalibrated BAM produced directly by `samtools merge -c -p` of the 20 coordinate-sorted ApplyBQSR chunks; the second full sort (`RECALIBRATE_SortBam`) removed. One `@RG`/`@PG` per sample instead of a renamed copy per chunk. Per-sample gathers (`groupTuple(size: 20)`) release each sample as soon as its own chunks finish.
+- MarkDuplicates spill files written to the task directory (node-local scratch under SLURM) instead of `<launch dir>/mkdup_tmp`; `--mkdup_temp_dir` now optional.
+- Every JVM step (GATK, Picard, SAGE, Conpair, FastQC) caps its heap from the task memory and its garbage-collector threads from the task CPUs; `_JAVA_OPTIONS`/`JAVA_TOOL_OPTIONS` inherited from the submitting shell are dropped before each task.
+- Startup warning when `--type exome` is used without `--callable_bed` (off-target calls retained); `--callable_bed` checked for existence. Override parameters declared before use (no "undefined parameter" warnings).
+- Benchmark against nf-core/sarek moved to its own repository (`AlexandrovLab/SomaticBunnyPublication-benchmark`).

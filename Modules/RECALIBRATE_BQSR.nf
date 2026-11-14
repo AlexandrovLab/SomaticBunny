@@ -6,8 +6,8 @@ process RECALIBRATE_BQSR {
     label 'RECALIBRATE'
     errorStrategy 'retry'
     maxRetries 3
-        
-    input: 
+
+    input:
     tuple val(patient), val(meta), path(bam), path(table), path(bai)
     each chunk
     path interval_dir
@@ -18,8 +18,10 @@ process RECALIBRATE_BQSR {
 
     script:
     def unmapped = chunk == 20 ? '-L unmapped' : ''
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
-    ${params.gatk} ApplyBQSR \
+    ${params.gatk} ApplyBQSR --java-options "-Xmx${xmx}M ${gc}" \
     -R ${params.ref} \
     -I ${bam} \
     -L ${interval_dir}/bqsr/${chunk}-contigs.interval_list ${unmapped} \

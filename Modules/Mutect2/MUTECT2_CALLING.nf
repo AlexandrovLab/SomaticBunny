@@ -22,8 +22,10 @@ process MUTECT2_CALLING {
 
     script:
     def pon_arg = params.mutect2_pon ? "-pon ${params.mutect2_pon}" : ""
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
-    ${params.gatk} Mutect2 \\
+    ${params.gatk} Mutect2 --java-options "-Xmx${xmx}M ${gc}" \\
          -R ${params.ref} ${pon_arg} \\
         --germline-resource ${params.mutect2_germline} \\
         --native-pair-hmm-threads ${task.cpus} \\

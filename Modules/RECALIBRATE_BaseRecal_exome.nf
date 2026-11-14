@@ -6,7 +6,7 @@ process RECALIBRATE_BaseRecal_exome {
     label 'RECALIBRATE'
     errorStrategy = 'retry'
     maxRetries 3
-        
+
     input:
     tuple val(patient), val(meta), path(bam), path(bai)
 
@@ -14,8 +14,10 @@ process RECALIBRATE_BaseRecal_exome {
     tuple val(patient), val(meta), path(bam), path("*table"), path(bai), emit: BQSR_input
 
     script:
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
-    ${params.gatk} BaseRecalibrator \
+    ${params.gatk} BaseRecalibrator --java-options "-Xmx${xmx}M ${gc}" \
     -I ${bam} \
     -R ${params.ref} \
     --known-sites ${params.recal_knownsite1} \

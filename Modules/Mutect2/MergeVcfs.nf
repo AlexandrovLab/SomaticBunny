@@ -30,7 +30,9 @@ process MergeVcfs {
         )
     }
 
-    def cmd = "picard MergeVcfs"
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
+    def cmd = "picard MergeVcfs -Xmx${xmx}M ${gc}"
 
     for (int i = 0; i < 20; i++) {
         cmd += " I=${vcf[i]}"

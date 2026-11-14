@@ -21,8 +21,10 @@ process FilterMutectCalls {
     tuple val(map), path("*vcf"), emit: Mutect2_out
 
     script:
+    def xmx = task.memory ? (task.memory.mega * 0.8).intValue() : 4096
+    def gc  = "-XX:ParallelGCThreads=${task.cpus} -XX:ConcGCThreads=${Math.max(1, task.cpus.intdiv(4))}"
     """
-    ${params.gatk} FilterMutectCalls \
+    ${params.gatk} FilterMutectCalls --java-options "-Xmx${xmx}M ${gc}" \
     -R ${params.ref} \
     -V ${unfiltered_vcf} \
     --contamination-table ${contamination_table} \
