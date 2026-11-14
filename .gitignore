@@ -7,7 +7,6 @@ work/
 # Pipeline outputs and logs (defaults under the launch directory)
 RESULTS/
 pipeline.log
-mkdup_tmp/
 report.html
 timeline.html
 trace.txt

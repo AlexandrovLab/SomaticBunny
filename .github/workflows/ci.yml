@@ -18,7 +18,7 @@ jobs:
       - name: bash -n on every shell script
         run: |
           set -e
-          for f in consensus_scenarios.sh bin/*.sh $(find Benchmark -name '*.sh'); do bash -n "$f" && echo "ok $f"; done
+          for f in *.sh bin/*.sh; do bash -n "$f" && echo "ok $f"; done
       - name: python syntax
         run: python -m py_compile VAF.py bin/*.py tests/*.py
       - name: YAML validity (conda environments and workflows)
