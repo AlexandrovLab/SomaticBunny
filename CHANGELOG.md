@@ -4,6 +4,10 @@ All notable changes to SomaticBunny are recorded here. The format follows Keep a
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-15
+
+- CPU requests right-sized for the remaining single-threaded or lightly threaded steps (observed use in the 30x run): Delly calling and genotyping 2 CPUs / 8 GB (was 8 / 64 GB), Delly filtering 1 / 4 GB, CNVkit per tumor 8 CPUs / 48 GB (was 16 / 64 GB), ASCAT 4 / 16 GB (was 8 / 64 GB), quickchecks, report collation, renames, VAF annotation and CSV summaries 1 CPU / 4 GB (was 2 / 16 GB). No change to any tool command or output.
+
 ## [1.0.0] - 2026-11-13
 
 Release corresponding to the manuscript. Changes made in response to the external code audit:

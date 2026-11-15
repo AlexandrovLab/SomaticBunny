@@ -249,7 +249,7 @@ nextflow run main.nf -profile slurm,conda -c my_cluster.config --type genome ...
 
 `process.clusterOptions` is passed to every job as extra `sbatch` options, so anything `sbatch` accepts works, e.g. `'--partition=compute --account=mylab --qos=normal'`.
 
-Resource requests per step are in `conf/base.config` (largest: 16 CPUs for bwa-mem2 and MuSE, 64 GB for bwa-mem2, MuSE and the CNV/SV tools). Memory and time double on each retry of a job killed for memory or time. If your nodes are smaller, cap what any job can request:
+Resource requests per step are in `conf/base.config` (largest: 16 CPUs and 64 GB for bwa-mem2 and MuSE). Memory and time double on each retry of a job killed for memory or time. If your nodes are smaller, cap what any job can request:
 
 ```bash
 nextflow run main.nf -profile slurm,conda -c my_cluster.config --max_cpus 32 --max_memory 192.GB --max_time 72.h ...
