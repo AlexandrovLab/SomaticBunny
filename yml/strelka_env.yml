@@ -4,4 +4,4 @@ channels:
   - bioconda
 dependencies:
   - python=2.7
-  - strelka=2.9.10
+  - strelka=2.9.10=h9ee0642_1
